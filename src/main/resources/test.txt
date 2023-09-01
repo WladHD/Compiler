@@ -1,0 +1,7 @@
+var n : int = I;
+
+const x : bool = B;
+
+double f(a,b,c)
+{
+}

@@ -24,4 +24,40 @@
 
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>javacc-maven-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>jjtree-javacc</id>
+                        <goals>
+                            <goal>jjtree-javacc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+                            <nodePackage>de.fh.javacc.generated</nodePackage>
+                            <buildNodeFiles>true</buildNodeFiles>
+                            <buildTokenManager>true</buildTokenManager>
+                            <buildParser>true</buildParser>
+                            <nodeClass>SimpleNode</nodeClass>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>javacc</id>
+                        <goals>
+                            <goal>javacc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>
