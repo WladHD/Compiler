@@ -4,24 +4,38 @@ import java.util.AbstractMap;
 import java.util.HashMap;
 
 public class Closure implements IClosure<String, String, Object> {
+    private final Closure parent;
+    private final HashMap<String, String> variableTypeMap;
+    private final HashMap<String, Object> variableValueMap;
+    private final HashMap<String, String> methodReturnTypeMap;
+    private final HashMap<String, IClosure<String, String, Object>> methodClosureMap;
+
+    private Closure(Closure parent) {
+        this.parent = parent;
+        this.variableTypeMap = new HashMap<>();
+        this.variableValueMap = new HashMap<>();
+        this.methodReturnTypeMap = new HashMap<>();
+        this.methodClosureMap = new HashMap<>();
+    }
+
     @Override
     public HashMap<String, String> getVariableTypeMap() {
-        return null;
+        return variableTypeMap;
     }
 
     @Override
     public HashMap<String, Object> getVariableValueMap() {
-        return null;
+        return variableValueMap;
     }
 
     @Override
     public HashMap<String, String> getMethodReturnTypeMap() {
-        return null;
+        return methodReturnTypeMap;
     }
 
     @Override
     public HashMap<String, IClosure<String, String, Object>> getMethodClosureMap() {
-        return null;
+        return methodClosureMap;
     }
 
     @Override
@@ -41,7 +55,7 @@ public class Closure implements IClosure<String, String, Object> {
 
     @Override
     public IClosure<String, String, Object> getParent() {
-        return null;
+        return parent;
     }
 
     @Override
@@ -56,6 +70,6 @@ public class Closure implements IClosure<String, String, Object> {
 
     @Override
     public IClosure<String, String, Object> createNewClosure() {
-        return null;
+        return new Closure(this);
     }
 }
