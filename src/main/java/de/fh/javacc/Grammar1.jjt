@@ -18,7 +18,8 @@ public class TestParser {
 PARSER_END(TestParser)
 
 TOKEN : {
-  "int" | "double" | "print" | "read" | "while" | ";" | "=" | "(" | ")" | "!" | "{" | "}" | "--" | "++"
+  <TypeSpecifiers: "int" | "double" > |
+  "print" | "read" | "while" | ";" | "=" | "(" | ")" | "!" | "{" | "}" | "--" | "++"
   | <BinVergleich : ">=" | ">" | "<=" | "<" | "==" | "!=" >
   | <BinJunktor : "||" | "&&" >
   | <OpSum : ["+","-","*","/","%"]>
@@ -56,10 +57,30 @@ void stmnt() #STMT :
 
 
 void decl() #DECL :
+{} {
+  type() identifier() ["=" ausdruck() ] ";"
+}
+
+void type() #TYPE :
 {
-   Token type, ident, end;
-} {
-  (type="int" | type="double") ident=<Identifier> ["=" ausdruck() ] end=";" { jjtThis.value = new Object[] {type, ident}; }
+  Token t;
+}
+{
+  t = <TypeSpecifiers>
+  {
+      jjtThis.value = t.image;
+  }
+}
+
+void identifier() #IDENTIFIER :
+{
+  Token t;
+}
+{
+  t=<Identifier>
+  {
+    jjtThis.value = t.image;
+  }
 }
 
 void block() #BLOCK :
