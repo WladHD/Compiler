@@ -1,7 +1,15 @@
-var n : int = I;
+int x;
+int y;
 
-const x : bool = B;
+read y;
 
-double f(a,b,c)
-{
+while (y!=1) {
+
+read x;
+int erg = 1;
+while (x>0) {
+  erg = erg * x--;
+}
+print erg;
+read y;
 }

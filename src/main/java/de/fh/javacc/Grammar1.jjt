@@ -1,0 +1,111 @@
+// @author https://stackoverflow.com/a/13921386
+// TestParser.jjt
+PARSER_BEGIN(TestParser)
+package de.fh.javacc.generated;
+public class TestParser {
+  public static SimpleNode parse(java.io.InputStream is) throws ParseException {
+      TestParser parser = new TestParser(is);
+      return parser.compilationUnit(); // SimpleNode root = parser.program()
+  }
+}
+
+PARSER_END(TestParser)
+
+TOKEN :
+{
+   "int" | "double" | "print" | "read" | "while" | ";" | "=" | "(" | ")" | "!" | "{" | "}" | "--" | "++"
+   | <BinVergleich : ">=" | ">" | "<=" | "<" | "==" | "!=" >
+   | <BinJunktor : "||" | "&&" >
+   | <OpSum : ["+","-","*","/","%"]>
+   | <OpProd : ["*","/","%"]>
+   | <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
+   | <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
+   | <DoubleLiteral : <IntegerLiteral> "." (["0"-"9"])* | "." (["0"-"9"])+ >
+}
+
+
+SKIP : {   " " | "\t" | "\n" | "\r" | <Kommentar: "//" (~["\n"])* >
+}
+
+SimpleNode compilationUnit() #compilationUnit :
+{}
+{
+    (stmnt() | decl())* <EOF> {return jjtThis;}
+}
+
+void stmnt() :
+{}
+{
+   block() | whileStmnt() | printStmnt() | readStmnt() | ausdruck() ";"
+}
+void decl() :
+{}
+{
+   ("int" | "double") <Identifier> ["=" ausdruck() ] ";"
+}
+
+void block() :
+{}
+{
+   "{" (stmnt() | decl())* "}"
+}
+
+void whileStmnt() :
+{}
+{
+   "while" "(" ausdruck() ")" stmnt()
+}
+
+
+
+void printStmnt() :
+{}
+{
+   "print" ausdruck() ";"
+}
+
+void readStmnt() :
+{Token t;}
+{
+  "read" t = <Identifier> ";" {jjtThis.value = t.image;}
+}
+
+
+void ausdruck() :
+{}
+{
+  LOOKAHEAD(2) <Identifier> "=" ausdruck() | junktoren()
+}
+
+void junktoren() :
+{}
+{
+  vergleich() (<BinJunktor> vergleich())*
+}
+
+void vergleich() :
+{}
+{
+  summe() [<BinVergleich> summe()]
+}
+
+void summe() :
+{}
+{
+  produkt() (<OpSum> produkt())*
+}
+
+void produkt() :
+{}
+{
+    unaer() (<OpProd> unaer())*
+}
+
+void unaer() : {}{
+   (<OpSum> | "!" ) unaer() | atom()
+}
+
+void atom() : {}{
+  <Identifier> ["++"|"--"]| ("++"|"--") <Identifier>  | <IntegerLiteral> | <DoubleLiteral>
+  | "(" ausdruck() ")"
+}
