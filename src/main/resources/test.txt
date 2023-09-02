@@ -1,7 +1,12 @@
-var n : int = I;
+int i = 0;
+Path p = /home/robert/hello;
 
-const x : bool = B;
+int anzahl(String neu) {
+    for (File f:p.files) f.name = neu + f.name;
+}
 
-double f(a,b,c)
-{
+void main() {
+    System.print(“Bitte geben Sie den Pfad ein:“);
+    String neu = System.readString();
+    System.println(anzahl(neu));
 }
