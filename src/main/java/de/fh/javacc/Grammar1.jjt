@@ -59,7 +59,7 @@ void decl() #DECL :
 {
    Token type, ident, end;
 } {
-  (type="int" | type="double") ident=<Identifier> ["=" ausdruck() ] end=";" { }
+  (type="int" | type="double") ident=<Identifier> ["=" ausdruck() ] end=";" { jjtThis.value = new Object[] {type, ident}; }
 }
 
 void block() #BLOCK :
