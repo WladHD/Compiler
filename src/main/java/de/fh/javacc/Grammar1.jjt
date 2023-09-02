@@ -11,101 +11,139 @@ public class TestParser {
 
 PARSER_END(TestParser)
 
-TOKEN :
-{
-   "int" | "double" | "print" | "read" | "while" | ";" | "=" | "(" | ")" | "!" | "{" | "}" | "--" | "++"
-   | <BinVergleich : ">=" | ">" | "<=" | "<" | "==" | "!=" >
-   | <BinJunktor : "||" | "&&" >
-   | <OpSum : ["+","-","*","/","%"]>
-   | <OpProd : ["*","/","%"]>
-   | <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
-   | <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
-   | <DoubleLiteral : <IntegerLiteral> "." (["0"-"9"])* | "." (["0"-"9"])+ >
+TOKEN : {
+  "int" | "double" | "print" | "read" | "while" | ";" | "=" | "(" | ")" | "!" | "{" | "}" | "--" | "++"
+  | <BinVergleich : ">=" | ">" | "<=" | "<" | "==" | "!=" >
+  | <BinJunktor : "||" | "&&" >
+  | <OpSum : ["+","-","*","/","%"]>
+  | <OpProd : ["*","/","%"]>
+  | <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
+  | <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
+  | <DoubleLiteral : <IntegerLiteral> "." (["0"-"9"])* | "." (["0"-"9"])+ >
 }
+
 
 
 SKIP : {   " " | "\t" | "\n" | "\r" | <Kommentar: "//" (~["\n"])* >
 }
 
-SimpleNode compilationUnit() #compilationUnit :
-{}
+SimpleNode compilationUnit() #PROGRAM :
 {
-    (stmnt() | decl())* <EOF> {return jjtThis;}
+    boolean first = true;
+    SimpleNode result = null; // Initialize the result
+} {
+    (
+        (stmnt() | decl()) { if (first) result = jjtThis; else result.jjtAddChild(jjtThis, result.jjtGetNumChildren()); }
+    )*
+    { return result; } // Return the result
 }
 
-void stmnt() :
-{}
+
+
+void stmnt() #STMT :
 {
-   block() | whileStmnt() | printStmnt() | readStmnt() | ausdruck() ";"
+  Token end;
+} {
+  (block() | whileStmnt() | printStmnt() | readStmnt() | (ausdruck() end = ";") { } )
+  { }
 }
-void decl() :
-{}
+
+
+void decl() #DECL :
 {
-   ("int" | "double") <Identifier> ["=" ausdruck() ] ";"
+   Token type, ident, end;
+} {
+  (type="int" | type="double") ident=<Identifier> ["=" ausdruck() ] end=";" { }
 }
 
-void block() :
-{}
+void block() #BLOCK :
 {
-   "{" (stmnt() | decl())* "}"
+    Token start, end;
+} {
+   start = "{" (
+         (stmnt() | decl())  { }
+       )*
+   end = "}"
+   { }
 }
 
-void whileStmnt() :
-{}
+void whileStmnt() #WHILE :
 {
-   "while" "(" ausdruck() ")" stmnt()
+   Token start;
+} {
+  start = "while" "(" ausdruck() ")" stmnt() { }
 }
 
-
-
-void printStmnt() :
-{}
+void printStmnt() #PRINT :
 {
-   "print" ausdruck() ";"
+  Token start, end;
+} {
+  start = "print" ausdruck() end = ";" { }
 }
 
-void readStmnt() :
-{Token t;}
+void readStmnt() #READ :
 {
-  "read" t = <Identifier> ";" {jjtThis.value = t.image;}
+   Token start, end, ident;
+} {
+  start ="read" ident=<Identifier> end=";"  { }
 }
 
-
-void ausdruck() :
-{}
+void ausdruck() #EXPR :
 {
-  LOOKAHEAD(2) <Identifier> "=" ausdruck() | junktoren()
+   Token ident;
+} {
+  (
+   LOOKAHEAD(2) ident=<Identifier> "=" ausdruck()  { }
+   | junktoren()
+  ) { }
 }
 
-void junktoren() :
-{}
+void junktoren() #JUNKTOREN :
 {
-  vergleich() (<BinJunktor> vergleich())*
+    Token junktor;
+} {
+   vergleich() (junktor=<BinJunktor> vergleich() { } )* { }
 }
 
-void vergleich() :
-{}
+void vergleich() #VERGLEICH :
 {
-  summe() [<BinVergleich> summe()]
+     Token op;
+} {
+   summe() [op=<BinVergleich> summe()  { } ] { }
 }
 
-void summe() :
-{}
+void summe() #SUMME :
 {
-  produkt() (<OpSum> produkt())*
+    Token op;
+} {
+  produkt() (op=<OpSum> produkt() { })*  { }
 }
 
-void produkt() :
-{}
+void produkt() #PRODUKT :
 {
-    unaer() (<OpProd> unaer())*
+     Token op;
+} {
+  unaer() (op=<OpProd> unaer() { })*  { }
 }
 
-void unaer() : {}{
-   (<OpSum> | "!" ) unaer() | atom()
+void unaer() #UNAER :
+{
+   Token op;
+} {
+  (
+   (op = <OpSum> | op = "!" ) unaer() { } | atom()
+  ) { }
 }
 
-void atom() : {}{
-  <Identifier> ["++"|"--"]| ("++"|"--") <Identifier>  | <IntegerLiteral> | <DoubleLiteral>
+void atom() #ATOM :
+{
+    Token ident;
+    Token inc=null;
+} {
+  (ident=<Identifier> [inc="++"|inc="--"] { }
+  | (inc = "++"| inc = "--") ident=<Identifier>  { }
+  | ident=<IntegerLiteral> { }
+  | ident=<DoubleLiteral> { }
   | "(" ausdruck() ")"
+  ) { }
 }
