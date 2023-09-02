@@ -1,5 +1,11 @@
 // @author https://stackoverflow.com/a/13921386
 // TestParser.jjt
+options {
+    VISITOR = true;
+    MULTI = true;
+    IGNORE_CASE = false;
+}
+
 PARSER_BEGIN(TestParser)
 package de.fh.javacc.generated;
 public class TestParser {
