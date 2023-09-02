@@ -7,6 +7,7 @@ import de.fh.lexparser.ILexParser;
 import de.fh.semantic.ISemanticAnalyzer;
 import de.fh.semantic.err.SemanticException;
 import de.fh.translator.ITranslator;
+import de.fh.utils.PrettyPrintVisitor;
 
 import java.io.InputStream;
 
@@ -50,7 +51,7 @@ public class Compiler<T extends Node> implements ICompiler<T> {
             rootNode = getLexParser().generateAST(is);
 
             if (debug && rootNode instanceof SimpleNode s)
-                s.dump("");
+                PrettyPrintVisitor.dump(s);
 
         } catch (ParseException e) {
             e.printStackTrace();
