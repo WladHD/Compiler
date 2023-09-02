@@ -3,13 +3,18 @@ package de.fh;
 import de.fh.javacc.generated.ParseException;
 import de.fh.javacc.generated.SimpleNode;
 import de.fh.lexparser.LexParser;
+import de.fh.semantic.SemanticAnalyzer;
+import de.fh.translator.Translator;
 
 public class Main {
     public static void main(String[] args) throws ParseException {
-        LexParser lp = new LexParser();
+        Compiler<SimpleNode> compiler = new Compiler<>(
+                new LexParser(),
+                new SemanticAnalyzer(),
+                new Translator(),
+                true
+        );
 
-        SimpleNode sn = lp.generateASTFromResource("test.txt");
-
-        sn.dump("");
+        compiler.executePipelineFromResource("test.txt", null);
     }
 }
