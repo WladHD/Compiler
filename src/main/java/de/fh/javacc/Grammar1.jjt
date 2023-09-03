@@ -190,14 +190,16 @@ void summe() #void :
 {
     Token op;
 } {
-  produkt() (op=<OpSum> #SUMME produkt())*
+    LOOKAHEAD(3)
+    (produkt() {jjtThis.value = op.image;} (op=<OpSum> produkt())+) #MATH_OP_SM  |
+    produkt()
 }
 
 void produkt() #void :
 {
      Token op;
 } {
-  unaer() (op=<OpProd> #PRODUKT unaer())*
+  unaer() (op=<OpProd> #MATH_OP_MD unaer())*
 }
 
 void unaer() #void :
@@ -216,7 +218,7 @@ void atom() #ATOM :
   | (inc = "++"| inc = "--") ident=<Identifier>
   | ident=<IntegerLiteral>
   | ident=<DoubleLiteral>
-  | "(" ausdruck() ")" #void)
+  | "(" ausdruck() #void ")")
    {
       jjtThis.value = ident == null ? null : ident.image;
     }

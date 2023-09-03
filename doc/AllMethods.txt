@@ -16,3 +16,20 @@
 .contains()
 .containtKey(element)
 identifier
+
+
+HashMap<String, String>
+-> "hello", "void"
+"x", "int"
+
+HashMap<String, String>
+"x" "String
+
+x <- 5 (int)
+
+
+int x;
+
+void hello(String x) {
+	x = 5;
+}
