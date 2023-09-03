@@ -53,8 +53,7 @@ void stmnt() #STMT :
 {
   Token end;
 } {
-  (block() | whileStmnt()  | (ausdruck() end = ";") { } )
-  { }
+  block() | whileStmnt()  | ausdruck() end = ";"
 }
 
 
@@ -68,7 +67,7 @@ void type() #TYPE :
   Token t;
 }
 {
-  t = <TypeSpecifiers> | t = "Set" Set() | t = "Map" Map()
+  (t = <TypeSpecifiers> | t = "Set" Set() | t = "Map" Map())
   {
       jjtThis.value = t.image;
   }
