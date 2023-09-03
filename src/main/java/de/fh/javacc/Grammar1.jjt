@@ -23,8 +23,9 @@ TOKEN : {
     "while" | ";" | "=" | "(" | ")" | "<" | ">" | "!" | "{" | "}" | "--" | "++" | "," | "Map" | "Set"
   | <BinVergleich : ">="  | "<=" | "==" | "!=" >
   | <BinJunktor : "||" | "&&" >
-  | <OpSum : ["+","-","*","/","%"]>
-  | <OpProd : ["*","/","%"]>
+  | <OpSum : "+" | "-">
+  | <OpUnaer: <OpSum> | "!">
+  | <OpProd : "*" | "/" | "%">
   | <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
   | <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
   | <DoubleLiteral : <IntegerLiteral> "." (["0"-"9"])* | "." (["0"-"9"])+ >
@@ -61,7 +62,7 @@ void Methode() #METH :
  Token t;
 
 } {
-  t = <Identifier>  "(" [identifier() ("," identifier())*] ")" ";"
+  (t = <Identifier>  "(" [identifier() ("," identifier())*] ")" ";")
   {
   jjtThis.value = t.image;
   }
@@ -176,14 +177,14 @@ void junktoren() #void :
 {
     Token junktor;
 } {
-   vergleich() (junktor=<BinJunktor> #JUNKTOREN vergleich())*
+   vergleich() [(junktor=<BinJunktor> #JUNKTOREN junktoren())]
 }
 
 void vergleich() #void :
 {
      Token op;
 } {
-   summe() [(op=<BinVergleich> | op=">" | op="<") #VERGLEICH summe() ]
+   summe() [(op=<BinVergleich> | op=">" | op="<") #VERGLEICH vergleich()]
 }
 
 void summe() #void :
@@ -191,8 +192,8 @@ void summe() #void :
     Token op;
 } {
     LOOKAHEAD(3)
-    produkt() ((op=<OpSum> {jjtThis.value = op.image;} #MATH_OP_SM produkt()))+ |
-    produkt()
+    (produkt() op=<OpSum> {jjtThis.value = op.image;} summe()) #MATH_OP_ADDSUB
+    | produkt()
 }
 
 void produkt() #void :
@@ -200,15 +201,15 @@ void produkt() #void :
      Token op;
 } {
     LOOKAHEAD(3)
-    unaer() ((op=<OpProd> {jjtThis.value = op.image;} #MATH_OP_MD unaer()))+ |
-    unaer()
+    (unaer() op=<OpProd> {jjtThis.value = op.image;} produkt()) #MATH_OP_MULTDIV
+    | unaer()
 }
 
 void unaer() #void :
 {
    Token op;
 } {
-  (op = <OpSum> | op = "!" ) #UNAER unaer() | atom()
+  ((op = <OpUnaer> | op = "!" ) #UNAER atom()) | atom()
 }
 
 void atom() #ATOM :
@@ -220,7 +221,7 @@ void atom() #ATOM :
   | (inc = "++"| inc = "--") ident=<Identifier>
   | ident=<IntegerLiteral>
   | ident=<DoubleLiteral>
-  | "(" ausdruck() #void ")")
+  | "(" ausdruck() ")" #void)
    {
       jjtThis.value = ident == null ? null : ident.image;
     }

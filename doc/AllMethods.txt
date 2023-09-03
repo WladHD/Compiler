@@ -29,7 +29,18 @@ x <- 5 (int)
 
 
 int x;
+int y;
 
 void hello(String x) {
-	x = 5;
+	x = "Ssdf";
+	y = 6;
 }
+
+-> Klasse Closure
+Attribut HashMap
+
+addBoundVariable()
+
+LOOKAHEAD(3)
+    (produkt() op=<OpSumClean> {jjtThis.value = op.image;} summe()) #MATH_OP_SM
+    | produkt()
