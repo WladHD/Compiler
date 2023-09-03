@@ -21,8 +21,10 @@ TOKEN : {
   <TypeSpecifiers: "int"| "char" | "String" | "boolean"| "Path"|  "Files" >
   | <MethodSpecifiers: <TypeSpecifiers> | "void">
   | "while" | ";" | "=" | "{" | "}" | "," | "Map" | "Set" // TODO introduce name
+  | <Point: ".">
   | <RoundBracketOpen: "(">
   | <RoundBracketClose: ")">
+  | <BooleanLiteral: "true" | "false" >
   | <LessThan: "<">
   | <GreaterThan: ">">
   | <BinVergleich : ">="  | "<=" | "==" | "!=" >
@@ -33,7 +35,7 @@ TOKEN : {
   | <OpProd : "*" | "/" | "%">
   | <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
   | <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
-  | <DoubleLiteral : <IntegerLiteral> "." (["0"-"9"])* | "." (["0"-"9"])+ >
+  | <DoubleLiteral : <IntegerLiteral> <Point> (["0"-"9"])* | <Point> (["0"-"9"])+ >
   | <StringLiteral: "\""(["A"-"Z", "a"-"z", "_", "0" - "9"])*"\"" > //ToDO vervollständigen
   | <CharLiteral:"\""(["A"-"Z", "a"-"z", "_", "0" - "9"])"\"" >//ToDO vervollständigen
 }
@@ -49,31 +51,35 @@ SimpleNode compilationUnit() #PROGRAM :
     boolean first = true;
     SimpleNode result = null; // Initialize the result
 } {(
-       (LOOKAHEAD(2) stmnt() | decl() | MethAufruf()) { if (first) result = jjtThis; else result.jjtAddChild(jjtThis, result.jjtGetNumChildren()); }
+       (LOOKAHEAD(2) stmnt() | decl() | methodOrVariableCaller()) { if (first) result = jjtThis; else result.jjtAddChild(jjtThis, result.jjtGetNumChildren()); }
     )*
     { return result; } // Return the result
 }
-void MethAufruf() #CALL :
+void methodOrVariableCaller() #CALLER :
 {
  Token t;
-  Token end;
 } {
-  t = <Identifier> "." Methode()
+  t = <Identifier> methodOrVariableCalled()
   {
   jjtThis.value = t.image;
   }
 }
-void Methode() #METH :
+void methodOrVariableCalled() #CALL_TO :
 {
  Token t;
 
 } {
-  t = <Identifier>  "(" [identifier() ("," identifier())*] ")" ";"
+  <Point> t = <Identifier> [methodCallParams()] (methodOrVariableCalled() | ";")
   {
   jjtThis.value = t.image;
   }
  }
 
+void methodCallParams() #CALL_METHOD_PARAMS :
+{}
+{
+    <RoundBracketOpen> [junktoren() #PARAM(true) ("," junktoren() #PARAM)*] <RoundBracketClose>
+}
 
 void stmnt() #STMT :
 {
@@ -90,20 +96,24 @@ void decl() #DECL :
 }
 
 
-void Vardecl() #VARDECL :
+void Vardecl() #void :
 {} {
- ["=" ausdruck() ]";"
+ ["=" ausdruck() #VARDECL]";"
 }
 void Methdecl() #METHDECL :
-{Token t;} {
- "(" params()  ")"  block()
+{} {
+ params() block()
 }
 
-void params() #PARAMS :
-{
+void params() #void :
+{} {
+   <RoundBracketOpen> [param_pair() ("," param_pair())*] <RoundBracketClose>
+}
 
-} {
-   [type() identifier()("," type() identifier())*]
+void param_pair() #PARAM_PAIR :
+{}
+{
+    type() identifier()
 }
 
 void Methtype() #TYPE :
@@ -164,7 +174,7 @@ void whileStmnt() #WHILE :
 {
    Token start;
 } {
-  start = "while" "(" ausdruck() ")" stmnt()
+  start = "while" <RoundBracketOpen> ausdruck() <RoundBracketClose> stmnt()
 }
 
 
@@ -243,6 +253,7 @@ void atom() #void :
   //| /*(inc = "++"| inc = "--")*/ ident=<Identifier>
   | ident=<IntegerLiteral> {jjtThis.value = ident.image; } #ATOM_INT
   | ident=<DoubleLiteral> {jjtThis.value = ident.image; } #ATOM_DBL
+  | ident=<BooleanLiteral> {jjtThis.value = ident.image; } #ATOM_BOL
   | <RoundBracketOpen> junktoren() <RoundBracketClose>
 }
 
