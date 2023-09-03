@@ -18,15 +18,17 @@ public class TestParser {
 PARSER_END(TestParser)
 
 TOKEN : {
-  <TypeSpecifiers: "int" | "double" > |
-  "print" | "read" | "while" | ";" | "=" | "(" | ")" | "!" | "{" | "}" | "--" | "++"
-  | <BinVergleich : ">=" | ">" | "<=" | "<" | "==" | "!=" >
+  <TypeSpecifiers: "int"| "char" | "String" | "boolean"| "Path"|  "Files" > |
+    "while" | ";" | "=" | "(" | ")" | "<" | ">" | "!" | "{" | "}" | "--" | "++" | "," | "Map" | "Set"
+  | <BinVergleich : ">="  | "<=" | "==" | "!=" >
   | <BinJunktor : "||" | "&&" >
   | <OpSum : ["+","-","*","/","%"]>
   | <OpProd : ["*","/","%"]>
   | <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
   | <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
   | <DoubleLiteral : <IntegerLiteral> "." (["0"-"9"])* | "." (["0"-"9"])+ >
+  | <StringLiteral: ["A"-"Z", "a"-"z", "_", "0" - "9"](["A"-"Z", "a"-"z", "_", "0" - "9"])* > //ToDO vervollständigen
+  | <CharLiteral: (["A"-"Z", "a"-"z", "_", "0" - "9"]) >//ToDO vervollständigen
 }
 
 
@@ -51,14 +53,14 @@ void stmnt() #STMT :
 {
   Token end;
 } {
-  (block() | whileStmnt() | printStmnt() | readStmnt() | (ausdruck() end = ";") { } )
+  (block() | whileStmnt()  | (ausdruck() end = ";") { } )
   { }
 }
 
 
 void decl() #DECL :
 {} {
-  type() identifier() ["=" ausdruck() ] ";"
+ LOOKAHEAD(3) type() identifier() ["=" ausdruck() ] ";" | type() identifier() ausdruck() block() ";"
 }
 
 void type() #TYPE :
@@ -66,9 +68,28 @@ void type() #TYPE :
   Token t;
 }
 {
-  t = <TypeSpecifiers>
+  t = <TypeSpecifiers> | t = "Set" Set() | t = "Map" Map()
   {
       jjtThis.value = t.image;
+  }
+}
+
+void Set() #Set :
+{
+
+}
+{
+  "<"  type() ">"
+  { }
+}
+void Map() #Map :
+{
+
+}
+{
+   "<"  type() "," type() ">"
+  {
+
   }
 }
 
@@ -101,19 +122,19 @@ void whileStmnt() #WHILE :
   start = "while" "(" ausdruck() ")" stmnt() { }
 }
 
-void printStmnt() #PRINT :
-{
-  Token start, end;
-} {
-  start = "print" ausdruck() end = ";" { }
-}
+//void printStmnt() #PRINT :
+//{
+//  Token start, end;
+//} {
+//  start = "print" ausdruck() end = ";" { }
+//}
 
-void readStmnt() #READ :
-{
-   Token start, end, ident;
-} {
-  start ="read" ident=<Identifier> end=";"  { }
-}
+//void readStmnt() #READ :
+//{
+//   Token start, end, ident;
+//} {
+//  start ="read" ident=<Identifier> end=";"  { }
+//}
 
 void ausdruck() #EXPR :
 {
@@ -136,7 +157,7 @@ void vergleich() #VERGLEICH :
 {
      Token op;
 } {
-   summe() [op=<BinVergleich> summe()  { } ] { }
+   summe() [(op=<BinVergleich> | op=">" | op="<") summe()  { } ] { }
 }
 
 void summe() #SUMME :

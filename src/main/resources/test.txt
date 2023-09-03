@@ -1,15 +1,16 @@
 int x = 5;
-int y;
+int y(x){
+Set<int> s; };
 
-read y;
+
 
 while (y!=1) {
 
-read x;
+
 int erg = 1;
 while (x>0) {
   erg = erg * x--;
 }
-print erg;
-read y;
+
+
 }
