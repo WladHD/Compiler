@@ -61,7 +61,7 @@ void Methode() #METH :
  Token t;
 
 } {
-  (t = <Identifier>  "(" [identifier() ("," identifier())*] ")" ";")
+  t = <Identifier>  "(" [identifier() ("," identifier())*] ")" ";"
   {
   jjtThis.value = t.image;
   }
@@ -191,7 +191,7 @@ void summe() #void :
     Token op;
 } {
     LOOKAHEAD(3)
-    (produkt() {jjtThis.value = op.image;} (op=<OpSum> produkt())+) #MATH_OP_SM  |
+    produkt() ((op=<OpSum> {jjtThis.value = op.image;} #MATH_OP_SM produkt()))+ |
     produkt()
 }
 
@@ -199,7 +199,9 @@ void produkt() #void :
 {
      Token op;
 } {
-  unaer() (op=<OpProd> #MATH_OP_MD unaer())*
+    LOOKAHEAD(3)
+    unaer() ((op=<OpProd> {jjtThis.value = op.image;} #MATH_OP_MD unaer()))+ |
+    unaer()
 }
 
 void unaer() #void :
