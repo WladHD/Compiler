@@ -18,7 +18,8 @@ public class TestParser {
 PARSER_END(TestParser)
 
 TOKEN : {
-  <TypeSpecifiers: "int"| "char" | "String" | "boolean"| "Path"|  "Files" > |
+  <TypeSpecifiers: "int"| "char" | "String" | "boolean"| "Path"|  "Files" >|
+  <MethodSpecifiers: <TypeSpecifiers> | "void"> |
     "while" | ";" | "=" | "(" | ")" | "<" | ">" | "!" | "{" | "}" | "--" | "++" | "," | "Map" | "Set"
   | <BinVergleich : ">="  | "<=" | "==" | "!=" >
   | <BinJunktor : "||" | "&&" >
@@ -27,8 +28,8 @@ TOKEN : {
   | <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
   | <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
   | <DoubleLiteral : <IntegerLiteral> "." (["0"-"9"])* | "." (["0"-"9"])+ >
-  | <StringLiteral: ["A"-"Z", "a"-"z", "_", "0" - "9"](["A"-"Z", "a"-"z", "_", "0" - "9"])* > //ToDO vervollständigen
-  | <CharLiteral: (["A"-"Z", "a"-"z", "_", "0" - "9"]) >//ToDO vervollständigen
+  | <StringLiteral: "\""(["A"-"Z", "a"-"z", "_", "0" - "9"])*"\"" > //ToDO vervollständigen
+  | <CharLiteral:"\""(["A"-"Z", "a"-"z", "_", "0" - "9"])"\"" >//ToDO vervollständigen
 }
 
 
@@ -40,13 +41,31 @@ SimpleNode compilationUnit() #PROGRAM :
 {
     boolean first = true;
     SimpleNode result = null; // Initialize the result
-} {
-    (
-        (stmnt() | decl()) { if (first) result = jjtThis; else result.jjtAddChild(jjtThis, result.jjtGetNumChildren()); }
+} {(
+       (LOOKAHEAD(2) stmnt() | decl() | MethAufruf()) { if (first) result = jjtThis; else result.jjtAddChild(jjtThis, result.jjtGetNumChildren()); }
     )*
     { return result; } // Return the result
 }
+void MethAufruf() #CALL :
+{
+ Token t;
+  Token end;
+} {
+  (t = <Identifier> "." Methode())
+  {
+  jjtThis.value = t.image;
+  }
+}
+void Methode() #METH :
+{
+ Token t;
 
+} {
+  (t = <Identifier>  "(" [identifier() ("," identifier())*] ")" ";")
+  {
+  jjtThis.value = t.image;
+  }
+ }
 
 
 void stmnt() #STMT :
@@ -59,7 +78,35 @@ void stmnt() #STMT :
 
 void decl() #DECL :
 {} {
- LOOKAHEAD(3) type() identifier() ["=" ausdruck() ] ";" | type() identifier() ausdruck() block() ";"
+ type() identifier() (Vardecl()) | Methtype() identifier() Methdecl()
+}
+
+
+void Vardecl() #VARDECL :
+{} {
+ ["=" ausdruck() ]";"
+}
+void Methdecl() #METHDECL :
+{Token t;} {
+ "(" params()  ")"  block()
+}
+
+void params() #PARAMS :
+{
+
+} {
+   [type() identifier()("," type() identifier())*]
+}
+
+void Methtype() #TYPE :
+{
+  Token t;
+}
+{
+  (t = <MethodSpecifiers> )
+  {
+      jjtThis.value = t.image;
+  }
 }
 
 void type() #TYPE :
@@ -115,19 +162,7 @@ void whileStmnt() #WHILE :
   start = "while" "(" ausdruck() ")" stmnt()
 }
 
-//void printStmnt() #PRINT :
-//{
-//  Token start, end;
-//} {
-//  start = "print" ausdruck() end = ";" { }
-//}
 
-//void readStmnt() #READ :
-//{
-//   Token start, end, ident;
-//} {
-//  start ="read" ident=<Identifier> end=";"  { }
-//}
 
 void ausdruck() #EXPR :
 {
@@ -174,12 +209,15 @@ void unaer() #UNAER :
 
 void atom() #ATOM :
 {
-    Token ident;
+    Token ident = null;
     Token inc=null;
 } {
-  ident=<Identifier> [inc="++"|inc="--"]
+  (ident=<Identifier> [inc="++"|inc="--"]
   | (inc = "++"| inc = "--") ident=<Identifier>
   | ident=<IntegerLiteral>
   | ident=<DoubleLiteral>
-  | "(" ausdruck() ")"
+  | "(" ausdruck() ")")
+   {
+      jjtThis.value = ident.image;
+    }
 }

@@ -1,13 +1,13 @@
 int x = 5;
-int y(x){
-Set<int> s; };
+void y(int x, Set<int> b){
+Set<int> s; }
+asda.y(x,x);
 
 
+while (y!=420) {
 
-while (y!=1) {
 
-
-int erg = 1;
+int erg = 69;
 while (x>0) {
   erg = erg * x--;
 }
