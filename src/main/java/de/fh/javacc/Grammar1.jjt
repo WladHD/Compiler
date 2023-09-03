@@ -172,39 +172,39 @@ void ausdruck() #EXPR :
   | junktoren()
 }
 
-void junktoren() #JUNKTOREN :
+void junktoren() #void :
 {
     Token junktor;
 } {
-   vergleich() (junktor=<BinJunktor> vergleich())*
+   vergleich() (junktor=<BinJunktor> #JUNKTOREN vergleich())*
 }
 
-void vergleich() #VERGLEICH :
+void vergleich() #void :
 {
      Token op;
 } {
-   summe() [(op=<BinVergleich> | op=">" | op="<") summe() ]
+   summe() [(op=<BinVergleich> | op=">" | op="<") #VERGLEICH summe() ]
 }
 
-void summe() #SUMME :
+void summe() #void :
 {
     Token op;
 } {
-  produkt() (op=<OpSum> produkt())*
+  produkt() (op=<OpSum> #SUMME produkt())*
 }
 
-void produkt() #PRODUKT :
+void produkt() #void :
 {
      Token op;
 } {
-  unaer() (op=<OpProd> unaer())*
+  unaer() (op=<OpProd> #PRODUKT unaer())*
 }
 
-void unaer() #UNAER :
+void unaer() #void :
 {
    Token op;
 } {
-  (op = <OpSum> | op = "!" ) unaer() | atom()
+  (op = <OpSum> | op = "!" ) #UNAER unaer() | atom()
 }
 
 void atom() #ATOM :
@@ -216,8 +216,8 @@ void atom() #ATOM :
   | (inc = "++"| inc = "--") ident=<Identifier>
   | ident=<IntegerLiteral>
   | ident=<DoubleLiteral>
-  | "(" ausdruck() ")")
+  | "(" ausdruck() ")" #void)
    {
-      jjtThis.value = ident.image;
+      jjtThis.value = ident == null ? null : ident.image;
     }
 }
