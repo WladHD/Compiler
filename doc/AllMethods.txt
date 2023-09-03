@@ -1,0 +1,17 @@
+.length()
+.charAt()
+.files
+.toString()
+.name
+.remove()
+.copyTo(Path)
+.moveTo(Path)
+.type
+.name
+.path
+.remove()
+.rename(String)
+.moveTo(Path)
+.getContent()
+.contains()
+.containtKey(element)
