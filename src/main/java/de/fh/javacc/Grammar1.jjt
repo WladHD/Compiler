@@ -18,13 +18,18 @@ public class TestParser {
 PARSER_END(TestParser)
 
 TOKEN : {
-  <TypeSpecifiers: "int"| "char" | "String" | "boolean"| "Path"|  "Files" >|
-  <MethodSpecifiers: <TypeSpecifiers> | "void"> |
-    "while" | ";" | "=" | "(" | ")" | "<" | ">" | "!" | "{" | "}" | "--" | "++" | "," | "Map" | "Set"
+  <TypeSpecifiers: "int"| "char" | "String" | "boolean"| "Path"|  "Files" >
+  | <MethodSpecifiers: <TypeSpecifiers> | "void">
+  | "while" | ";" | "=" | "{" | "}" | "," | "Map" | "Set" // TODO introduce name
+  | <RoundBracketOpen: "(">
+  | <RoundBracketClose: ")">
+  | <LessThan: "<">
+  | <GreaterThan: ">">
   | <BinVergleich : ">="  | "<=" | "==" | "!=" >
   | <BinJunktor : "||" | "&&" >
   | <OpSum : "+" | "-">
-  | <OpUnaer: <OpSum> | "!">
+  | <OpUnaer: "!">
+  | <OpIncrement: "++" | "--">
   | <OpProd : "*" | "/" | "%">
   | <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
   | <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
@@ -38,6 +43,7 @@ TOKEN : {
 SKIP : {   " " | "\t" | "\n" | "\r" | <Kommentar: "//" (~["\n"])* >
 }
 
+// TODO check operator precedence https://www.javatpoint.com/java-operator-precedence
 SimpleNode compilationUnit() #PROGRAM :
 {
     boolean first = true;
@@ -52,7 +58,7 @@ void MethAufruf() #CALL :
  Token t;
   Token end;
 } {
-  (t = <Identifier> "." Methode())
+  t = <Identifier> "." Methode()
   {
   jjtThis.value = t.image;
   }
@@ -62,7 +68,7 @@ void Methode() #METH :
  Token t;
 
 } {
-  (t = <Identifier>  "(" [identifier() ("," identifier())*] ")" ";")
+  t = <Identifier>  "(" [identifier() ("," identifier())*] ")" ";"
   {
   jjtThis.value = t.image;
   }
@@ -79,7 +85,8 @@ void stmnt() #STMT :
 
 void decl() #DECL :
 {} {
- type() identifier() (Vardecl()) | Methtype() identifier() Methdecl()
+ (type() identifier() Vardecl()) |
+ (Methtype() identifier() Methdecl())
 }
 
 
@@ -122,17 +129,14 @@ void type() #TYPE :
 }
 
 void Set() #Set :
+{}
 {
-
-}
-{
-  "<"  type() ">"
+  <LessThan> type() <GreaterThan>
 }
 void Map() #Map :
+{}
 {
-}
-{
-   "<"  type() "," type() ">"
+   <LessThan> type() "," type() <GreaterThan>
 }
 
 void identifier() #IDENTIFIER :
@@ -165,64 +169,98 @@ void whileStmnt() #WHILE :
 
 
 
-void ausdruck() #EXPR :
+void ausdruck() #void :
 {
    Token ident;
 } {
-  LOOKAHEAD(2) ident=<Identifier> "=" ausdruck()
+    LOOKAHEAD(2)
+  (ident=<Identifier> {jjtThis.value = ident.image; } "=" ausdruck()) #EXPRESSION
   | junktoren()
 }
 
+
 void junktoren() #void :
+{} {
+   vergleich() (junktoren2())*
+}
+
+void junktoren2() #JUNKTOREN :
+{ Token t; }
 {
-    Token junktor;
-} {
-   vergleich() [(junktor=<BinJunktor> #JUNKTOREN junktoren())]
+    t=<BinJunktor> {jjtThis.value = t.image;} vergleich()
 }
 
 void vergleich() #void :
+{} {
+   summe() (vergleich2())*
+}
+
+void vergleich2() #VERGLEICH :
+{Token op;}
 {
-     Token op;
-} {
-   summe() [(op=<BinVergleich> | op=">" | op="<") #VERGLEICH vergleich()]
+    (op=<BinVergleich> | op = <LessThan> | op = <GreaterThan>) {jjtThis.value = op.image;} summe()
 }
 
 void summe() #void :
+{} {
+    produkt() (summe2())*
+}
+
+void summe2() #MATH_OP_ADDSUB :
+{Token op;}
 {
-    Token op;
-} {
-    LOOKAHEAD(3)
-    (produkt() op=<OpSum> {jjtThis.value = op.image;} summe()) #MATH_OP_ADDSUB
-    | produkt()
+    op=<OpSum> {jjtThis.value = op.image;} produkt()
 }
 
 void produkt() #void :
+{} {
+    unaer() (produkt2())*
+}
+
+void produkt2() #MATH_OP_MULDIV :
+{Token op;}
 {
-     Token op;
-} {
-    LOOKAHEAD(3)
-    (unaer() op=<OpProd> {jjtThis.value = op.image;} produkt()) #MATH_OP_MULTDIV
-    | unaer()
+    op=<OpProd> {jjtThis.value = op.image;} unaer()
 }
 
 void unaer() #void :
-{
-   Token op;
-} {
-  ((op = <OpUnaer> | op = "!" ) #UNAER atom()) | atom()
+{} {
+  unaer2() | atom()
 }
 
-void atom() #ATOM :
+void unaer2() #UNAER_OPERATOR :
+{ Token op; }
+{
+    (op = <OpSum> | op = <OpUnaer>) {jjtThis.value = op.image;} atom()
+}
+
+void atom() #void :
 {
     Token ident = null;
     Token inc=null;
 } {
-  (ident=<Identifier> [inc="++"|inc="--"]
-  | (inc = "++"| inc = "--") ident=<Identifier>
-  | ident=<IntegerLiteral>
-  | ident=<DoubleLiteral>
-  | "(" ausdruck() ")" #void)
-   {
-      jjtThis.value = ident == null ? null : ident.image;
-    }
+  identifier_increment()
+  //| /*(inc = "++"| inc = "--")*/ ident=<Identifier>
+  | ident=<IntegerLiteral> {jjtThis.value = ident.image; } #ATOM_INT
+  | ident=<DoubleLiteral> {jjtThis.value = ident.image; } #ATOM_DBL
+  | <RoundBracketOpen> junktoren() <RoundBracketClose>
+}
+
+void identifier_increment() #ATOM_LITERAL :
+{ Token ident; }
+{
+    // TODO needs semantic check later in the pipeline
+    [identifier_increment_pre()] ident=<Identifier> {jjtThis.value = ident.image; } [identifier_increment_post()]
+}
+
+void identifier_increment_pre() #INCREMENT_PRE :
+{ Token inc; }
+{
+    inc=<OpIncrement> {jjtThis.value = inc.image; }
+}
+
+void identifier_increment_post() #INCREMENT_POST :
+{ Token inc; }
+{
+    inc=<OpIncrement> {jjtThis.value = inc.image; }
 }
