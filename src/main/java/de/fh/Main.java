@@ -16,8 +16,9 @@ public class Main {
         );
 
         int y = 4;
-        int x = y++ -3;
-        int z = y++ - -3;
+        int x = y++ + -3;
+
+        x = y += 23;
 
         compiler.executePipelineFromResource("test.txt", null);
     }

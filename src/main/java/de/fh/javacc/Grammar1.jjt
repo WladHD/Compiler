@@ -19,8 +19,12 @@ PARSER_END(TestParser)
 
 TOKEN : {
   <TypeSpecifiers: "int"| "char" | "String" | "boolean"| "Path"|  "Files" >
-  | <MethodSpecifiers: <TypeSpecifiers> | "void">
-  | "while" | ";" | "=" | "{" | "}" | "," | "Map" | "Set" // TODO introduce name
+  | <TypeMap: "Map">
+  | <TypeSet: "Set">
+  | ";" | "{" | "}" | "," // TODO introduce name
+  | <TypeVoid: "void">
+  | <While: "while">
+  | <SimpleEquals: "=">
   | <Point: ".">
   | <RoundBracketOpen: "(">
   | <RoundBracketClose: ")">
@@ -51,11 +55,11 @@ SimpleNode compilationUnit() #PROGRAM :
     boolean first = true;
     SimpleNode result = null; // Initialize the result
 } {(
-       (LOOKAHEAD(2) stmnt() | decl() | methodOrVariableCaller()) { if (first) result = jjtThis; else result.jjtAddChild(jjtThis, result.jjtGetNumChildren()); }
+       (LOOKAHEAD(2) stmnt() | decl() | (methodOrVariableCaller() ";")) { if (first) result = jjtThis; else result.jjtAddChild(jjtThis, result.jjtGetNumChildren()); }
     )*
     { return result; } // Return the result
 }
-void methodOrVariableCaller() #CALLER :
+void methodOrVariableCaller() #REQUESTER_VAR_METHOD :
 {
  Token t;
 } {
@@ -64,24 +68,25 @@ void methodOrVariableCaller() #CALLER :
   jjtThis.value = t.image;
   }
 }
-void methodOrVariableCalled() #CALL_TO :
+void methodOrVariableCalled() #GET_VAR_METHOD :
 {
  Token t;
 
 } {
-  <Point> t = <Identifier> [methodCallParams()] (methodOrVariableCalled() | ";")
+  <Point> t = <Identifier> [methodCallParams()] [methodOrVariableCalled()]
   {
   jjtThis.value = t.image;
   }
  }
 
-void methodCallParams() #CALL_METHOD_PARAMS :
+
+void methodCallParams() #GET_METHOD_PARAMS :
 {}
 {
     <RoundBracketOpen> [junktoren() #PARAM(true) ("," junktoren() #PARAM)*] <RoundBracketClose>
 }
 
-void stmnt() #STMT :
+void stmnt() #STATEMENT :
 {
   Token end;
 } {
@@ -91,16 +96,18 @@ void stmnt() #STMT :
 
 void decl() #DECL :
 {} {
- (type() identifier() Vardecl()) |
- (Methtype() identifier() Methdecl())
+ type() identifier() decide_declaration_type() |
+ <TypeVoid> identifier() method_declaration()
+
 }
 
-
-void Vardecl() #void :
-{} {
- ["=" ausdruck() #VARDECL]";"
+void decide_declaration_type() #void :
+{}
+{
+    ([variable_declaration()] ";") | method_declaration()
 }
-void Methdecl() #METHDECL :
+
+void method_declaration() #METHDECL :
 {} {
  params() block()
 }
@@ -116,40 +123,29 @@ void param_pair() #PARAM_PAIR :
     type() identifier()
 }
 
-void Methtype() #TYPE :
-{
-  Token t;
-}
-{
-  (t = <MethodSpecifiers> )
-  {
-      jjtThis.value = t.image;
-  }
-}
-
 void type() #TYPE :
 {
   Token t;
 }
 {
-  (t = <TypeSpecifiers> | t = "Set" Set() | t = "Map" Map())
+  (t = <TypeSpecifiers> | t = <TypeSet> Set() | t = <TypeMap> Map())
   {
       jjtThis.value = t.image;
   }
 }
 
-void Set() #Set :
+void Set() #KOMPLEX_TYPE :
 {}
 {
   <LessThan> type() <GreaterThan>
 }
-void Map() #Map :
+void Map() #KOMPLEX_TYPE :
 {}
 {
    <LessThan> type() "," type() <GreaterThan>
 }
 
-void identifier() #IDENTIFIER :
+void identifier() #VAR_METHOD_NAME :
 {
   Token t;
 }
@@ -174,17 +170,21 @@ void whileStmnt() #WHILE :
 {
    Token start;
 } {
-  start = "while" <RoundBracketOpen> ausdruck() <RoundBracketClose> stmnt()
+  start = <While> <RoundBracketOpen> ausdruck() #CONDITION <RoundBracketClose> stmnt()
 }
 
-
+// TODO = += -= *= /= %= hinzufügen
+void variable_declaration() #VARIABLE_ASSIGNMENT_PRIO_1 :
+{Token t;} {
+ t = <SimpleEquals> {jjtThis.value = t.image;} ausdruck()
+}
 
 void ausdruck() #void :
 {
    Token ident;
 } {
     LOOKAHEAD(2)
-  (ident=<Identifier> {jjtThis.value = ident.image; } "=" ausdruck()) #EXPRESSION
+  (ident=<Identifier> {jjtThis.value = ident.image; } variable_declaration()) #VAR_METHOD_NAME
   | junktoren()
 }
 
@@ -194,7 +194,8 @@ void junktoren() #void :
    vergleich() (junktoren2())*
 }
 
-void junktoren2() #JUNKTOREN :
+// TODO OPERATION PRIO 4 &&     und OPERATION PRIO 3 || aufsplitten
+void junktoren2() #OPERATION_PRIO_4_AND_3 :
 { Token t; }
 {
     t=<BinJunktor> {jjtThis.value = t.image;} vergleich()
@@ -205,7 +206,10 @@ void vergleich() #void :
    summe() (vergleich2())*
 }
 
-void vergleich2() #VERGLEICH :
+// TODO OPERATION PRIO 8 == !=
+
+// < <= > >=
+void vergleich2() #OPERATION_PRIO_9 :
 {Token op;}
 {
     (op=<BinVergleich> | op = <LessThan> | op = <GreaterThan>) {jjtThis.value = op.image;} summe()
@@ -216,7 +220,8 @@ void summe() #void :
     produkt() (summe2())*
 }
 
-void summe2() #MATH_OP_ADDSUB :
+// + -
+void summe2() #OPERATION_PRIO_11 :
 {Token op;}
 {
     op=<OpSum> {jjtThis.value = op.image;} produkt()
@@ -224,54 +229,54 @@ void summe2() #MATH_OP_ADDSUB :
 
 void produkt() #void :
 {} {
-    unaer() (produkt2())*
+    unaer_pre() (produkt2())*
 }
 
-void produkt2() #MATH_OP_MULDIV :
+// * / %
+void produkt2() #OPERATION_PRIO_12 :
 {Token op;}
 {
-    op=<OpProd> {jjtThis.value = op.image;} unaer()
+    op=<OpProd> {jjtThis.value = op.image;} unaer_pre()
 }
 
-void unaer() #void :
+void unaer_pre() #void :
 {} {
-  unaer2() | atom()
+  unaer_pre2() | unaer_post()
 }
 
-void unaer2() #UNAER_OPERATOR :
+// ++ -- (pre) + - ! ~ (type)
+void unaer_pre2() #OPERATION_PRIO_13 :
 { Token op; }
 {
-    (op = <OpSum> | op = <OpUnaer>) {jjtThis.value = op.image;} atom()
+    (op = <OpSum> | op = <OpUnaer> | op = <OpIncrement>) {jjtThis.value = op.image;} atom()
+    // Nach Java IDE darf kein Post-Increment mehr kommen, wenn ein pre Increment vorliegt, weshalb direkt zum atom geskippt wird
 }
 
+void unaer_post() #void :
+{}
+{
+    LOOKAHEAD(atom() <OpIncrement>)
+    unaer_post2() | atom()
+}
+
+// ++ -- (post)
+void unaer_post2() #OPERATION_PRIO_14 :
+{ Token inc; }
+{
+    atom() inc=<OpIncrement> {jjtThis.value = inc.image; }
+}
+
+// OPERATION_PRIO_15 () [] . (Parentheses, Array subscript, Member selection)
 void atom() #void :
 {
     Token ident = null;
     Token inc=null;
 } {
-  identifier_increment()
-  //| /*(inc = "++"| inc = "--")*/ ident=<Identifier>
+    LOOKAHEAD(2)
+  methodOrVariableCaller()
+  | ident=<Identifier> {jjtThis.value = ident.image; } #ATOM_VARIABLE
   | ident=<IntegerLiteral> {jjtThis.value = ident.image; } #ATOM_INT
   | ident=<DoubleLiteral> {jjtThis.value = ident.image; } #ATOM_DBL
   | ident=<BooleanLiteral> {jjtThis.value = ident.image; } #ATOM_BOL
   | <RoundBracketOpen> junktoren() <RoundBracketClose>
-}
-
-void identifier_increment() #ATOM_LITERAL :
-{ Token ident; }
-{
-    // TODO needs semantic check later in the pipeline
-    [identifier_increment_pre()] ident=<Identifier> {jjtThis.value = ident.image; } [identifier_increment_post()]
-}
-
-void identifier_increment_pre() #INCREMENT_PRE :
-{ Token inc; }
-{
-    inc=<OpIncrement> {jjtThis.value = inc.image; }
-}
-
-void identifier_increment_post() #INCREMENT_POST :
-{ Token inc; }
-{
-    inc=<OpIncrement> {jjtThis.value = inc.image; }
 }
