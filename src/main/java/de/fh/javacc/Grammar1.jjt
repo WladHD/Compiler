@@ -79,17 +79,12 @@ void Set() #Set :
 }
 {
   "<"  type() ">"
-  { }
 }
 void Map() #Map :
 {
-
 }
 {
    "<"  type() "," type() ">"
-  {
-
-  }
 }
 
 void identifier() #IDENTIFIER :
@@ -108,17 +103,16 @@ void block() #BLOCK :
     Token start, end;
 } {
    start = "{" (
-         (stmnt() | decl())  { }
+         (stmnt() | decl())
        )*
    end = "}"
-   { }
 }
 
 void whileStmnt() #WHILE :
 {
    Token start;
 } {
-  start = "while" "(" ausdruck() ")" stmnt() { }
+  start = "while" "(" ausdruck() ")" stmnt()
 }
 
 //void printStmnt() #PRINT :
@@ -139,47 +133,43 @@ void ausdruck() #EXPR :
 {
    Token ident;
 } {
-  (
-   LOOKAHEAD(2) ident=<Identifier> "=" ausdruck()  { }
-   | junktoren()
-  ) { }
+  LOOKAHEAD(2) ident=<Identifier> "=" ausdruck()
+  | junktoren()
 }
 
 void junktoren() #JUNKTOREN :
 {
     Token junktor;
 } {
-   vergleich() (junktor=<BinJunktor> vergleich() { } )* { }
+   vergleich() (junktor=<BinJunktor> vergleich())*
 }
 
 void vergleich() #VERGLEICH :
 {
      Token op;
 } {
-   summe() [(op=<BinVergleich> | op=">" | op="<") summe()  { } ] { }
+   summe() [(op=<BinVergleich> | op=">" | op="<") summe() ]
 }
 
 void summe() #SUMME :
 {
     Token op;
 } {
-  produkt() (op=<OpSum> produkt() { })*  { }
+  produkt() (op=<OpSum> produkt())*
 }
 
 void produkt() #PRODUKT :
 {
      Token op;
 } {
-  unaer() (op=<OpProd> unaer() { })*  { }
+  unaer() (op=<OpProd> unaer())*
 }
 
 void unaer() #UNAER :
 {
    Token op;
 } {
-  (
-   (op = <OpSum> | op = "!" ) unaer() { } | atom()
-  ) { }
+  (op = <OpSum> | op = "!" ) unaer() | atom()
 }
 
 void atom() #ATOM :
@@ -187,10 +177,9 @@ void atom() #ATOM :
     Token ident;
     Token inc=null;
 } {
-  (ident=<Identifier> [inc="++"|inc="--"] { }
-  | (inc = "++"| inc = "--") ident=<Identifier>  { }
-  | ident=<IntegerLiteral> { }
-  | ident=<DoubleLiteral> { }
+  ident=<Identifier> [inc="++"|inc="--"]
+  | (inc = "++"| inc = "--") ident=<Identifier>
+  | ident=<IntegerLiteral>
+  | ident=<DoubleLiteral>
   | "(" ausdruck() ")"
-  ) { }
 }
