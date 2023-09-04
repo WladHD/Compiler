@@ -40,17 +40,17 @@ public class Closure implements IClosure<String, String, Object> {
 
     @Override
     public void addBoundVariable(String var, String s) {
-
+        variableTypeMap.put(var, s);
     }
 
     @Override
     public void addBoundVariableValue(String var, Object o) {
-
+        variableValueMap.put(var, o);
     }
 
     @Override
     public void addBoundMethod(String methodName, String s, IClosure<String, String, Object> closure) {
-
+        methodReturnTypeMap.put(methodName, s);
     }
 
     @Override
@@ -60,12 +60,40 @@ public class Closure implements IClosure<String, String, Object> {
 
     @Override
     public AbstractMap.SimpleEntry<String, Object> getVariableTypeAndValue(String varName, boolean checkOnlyBoundVariables) {
-        return null;
+
+        if (checkOnlyBoundVariables && !variableTypeMap.containsKey(varName)) {
+            return null; // Variable not found in the current closure
+        }
+
+        // Try to retrieve variable type and value from the current closure
+        String variableType = variableTypeMap.get(varName);
+        Object variableValue = variableValueMap.get(varName);
+
+        // If the variable is not found and we're allowed to check parent closures
+        if (variableType == null && variableValue == null && parent != null) {
+            return parent.getVariableTypeAndValue(varName, false); // Check parent closures
+        }
+
+        return new AbstractMap.SimpleEntry<>(variableType, variableValue);
     }
 
     @Override
     public AbstractMap.SimpleEntry<String, IClosure<String, String, Object>> getMethodTypeAndClosure(String methodName, boolean checkOnlyBoundMethods) {
-        return null;
+
+        if (checkOnlyBoundMethods && !methodReturnTypeMap.containsKey(methodName)) {
+            return null; // Method not found in the current closure
+        }
+
+        // Try to retrieve method return type and closure from the current closure
+        String methodReturnType = methodReturnTypeMap.get(methodName);
+        IClosure<String, String, Object> methodClosure = methodClosureMap.get(methodName);
+
+        // If the method is not found and we're allowed to check parent closures
+        if (methodReturnType == null && methodClosure == null && parent != null) {
+            return parent.getMethodTypeAndClosure(methodName, false); // Check parent closures
+        }
+
+        return new AbstractMap.SimpleEntry<>(methodReturnType, methodClosure);
     }
 
     @Override
