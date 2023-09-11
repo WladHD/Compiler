@@ -244,7 +244,14 @@ void foroper() #For :
 void array()  #ATOM_ARRAY:
 {}
 {
-<LBRACKET> ausdruck() ("," ausdruck())* <RBRACKET>
+<LBRACKET> array_element() ("," array_element())* <RBRACKET>
+}
+
+// eigentlich unnötig, aber sieht besser aus da sonst die array() Methode mit #ARRAY_ELEMENT vollgespamt wird
+void array_element() #ARRAY_ELEMENT:
+{}
+{
+    ausdruck()
 }
 
 // TODO = += -= *= /= %= hinzufügen

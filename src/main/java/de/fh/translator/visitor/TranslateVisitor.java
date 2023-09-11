@@ -119,6 +119,8 @@ public class TranslateVisitor implements TestParserVisitor {
             return visit(a, a.jjtGetValue());
         else if (node instanceof ASTATOM_STRING a)
             return visit(a, a.jjtGetValue());
+        else if (node instanceof ASTARRAY_ELEMENT a)
+            return visit(a, a.jjtGetValue());
 
 
         return "/* Konnte SimpleNode nicht parsen */";
@@ -236,6 +238,11 @@ public class TranslateVisitor implements TestParserVisitor {
     public Object visit(ASTATOM_ARRAY node, Object data) {
         String ph = "'{' {0} '}'";
         return MessageFormat.format(ph, childrenToText(node, ", "));
+    }
+
+    @Override
+    public Object visit(ASTARRAY_ELEMENT node, Object data) {
+        return childrenToText(node);
     }
 
     @Override
