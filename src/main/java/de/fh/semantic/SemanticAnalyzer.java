@@ -8,7 +8,7 @@ public class SemanticAnalyzer implements ISemanticAnalyzer<SimpleNode> {
 
     @Override
     public void doSemanticCheck(SimpleNode rootNode) throws SemanticException {
-        // throw new UnknownSemanticException();
+        throw new UnknownSemanticException();
     }
 
 }

@@ -69,9 +69,9 @@ public class Compiler<T extends Node> implements ICompiler<T> {
         }
 
         System.out.println("Erfolgreich");
-        System.out.println("Starte Übersetzung zu Java Source Code ... ");
+        System.out.println("Starte Übersetzung zu Java Code ... ");
+
         String javaCodeSource = getTranslator().getJavaCode(rootNode);
-        System.out.println(javaCodeSource);
         System.out.println("Erfolgreich");
         System.out.println("Starte Übersetzung zu Java Byte Code ... ");
         byte[] javaCodeCompiler = getTranslator().getJavaByteCode(javaCodeSource);

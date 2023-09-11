@@ -18,13 +18,22 @@ public class TestParser {
 PARSER_END(TestParser)
 
 TOKEN : {
-  <TypeSpecifiers: "int"| "char" | "String" | "boolean"| "Path"|  "Files" >
-  | <TypeMap: "Map">
-  | <TypeSet: "Set">
-  | ";" | "{" | "}" | "," // TODO introduce name
+//  <TypeChar: "char" > |
+//  <TypeInt: "int"> |
+//  <TypeString: "String" > |
+//  <TypeBoolean: "boolean" > |
+//  <TypePath:  "Path"> |
+//  <TypeFiles: "Files" >|
+  <TypeMap: "Map">
+  |<TypeSet: "Set">
+  |<TypeSpecifiers: "int" | "char" | "String" | "boolean" | "Path"|  "Files" >
+  |<LBRACKET : "[">|
+   <RBRACKET : "]">
+  |";" | "{" | "}" | "," // TODO introduce name
   | <TypeVoid: "void">
   | <While: "while">
-  | <SimpleEquals: "=">
+  | <For: "for">
+  | <SimpleEquals: "="| "+=" |"-=" |"*="| "/=" | "%=" >
   | <Point: ".">
   | <RoundBracketOpen: "(">
   | <RoundBracketClose: ")">
@@ -40,10 +49,12 @@ TOKEN : {
   | <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
   | <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
   | <DoubleLiteral : <IntegerLiteral> <Point> (["0"-"9"])* | <Point> (["0"-"9"])+ >
-  | <StringLiteral: "\""(["A"-"Z", "a"-"z", "_", "0" - "9"])*"\"" > //ToDO vervollständigen
-  | <CharLiteral:"\""(["A"-"Z", "a"-"z", "_", "0" - "9"])"\"" >//ToDO vervollständigen
-}
+  | <StringLiteral: "\""(["A"-"Z", "a"-"z", "_", "0" - "9", " "])*"\"" > //ToDO vervollständigen
+  | <CharLiteral:"\""(["A"-"Z", "a"-"z", "_", "0" - "9", " "])"\"" >//ToDO vervollständigen
+  | <PathLiteral:  "/" ["A"-"Z", "a"-"z", "_", "0" - "9"](["A"-"Z", "a"-"z", "_", "0" - "9"])*("/"["A"-"Z", "a"-"z", "_", "0" - "9"](["A"-"Z", "a"-"z", "_", "0" - "9"])*)* >
 
+
+}
 
 
 SKIP : {   " " | "\t" | "\n" | "\r" | <Kommentar: "//" (~["\n"])* >
@@ -90,29 +101,44 @@ void stmnt() #STATEMENT :
 {
   Token end;
 } {
-  block() | whileStmnt()  | ausdruck() end = ";"
+  block() | whileStmnt()  | forStmnt() | ausdruck() end = ";"
 }
 
 
 void decl() #DECL :
 {} {
+
  type() identifier() decide_declaration_type() |
- type_void() identifier() method_declaration()
+
+
+ <TypeVoid> identifier() method_declaration()
 
 }
+
+
+
 
 void decide_declaration_type() #void :
 {}
 {
-    ([variable_declaration()] ";") #CONCLUDED_VAR_DEC | method_declaration()
+    ([variable_declaration()] ";") | method_declaration()
 }
+
+
+
+
+
+
+
+
+
 
 void method_declaration() #METHDECL :
 {} {
  params() block()
 }
 
-void params() #DECL_METHOD_PARAMS :
+void params() #void :
 {} {
    <RoundBracketOpen> [param_pair() ("," param_pair())*] <RoundBracketClose>
 }
@@ -123,21 +149,14 @@ void param_pair() #PARAM_PAIR :
     type() identifier()
 }
 
-void type_void() #TYPE :
-{Token t;}
-{
-    t = <TypeVoid>
-  {
-      jjtThis.value = t.image;
-  }
-}
-
 void type() #TYPE :
 {
   Token t;
 }
 {
-  (t = <TypeSpecifiers> | t = <TypeSet> Set() | t = <TypeMap> Map())
+  (        t =<TypeSpecifiers> | t = <TypeSet> Set() | t = <TypeMap> Map())
+
+
   {
       jjtThis.value = t.image;
   }
@@ -181,6 +200,71 @@ void whileStmnt() #WHILE :
 } {
   start = <While> <RoundBracketOpen> ausdruck() #CONDITION <RoundBracketClose> stmnt()
 }
+
+void forStmnt() #For :
+{
+   Token start;
+} {
+  start = <For> <RoundBracketOpen> forinit() ";" forcond() ";" foroper() <RoundBracketClose> stmnt()
+
+
+
+}
+
+
+
+void forinit() #For :
+{
+   Token start;
+} {
+
+    identifier()
+
+}
+
+void forcond() #For :
+{
+   Token start;
+} {
+
+ identifier()
+
+}
+
+void foroper() #For :
+{
+   Token start;
+} {
+
+ identifier()
+
+}
+void array()  #ATOM_Array:
+{
+
+}
+{
+<LBRACKET> ArrayElement() ("," ArrayElement())* <RBRACKET>   {}
+}
+
+void ArrayElement() #void:
+{
+Token inc=null;
+Token ident = null;
+}
+{
+    array()  | ident=<Identifier> {jjtThis.value = ident.image; } #ATOM_VARIABLE
+             | ident=<IntegerLiteral> {jjtThis.value = ident.image; } #ATOM_INT
+             | ident=<DoubleLiteral> {jjtThis.value = ident.image; } #ATOM_DBL
+             | ident=<BooleanLiteral> {jjtThis.value = ident.image; } #ATOM_BOL
+             |ident = <StringLiteral> {jjtThis.value = ident.image; } #ATOM_String
+             | <RoundBracketOpen> junktoren() <RoundBracketClose>
+               }
+
+
+
+
+
 
 // TODO = += -= *= /= %= hinzufügen
 void variable_declaration() #VARIABLE_ASSIGNMENT_PRIO_1 :
@@ -287,5 +371,7 @@ void atom() #void :
   | ident=<IntegerLiteral> {jjtThis.value = ident.image; } #ATOM_INT
   | ident=<DoubleLiteral> {jjtThis.value = ident.image; } #ATOM_DBL
   | ident=<BooleanLiteral> {jjtThis.value = ident.image; } #ATOM_BOL
+  | array()
+  |ident = <StringLiteral> {jjtThis.value = ident.image; } #ATOM_String
   | <RoundBracketOpen> junktoren() <RoundBracketClose>
 }
