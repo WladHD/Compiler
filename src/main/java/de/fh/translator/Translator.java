@@ -1,11 +1,14 @@
 package de.fh.translator;
 
 import de.fh.javacc.generated.SimpleNode;
+import de.fh.translator.visitor.TranslateVisitor;
 
 public class Translator implements ITranslator<SimpleNode> {
     @Override
     public String getJavaCode(SimpleNode rootNode) {
-        return null;
+        TranslateVisitor tv = new TranslateVisitor();
+
+        return (String) tv.visit(rootNode, rootNode.jjtGetValue());
     }
 
     @Override

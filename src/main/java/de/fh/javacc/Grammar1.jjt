@@ -98,10 +98,9 @@ void methodCallParams() #GET_METHOD_PARAMS :
 }
 
 void stmnt() #STATEMENT :
+{}
 {
-  Token end;
-} {
-  block() | whileStmnt()  | forStmnt() | ausdruck() end = ";"
+  block() | whileStmnt()  | forStmnt() | (ausdruck() ";")
 }
 
 
@@ -109,10 +108,14 @@ void decl() #DECL :
 {} {
 
  type() identifier() decide_declaration_type() |
+ type_void() identifier() method_declaration()
 
+}
 
- <TypeVoid> identifier() method_declaration()
-
+void type_void() #TYPE :
+{Token t;}
+{
+    t = <TypeVoid> {jjtThis.value = t;}
 }
 
 
@@ -121,7 +124,7 @@ void decl() #DECL :
 void decide_declaration_type() #void :
 {}
 {
-    ([variable_declaration()] ";") | method_declaration()
+    ([variable_declaration()] ";") #CONCLUDED_VAR_DEC | method_declaration()
 }
 
 
@@ -138,7 +141,7 @@ void method_declaration() #METHDECL :
  params() block()
 }
 
-void params() #void :
+void params() #DECL_METHOD_PARAMS :
 {} {
    <RoundBracketOpen> [param_pair() ("," param_pair())*] <RoundBracketClose>
 }
@@ -239,7 +242,7 @@ void foroper() #For :
  identifier()
 
 }
-void array()  #ATOM_Array:
+void array()  #ATOM_ARRAY:
 {
 
 }
@@ -257,7 +260,7 @@ Token ident = null;
              | ident=<IntegerLiteral> {jjtThis.value = ident.image; } #ATOM_INT
              | ident=<DoubleLiteral> {jjtThis.value = ident.image; } #ATOM_DBL
              | ident=<BooleanLiteral> {jjtThis.value = ident.image; } #ATOM_BOL
-             |ident = <StringLiteral> {jjtThis.value = ident.image; } #ATOM_String
+             |ident = <StringLiteral> {jjtThis.value = ident.image; } #ATOM_STRING
              | <RoundBracketOpen> junktoren() <RoundBracketClose>
                }
 
@@ -372,6 +375,6 @@ void atom() #void :
   | ident=<DoubleLiteral> {jjtThis.value = ident.image; } #ATOM_DBL
   | ident=<BooleanLiteral> {jjtThis.value = ident.image; } #ATOM_BOL
   | array()
-  |ident = <StringLiteral> {jjtThis.value = ident.image; } #ATOM_String
+  |ident = <StringLiteral> {jjtThis.value = ident.image; } #ATOM_STRING
   | <RoundBracketOpen> junktoren() <RoundBracketClose>
 }
