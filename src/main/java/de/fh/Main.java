@@ -20,6 +20,8 @@ public class Main {
 
         x = y += 23;
 
+        int[] asd = new int[] { y, y++, y += 2 };
+
         compiler.executePipelineFromResource("test.txt", null);
     }
 }

@@ -29,6 +29,7 @@ TOKEN : {
   |<TypeSpecifiers: "int" | "char" | "String" | "boolean" | "Path"|  "Files" >
   |<LBRACKET : "[">|
    <RBRACKET : "]">
+   | <THIS: "this">
   |";" | "{" | "}" | "," // TODO introduce name
   | <TypeVoid: "void">
   | <While: "while">
@@ -74,11 +75,22 @@ void methodOrVariableCaller() #REQUESTER_VAR_METHOD :
 {
  Token t;
 } {
-  t = <Identifier> methodOrVariableCalled()
+    LOOKAHEAD(<Identifier> <Point>)
+  (t = <Identifier> methodOrVariableCalled() { jjtThis.value = t.image; })
+  | thisMethodOrVariableCalled() { jjtThis.value = "this"; }
+
+}
+void thisMethodOrVariableCalled() #GET_VAR_METHOD :
+{
+ Token t;
+
+} {
+  [<THIS>] t = <Identifier> [methodCallParams()] [methodOrVariableCalled()]
   {
   jjtThis.value = t.image;
   }
-}
+ }
+
 void methodOrVariableCalled() #GET_VAR_METHOD :
 {
  Token t;
@@ -109,7 +121,6 @@ void decl() #DECL :
 
  type() identifier() decide_declaration_type() |
  type_void() identifier() method_declaration()
-
 }
 
 void type_void() #TYPE :
@@ -118,23 +129,11 @@ void type_void() #TYPE :
     t = <TypeVoid> {jjtThis.value = t;}
 }
 
-
-
-
 void decide_declaration_type() #void :
 {}
 {
     ([variable_declaration()] ";") #CONCLUDED_VAR_DEC | method_declaration()
 }
-
-
-
-
-
-
-
-
-
 
 void method_declaration() #METHDECL :
 {} {
@@ -243,31 +242,10 @@ void foroper() #For :
 
 }
 void array()  #ATOM_ARRAY:
+{}
 {
-
+<LBRACKET> ausdruck() ("," ausdruck())* <RBRACKET>
 }
-{
-<LBRACKET> ArrayElement() ("," ArrayElement())* <RBRACKET>   {}
-}
-
-void ArrayElement() #void:
-{
-Token inc=null;
-Token ident = null;
-}
-{
-    array()  | ident=<Identifier> {jjtThis.value = ident.image; } #ATOM_VARIABLE
-             | ident=<IntegerLiteral> {jjtThis.value = ident.image; } #ATOM_INT
-             | ident=<DoubleLiteral> {jjtThis.value = ident.image; } #ATOM_DBL
-             | ident=<BooleanLiteral> {jjtThis.value = ident.image; } #ATOM_BOL
-             |ident = <StringLiteral> {jjtThis.value = ident.image; } #ATOM_STRING
-             | <RoundBracketOpen> junktoren() <RoundBracketClose>
-               }
-
-
-
-
-
 
 // TODO = += -= *= /= %= hinzufügen
 void variable_declaration() #VARIABLE_ASSIGNMENT_PRIO_1 :
@@ -374,7 +352,7 @@ void atom() #void :
   | ident=<IntegerLiteral> {jjtThis.value = ident.image; } #ATOM_INT
   | ident=<DoubleLiteral> {jjtThis.value = ident.image; } #ATOM_DBL
   | ident=<BooleanLiteral> {jjtThis.value = ident.image; } #ATOM_BOL
+  | ident = <StringLiteral> {jjtThis.value = ident.image; } #ATOM_STRING
   | array()
-  |ident = <StringLiteral> {jjtThis.value = ident.image; } #ATOM_STRING
   | <RoundBracketOpen> junktoren() <RoundBracketClose>
 }
