@@ -5,6 +5,7 @@ import de.fh.javacc.generated.SimpleNode;
 import de.fh.lexparser.LexParser;
 import de.fh.semantic.SemanticAnalyzer;
 import de.fh.translator.Translator;
+import de.fh.translator.sandbox.TranslatorTemplate;
 
 public class Main {
     public static void main(String[] args) throws ParseException {
@@ -21,7 +22,8 @@ public class Main {
         x = y += 23;
 
         int[] asd = new int[] { y, y++, y += 2 };
+        int xd = 'a' - 'b';
 
-        compiler.executePipelineFromResource("test.txt", null);
+        compiler.executePipelineFromResource("test2.txt", null);
     }
 }

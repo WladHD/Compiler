@@ -1,13 +1,16 @@
 package de.fh.translator.visitor;
 
 import de.fh.javacc.generated.*;
+import de.fh.utils.ClassLoaderReader;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class TranslateVisitor implements TestParserVisitor {
 
-    public final static String LINE_SEPARATOR = "\n";
+    public final static String LINE_SEPARATOR = "\n\t   ";
+    private boolean fancyFlag = false;
 
 
     private String childrenToText(SimpleNode root) {
@@ -22,6 +25,13 @@ public class TranslateVisitor implements TestParserVisitor {
                 SimpleNode n = (SimpleNode) root.jjtGetChild(i);
                 if (n != null) {
                     Object val = visit(n, n.jjtGetValue());
+
+                    if(fancyFlag)
+                    {
+                        fancyFlag = false;
+                        return (String) val;
+                    }
+
                     carry.append(val == null ? "/* ?" + n.getClass().getSimpleName() + "? */" : val);
 
                     if (i + 1 < root.jjtGetNumChildren())
@@ -116,8 +126,12 @@ public class TranslateVisitor implements TestParserVisitor {
 
     @Override
     public Object visit(ASTPROGRAM node, Object data) {
-        String ph_Class = "public class Main '{'{1} {0} {1}'}'";
-        return MessageFormat.format(ph_Class, childrenToText(node), LINE_SEPARATOR);
+        String s = ClassLoaderReader.getResourceFileAsString("TranslatorTemplate.java");
+
+        if (s == null)
+            throw new RuntimeException("Konnte Template zur Java Source Code Erzeugung nicht finden ...");
+
+        return s.replace("/* PLACEHOLDER */", childrenToText(node));
     }
 
     @Override
@@ -179,12 +193,14 @@ public class TranslateVisitor implements TestParserVisitor {
 
     @Override
     public Object visit(ASTTYPE node, Object data) {
-        return data;
+        String ph = "{0}{1}";
+        return MessageFormat.format(ph, data, childrenToText(node));
     }
 
     @Override
     public Object visit(ASTKOMPLEX_TYPE node, Object data) {
-        return null;
+        String ph = "<{0}>";
+        return MessageFormat.format(ph, childrenToText(node));
     }
 
     @Override
@@ -241,7 +257,40 @@ public class TranslateVisitor implements TestParserVisitor {
     @Override
     public Object visit(ASTOPERATION_PRIO_11 node, Object data) {
         String ph_ConVar = "{0} {1}";
-        return MessageFormat.format(ph_ConVar, data, childrenToText(node));
+        System.out.println(node.jjtGetParent());
+        System.out.println(node.jjtGetNumChildren());
+
+        ArrayList<SimpleNode> sn = childrenToArray((SimpleNode) node.jjtGetParent());
+
+        System.out.println(Arrays.toString(sn.toArray()));
+
+        ArrayList<Object> current = new ArrayList<>();
+        current.add(visit(sn.get(0), null));
+
+        for (int i = 1; i < sn.size(); i++) {
+            if (sn.get(i) instanceof ASTOPERATION_PRIO_11 a) {
+                current.add(0, a.jjtGetValue());
+
+                current.add(2, (a.jjtGetNumChildren() == 1 ? visit((SimpleNode) a.jjtGetChild(0), null) : childrenToText(a)));
+
+
+                ArrayList<Object> temp = new ArrayList<>();
+                String template = "OpOverload.p11(''{0}'', {1}, {2})";
+                temp.add(MessageFormat.format(template, current.get(0), current.get(1), current.get(2)));
+
+                current = temp;
+
+            } else {
+                current.set(0, current.get(0).toString() + " " + visit(sn.get(i), null).toString());
+            }
+        }
+
+        fancyFlag = true;
+
+        System.out.println(current.get(0));
+
+
+        return current.get(0);
     }
 
     @Override
