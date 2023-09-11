@@ -1,15 +1,20 @@
 package de.fh.translator.visitor;
 
 import de.fh.javacc.generated.*;
-import org.checkerframework.checker.units.qual.A;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class TranslateVisitor implements TestParserVisitor {
 
+    public final static String LINE_SEPARATOR = "\n";
+
+
     private String childrenToText(SimpleNode root) {
+        return childrenToText(root, " ");
+    }
+
+    private String childrenToText(SimpleNode root, String sep) {
         StringBuilder carry = new StringBuilder();
 
         if (root.jjtGetNumChildren() != 0) {
@@ -19,8 +24,8 @@ public class TranslateVisitor implements TestParserVisitor {
                     Object val = visit(n, n.jjtGetValue());
                     carry.append(val == null ? "/* ?" + n.getClass().getSimpleName() + "? */" : val);
 
-                    if(i + 1 < root.jjtGetNumChildren())
-                        carry.append(" ");
+                    if (i + 1 < root.jjtGetNumChildren())
+                        carry.append(sep);
                 }
             }
         }
@@ -107,8 +112,8 @@ public class TranslateVisitor implements TestParserVisitor {
 
     @Override
     public Object visit(ASTPROGRAM node, Object data) {
-        String ph_Class = "public class Main '{' {0} '}'";
-        return MessageFormat.format(ph_Class, childrenToText(node));
+        String ph_Class = "public class Main '{'{1} {0} {1}'}'";
+        return MessageFormat.format(ph_Class, childrenToText(node), LINE_SEPARATOR);
     }
 
     @Override
@@ -120,30 +125,30 @@ public class TranslateVisitor implements TestParserVisitor {
     @Override
     public Object visit(ASTGET_VAR_METHOD node, Object data) {
         String ph = ".{0}{1}";
-        return MessageFormat.format(ph, data, childrenToText(node));
+        return MessageFormat.format(ph, data, childrenToText(node, ""));
     }
 
     @Override
     public Object visit(ASTGET_METHOD_PARAMS node, Object data) {
         String ph = "({0})";
-        return MessageFormat.format(ph, childrenToText(node));
+        return MessageFormat.format(ph, childrenToText(node, ", "));
     }
 
     @Override
     public Object visit(ASTPARAM node, Object data) {
-        return null;
+        return childrenToText(node);
     }
 
     @Override
     public Object visit(ASTSTATEMENT node, Object data) {
         // TODO WHILE Statement in andere Node einteilen
-        String ph = "{0};";
-        return MessageFormat.format(ph, childrenToText(node));
+        String ph = "{0};{1}";
+        return MessageFormat.format(ph, childrenToText(node), LINE_SEPARATOR);
     }
 
     @Override
     public Object visit(ASTDECL node, Object data) {
-        return childrenToText(node);
+        return childrenToText(node) + LINE_SEPARATOR;
     }
 
     @Override
@@ -154,17 +159,18 @@ public class TranslateVisitor implements TestParserVisitor {
 
     @Override
     public Object visit(ASTMETHDECL node, Object data) {
-        return null;
+        return childrenToText(node);
     }
 
     @Override
     public Object visit(ASTDECL_METHOD_PARAMS node, Object data) {
-        return null;
+        String ph_ConVar = "({0})";
+        return MessageFormat.format(ph_ConVar, childrenToText(node, ", "));
     }
 
     @Override
     public Object visit(ASTPARAM_PAIR node, Object data) {
-        return null;
+        return childrenToText(node);
     }
 
     @Override
@@ -187,7 +193,8 @@ public class TranslateVisitor implements TestParserVisitor {
 
     @Override
     public Object visit(ASTBLOCK node, Object data) {
-        return null;
+        String ph = "'{'{1} {0} '}'";
+        return MessageFormat.format(ph, childrenToText(node), LINE_SEPARATOR);
     }
 
     @Override
@@ -230,7 +237,8 @@ public class TranslateVisitor implements TestParserVisitor {
 
     @Override
     public Object visit(ASTOPERATION_PRIO_13 node, Object data) {
-        return null;
+        String ph_ConVar = "{0}{1}";
+        return MessageFormat.format(ph_ConVar, data, childrenToText(node));
     }
 
     @Override
@@ -241,7 +249,7 @@ public class TranslateVisitor implements TestParserVisitor {
 
     @Override
     public Object visit(ASTATOM_VARIABLE node, Object data) {
-        return null;
+        return data;
     }
 
     @Override
@@ -256,7 +264,6 @@ public class TranslateVisitor implements TestParserVisitor {
 
     @Override
     public Object visit(ASTATOM_BOL node, Object data) {
-        String ph_ConVar = "({0})";
-        return MessageFormat.format(ph_ConVar, childrenToText(node));
+        return data;
     }
 }

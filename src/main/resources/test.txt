@@ -1,8 +1,7 @@
-int z = y = x.x++ + x.getAge() / 2;
 int x = 5;
 int y;
+int z = y = x++ + x / 2;
 
-x = y = 23;
 
 void main() {
     int x = 4;
@@ -10,7 +9,7 @@ void main() {
 
 void y(int x, Set<int> b){
 Set<int> s; }
-Object.getName(false).lengthFromTo(x,x, 2+3+5).variable.getHeight();
+Object.getName(false).lengthFromTo(x,x, 2+3+5);
 
 Set<int> generateDictionary(String x) {
     int i = 4;
