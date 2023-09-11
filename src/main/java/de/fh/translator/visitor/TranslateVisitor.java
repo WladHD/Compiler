@@ -218,7 +218,8 @@ public class TranslateVisitor implements TestParserVisitor {
 
     @Override
     public Object visit(ASTATOM_ARRAY node, Object data) {
-        return null;
+        String ph = "'{' {0} '}'";
+        return MessageFormat.format(ph, childrenToText(node, ", "));
     }
 
     @Override
