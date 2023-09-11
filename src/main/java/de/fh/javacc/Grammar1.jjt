@@ -97,14 +97,14 @@ void stmnt() #STATEMENT :
 void decl() #DECL :
 {} {
  type() identifier() decide_declaration_type() |
- <TypeVoid> identifier() method_declaration()
+ type_void() identifier() method_declaration()
 
 }
 
 void decide_declaration_type() #void :
 {}
 {
-    ([variable_declaration()] ";") | method_declaration()
+    ([variable_declaration()] ";") #CONCLUDED_VAR_DEC | method_declaration()
 }
 
 void method_declaration() #METHDECL :
@@ -112,7 +112,7 @@ void method_declaration() #METHDECL :
  params() block()
 }
 
-void params() #void :
+void params() #DECL_METHOD_PARAMS :
 {} {
    <RoundBracketOpen> [param_pair() ("," param_pair())*] <RoundBracketClose>
 }
@@ -121,6 +121,15 @@ void param_pair() #PARAM_PAIR :
 {}
 {
     type() identifier()
+}
+
+void type_void() #TYPE :
+{Token t;}
+{
+    t = <TypeVoid>
+  {
+      jjtThis.value = t.image;
+  }
 }
 
 void type() #TYPE :
