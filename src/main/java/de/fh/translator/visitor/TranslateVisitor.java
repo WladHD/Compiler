@@ -42,19 +42,6 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
         return carry.toString();
     }
 
-    private ArrayList<SimpleNode> childrenToArray(SimpleNode root) {
-        ArrayList<SimpleNode> sn = new ArrayList<>();
-
-        if (root.jjtGetNumChildren() != 0) {
-            for (int i = 0; i < root.jjtGetNumChildren(); ++i) {
-                SimpleNode n = (SimpleNode) root.jjtGetChild(i);
-                if (n != null) sn.add(n);
-            }
-        }
-
-        return sn;
-    }
-
     @Override
     public Object visit(ASTPROGRAM node, Object data) {
         String s = ClassLoaderReader.getResourceFileAsString("TranslatorTemplate.java");

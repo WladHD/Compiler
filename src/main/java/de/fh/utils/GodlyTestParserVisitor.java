@@ -2,7 +2,23 @@ package de.fh.utils;
 
 import de.fh.javacc.generated.*;
 
+import java.util.ArrayList;
+
 public interface GodlyTestParserVisitor extends TestParserVisitor {
+
+    default ArrayList<SimpleNode> childrenToArray(SimpleNode root) {
+        ArrayList<SimpleNode> sn = new ArrayList<>();
+
+        if (root.jjtGetNumChildren() != 0) {
+            for (int i = 0; i < root.jjtGetNumChildren(); ++i) {
+                SimpleNode n = (SimpleNode) root.jjtGetChild(i);
+                if (n != null) sn.add(n);
+            }
+        }
+
+        return sn;
+    }
+
     @Override
     default Object visit(SimpleNode node, Object data) {
         if (node instanceof ASTPROGRAM a)
