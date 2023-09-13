@@ -10,7 +10,7 @@ public class Closure implements IClosure<String, String, Object> {
     private final HashMap<String, String> methodReturnTypeMap;
     private final HashMap<String, IClosure<String, String, Object>> methodClosureMap;
 
-    private Closure(Closure parent) {
+    public Closure(Closure parent) {
         this.parent = parent;
         this.variableTypeMap = new HashMap<>();
         this.variableValueMap = new HashMap<>();
@@ -40,6 +40,7 @@ public class Closure implements IClosure<String, String, Object> {
 
     @Override
     public void addBoundVariable(String var, String s) {
+
         variableTypeMap.put(var, s);
     }
 
@@ -53,6 +54,22 @@ public class Closure implements IClosure<String, String, Object> {
         methodReturnTypeMap.put(methodName, s);
     }
 
+    @Override
+    // Add this method to update a variable's value
+    public boolean updateVariableValue(String var, Object newValue) {
+        boolean itWorked = true;
+        if (variableTypeMap.containsKey(var)) {
+            // Variable exists in the current closure, update its value
+            variableValueMap.put(var, newValue);
+        } else if (parent != null) {
+            // Variable not found in the current closure, check parent closures recursively
+            parent.updateVariableValue(var, newValue);
+        } else {
+
+            itWorked = false;
+        }
+        return itWorked;
+    }
     @Override
     public IClosure<String, String, Object> getParent() {
         return parent;

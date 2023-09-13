@@ -19,6 +19,9 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
 
     void addBoundMethod(VarMethodNames methodName, VarMethodType type, IClosure<VarMethodNames, VarMethodType, VarValue> closure);
 
+    // Add this method to update a variable's value
+    boolean updateVariableValue(VarMethodNames var, VarValue newValue);
+
     IClosure<VarMethodNames, VarMethodType, VarValue> getParent();
 
     AbstractMap.SimpleEntry<VarMethodType, VarValue> getVariableTypeAndValue(VarMethodNames varName, boolean checkOnlyBoundVariables);

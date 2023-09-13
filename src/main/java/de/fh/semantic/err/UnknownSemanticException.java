@@ -1,7 +1,7 @@
 package de.fh.semantic.err;
 
 public class UnknownSemanticException extends SemanticException {
-    public UnknownSemanticException() {
-        super(42, "Something went really wrong");
+    public UnknownSemanticException(String errorMessage) {
+        super(42, (errorMessage != null) ? errorMessage : "Something went really wrong");
     }
 }
