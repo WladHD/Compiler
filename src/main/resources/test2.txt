@@ -2,17 +2,7 @@ int x = 5;
 int y;
 int z = y = x++ + x / 2;
 z++;
-Path p = .;
-Path p = ..;
-Path p = ../;
-Path p = ..\;
-Path p = ./;
-Path p = .\;
-Path p = C:\;
-Path p = D:\;
-Path p = C:/;
-Path p = D:/;
-Path p = test/test/heytest/heytest/heytest/hey;
+
 
 int x = [1, 2, 3 + 3, 4, [getName(), 6, 7, [8]]];
 
@@ -21,7 +11,7 @@ void main() {
 }
 
 void y(int x, Set<int> b){
-Set<int> s; }
+Set<int> s = {1,2,3,4}; }
 Object.getName(false).lengthFromTo(x,x, 2+3+5);
 
 Set<int> generateDictionary(String x) {

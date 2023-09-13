@@ -31,7 +31,9 @@ TOKEN : {
    <RBRACKET : "]">
    |<TypePath: "Path" >
    | <THIS: "this">
-  |";" | "{" | "}" | "," // TODO introduce name
+  |";" |  "," // TODO introduce name
+  | <GBracketOpen: "{">
+  | <GBracketClose: "}">
   | <TypeVoid: "void">
   | <While: "while">
   | <For: "for">
@@ -116,6 +118,7 @@ void methodCallParams() #GET_METHOD_PARAMS :
 void stmnt() #STATEMENT :
 {}
 {
+LOOKAHEAD(3)
   block() | whileStmnt()  | forStmnt() | (ausdruck() ";")
 }
 
@@ -213,10 +216,10 @@ void block() #BLOCK :
 {
     Token start, end;
 } {
-   start = "{" (
+   start = <GBracketOpen> (
          (stmnt() | decl())
        )*
-   end = "}"
+   end = <GBracketClose>
 }
 
 void whileStmnt() #WHILE :
@@ -270,8 +273,13 @@ void array()  #ATOM_ARRAY:
 <LBRACKET> array_element() ("," array_element())* <RBRACKET>
 }
 
+void atomset()  #ATOM_SET:
+{}
+{
+<GBracketOpen> set_element() ("," set_element())* <GBracketClose>
+}
 
-void Path()  #ATOM_ELEMENT:
+void Path()  #ATOM_PATHELEMENT:
 {Token t;
  }
 
@@ -285,6 +293,11 @@ void Path()  #ATOM_ELEMENT:
 
 // eigentlich unnötig, aber sieht besser aus da sonst die array() Methode mit #ARRAY_ELEMENT vollgespamt wird
 void array_element() #ARRAY_ELEMENT:
+{}
+{
+    ausdruck()
+}
+void set_element() #SET_ELEMENT:
 {}
 {
     ausdruck()
@@ -397,6 +410,6 @@ void atom() #void :
   | ident=<DoubleLiteral> {jjtThis.value = ident.image; } #ATOM_DBL
   | ident=<BooleanLiteral> {jjtThis.value = ident.image; } #ATOM_BOL
   | ident = <StringLiteral> {jjtThis.value = ident.image; } #ATOM_STRING
-  | array()
+  | array()| atomset()
   | <RoundBracketOpen> junktoren() <RoundBracketClose>
 }
