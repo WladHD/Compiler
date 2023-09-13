@@ -3,12 +3,12 @@ package de.fh.semantic.closure;
 import java.util.AbstractMap;
 import java.util.HashMap;
 
-public class Closure implements IClosure<String, String, Object> {
+public class Closure implements IClosure<String, String, Boolean> {
     private final Closure parent;
     private final HashMap<String, String> variableTypeMap;
-    private final HashMap<String, Object> variableValueMap;
+    private final HashMap<String, Boolean> variableValueMap;
     private final HashMap<String, String> methodReturnTypeMap;
-    private final HashMap<String, IClosure<String, String, Object>> methodClosureMap;
+    private final HashMap<String, IClosure<String, String, Boolean>> methodClosureMap;
 
     public Closure(Closure parent) {
         this.parent = parent;
@@ -24,7 +24,7 @@ public class Closure implements IClosure<String, String, Object> {
     }
 
     @Override
-    public HashMap<String, Object> getVariableValueMap() {
+    public HashMap<String, Boolean> getVariableValueMap() {
         return variableValueMap;
     }
 
@@ -34,7 +34,7 @@ public class Closure implements IClosure<String, String, Object> {
     }
 
     @Override
-    public HashMap<String, IClosure<String, String, Object>> getMethodClosureMap() {
+    public HashMap<String, IClosure<String, String, Boolean>> getMethodClosureMap() {
         return methodClosureMap;
     }
 
@@ -45,18 +45,18 @@ public class Closure implements IClosure<String, String, Object> {
     }
 
     @Override
-    public void addBoundVariableValue(String var, Object o) {
+    public void addBoundVariableValue(String var, Boolean o) {
         variableValueMap.put(var, o);
     }
 
     @Override
-    public void addBoundMethod(String methodName, String s, IClosure<String, String, Object> closure) {
+    public void addBoundMethod(String methodName, String s, IClosure<String, String, Boolean> closure) {
         methodReturnTypeMap.put(methodName, s);
     }
 
     @Override
     // Add this method to update a variable's value
-    public boolean updateVariableValue(String var, Object newValue) {
+    public boolean updateVariableValue(String var, Boolean newValue) {
         boolean itWorked = true;
         if (variableTypeMap.containsKey(var)) {
             // Variable exists in the current closure, update its value
@@ -71,12 +71,12 @@ public class Closure implements IClosure<String, String, Object> {
         return itWorked;
     }
     @Override
-    public IClosure<String, String, Object> getParent() {
+    public IClosure<String, String, Boolean> getParent() {
         return parent;
     }
 
     @Override
-    public AbstractMap.SimpleEntry<String, Object> getVariableTypeAndValue(String varName, boolean checkOnlyBoundVariables) {
+    public AbstractMap.SimpleEntry<String, Boolean> getVariableTypeAndValue(String varName, boolean checkOnlyBoundVariables) {
 
         if (checkOnlyBoundVariables && !variableTypeMap.containsKey(varName)) {
             return null; // Variable not found in the current closure
@@ -84,7 +84,7 @@ public class Closure implements IClosure<String, String, Object> {
 
         // Try to retrieve variable type and value from the current closure
         String variableType = variableTypeMap.get(varName);
-        Object variableValue = variableValueMap.get(varName);
+        Boolean variableValue = variableValueMap.get(varName);
 
         // If the variable is not found and we're allowed to check parent closures
         if (variableType == null && variableValue == null && parent != null) {
@@ -95,7 +95,7 @@ public class Closure implements IClosure<String, String, Object> {
     }
 
     @Override
-    public AbstractMap.SimpleEntry<String, IClosure<String, String, Object>> getMethodTypeAndClosure(String methodName, boolean checkOnlyBoundMethods) {
+    public AbstractMap.SimpleEntry<String, IClosure<String, String, Boolean>> getMethodTypeAndClosure(String methodName, boolean checkOnlyBoundMethods) {
 
         if (checkOnlyBoundMethods && !methodReturnTypeMap.containsKey(methodName)) {
             return null; // Method not found in the current closure
@@ -103,7 +103,7 @@ public class Closure implements IClosure<String, String, Object> {
 
         // Try to retrieve method return type and closure from the current closure
         String methodReturnType = methodReturnTypeMap.get(methodName);
-        IClosure<String, String, Object> methodClosure = methodClosureMap.get(methodName);
+        IClosure<String, String, Boolean> methodClosure = methodClosureMap.get(methodName);
 
         // If the method is not found and we're allowed to check parent closures
         if (methodReturnType == null && methodClosure == null && parent != null) {
@@ -114,7 +114,7 @@ public class Closure implements IClosure<String, String, Object> {
     }
 
     @Override
-    public IClosure<String, String, Object> createNewClosure() {
+    public IClosure<String, String, Boolean> createNewClosure() {
         return new Closure(this);
     }
 }
