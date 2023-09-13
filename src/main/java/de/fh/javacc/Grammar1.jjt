@@ -34,6 +34,7 @@ TOKEN : {
   | <TypeVoid: "void">
   | <While: "while">
   | <For: "for">
+  | <FWSlash: "/" >
   | <SimpleEquals: "="| "+=" |"-=" |"*="| "/=" | "%=" >
   | <Point: ".">
   | <RoundBracketOpen: "(">
@@ -46,13 +47,14 @@ TOKEN : {
   | <OpSum : "+" | "-">
   | <OpUnaer: "!">
   | <OpIncrement: "++" | "--">
-  | <OpProd : "*" | "/" | "%">
+  | <OpProd : "*" | "%">
   | <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
   | <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
   | <DoubleLiteral : <IntegerLiteral> <Point> (["0"-"9"])* | <Point> (["0"-"9"])+ >
   | <StringLiteral: "\""(["A"-"Z", "a"-"z", "_", "0" - "9", " "])*"\"" > //ToDO vervollständigen
   | <CharLiteral:"\""(["A"-"Z", "a"-"z", "_", "0" - "9", " "])"\"" >//ToDO vervollständigen
-  | <PathLiteral2:"."|".." | ((["0"-"9"])* <Identifier>) >
+  | <PathSymFolder: "." | "..">
+  | <PathSymSep: "\\" >
 
 
 }
@@ -248,14 +250,14 @@ void array()  #ATOM_ARRAY:
 }
 
 
-void Path()  #ATOM_PATH:
+void path()  #ATOM_PATH:
 {Token t;
  }
 
 {
 
-     t = <PathLiteral2> ["/" | "\\" Path()]
-
+     (t = <PathSymFolder> | t = <Identifier>) [(<FWSlash> | <PathSymSep>) path()]
+     {jjtThis.value = t; }
 }
 
 
@@ -330,7 +332,7 @@ void produkt() #void :
 void produkt2() #OPERATION_PRIO_12 :
 {Token op;}
 {
-    op=<OpProd> {jjtThis.value = op.image;} unaer_pre()
+    (op=<OpProd> | op=<FWSlash>) {jjtThis.value = op.image;} unaer_pre()
 }
 
 void unaer_pre() #void :
