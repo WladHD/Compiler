@@ -19,6 +19,15 @@ public interface GodlyTestParserVisitor extends TestParserVisitor {
         return sn;
     }
 
+    default void visitAll(SimpleNode root) {
+        if (root.jjtGetNumChildren() != 0) {
+            for (int i = 0; i < root.jjtGetNumChildren(); ++i) {
+                SimpleNode sn = (SimpleNode) root.jjtGetChild(i);
+                visit(sn, sn.jjtGetValue());
+            }
+        }
+    }
+
     @Override
     default Object visit(SimpleNode node, Object data) {
         if (node instanceof ASTPROGRAM a)
