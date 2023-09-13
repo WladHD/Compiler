@@ -24,6 +24,6 @@ public class Main {
         int[] asd = new int[] { y, y++, y += 2 };
         int xd = 'a' - 'b';
 
-        compiler.executePipelineFromResource("path.txt", null);
+        compiler.executePipelineFromResource("test2.txt", null);
     }
 }

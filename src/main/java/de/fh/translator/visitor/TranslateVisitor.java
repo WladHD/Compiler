@@ -135,6 +135,11 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
     }
 
     @Override
+    public Object visit(ASTRETURN node, Object data) {
+        return null;
+    }
+
+    @Override
     public Object visit(ASTWHILE node, Object data) {
         return null;
     }
@@ -150,12 +155,38 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
     }
 
     @Override
+    public Object visit(ASTFORINIT node, Object data) {
+        return null;
+    }
+
+    @Override
+    public Object visit(ASTFORCOND node, Object data) {
+        return null;
+    }
+
+    @Override
+    public Object visit(ASTFOROPER node, Object data) {
+        return null;
+    }
+
+    @Override
     public Object visit(ASTATOM_ARRAY node, Object data) {
         String ph = "'{' {0} '}'";
         return MessageFormat.format(ph, childrenToText(node, ", "));
     }
 
     @Override
+    public Object visit(ASTATOM_SET node, Object data) {
+        return null;
+    }
+
+    @Override
+    public Object visit(ASTATOM_PATHELEMENT node, Object data) {
+        return null;
+    }
+
+
+
     public Object visit(ASTATOM_ELEMENT node, Object data) {
         return null;
     }
@@ -167,6 +198,11 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
     @Override
     public Object visit(ASTARRAY_ELEMENT node, Object data) {
         return childrenToText(node);
+    }
+
+    @Override
+    public Object visit(ASTSET_ELEMENT node, Object data) {
+        return null;
     }
 
     @Override

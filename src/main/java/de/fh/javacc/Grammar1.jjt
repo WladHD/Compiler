@@ -31,7 +31,9 @@ TOKEN : {
    <RBRACKET : "]">
    |<TypePath: "Path" >
    | <THIS: "this">
-  |";" | "{" | "}" | "," // TODO introduce name
+  |";" |  "," // TODO introduce name
+  | <GBracketOpen: "{">
+  | <GBracketClose: "}">
   | <TypeVoid: "void">
   | <While: "while">
   | <For: "for">
@@ -50,7 +52,7 @@ TOKEN : {
   | <OpProd : "*" | "%">
   | <FWD: "/">
 
-
+ | <Return : "return">
   | <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
   | <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
   | <DoubleLiteral : <IntegerLiteral> <Point> (["0"-"9"])* | <Point> (["0"-"9"])+ >
@@ -116,6 +118,7 @@ void methodCallParams() #GET_METHOD_PARAMS :
 void stmnt() #STATEMENT :
 {}
 {
+LOOKAHEAD(3)
   block() | whileStmnt()  | forStmnt() | (ausdruck() ";")
 }
 
@@ -211,12 +214,13 @@ void identifier() #VAR_METHOD_NAME :
 
 void block() #BLOCK :
 {
-    Token start, end;
+
 } {
-   start = "{" (
-         (stmnt() | decl())
+   <GBracketOpen> (
+         (( <Return>  [ausdruck()] ";")#RETURN |stmnt() | decl()  )
        )*
-   end = "}"
+
+   <GBracketClose>
 }
 
 void whileStmnt() #WHILE :
@@ -238,30 +242,31 @@ void forStmnt() #For :
 
 
 
-void forinit() #For :
+
+void forinit() #FORINIT :
 {
    Token start;
 } {
 
-    identifier()
+   [type() identifier() variable_declaration() |ausdruck() ]
 
 }
 
-void forcond() #For :
+void forcond() #FORCOND :
 {
    Token start;
 } {
 
- identifier()
+ [ausdruck() ]
 
 }
 
-void foroper() #For :
+void foroper() #FOROPER :
 {
    Token start;
 } {
 
- identifier()
+ [ausdruck() ]
 
 }
 void array()  #ATOM_ARRAY:
@@ -270,8 +275,13 @@ void array()  #ATOM_ARRAY:
 <LBRACKET> array_element() ("," array_element())* <RBRACKET>
 }
 
+void atomset()  #ATOM_SET:
+{}
+{
+<GBracketOpen> set_element() ("," set_element())* <GBracketClose>
+}
 
-void Path()  #ATOM_ELEMENT:
+void Path()  #ATOM_PATHELEMENT:
 {Token t;
  }
 
@@ -285,6 +295,11 @@ void Path()  #ATOM_ELEMENT:
 
 // eigentlich unnötig, aber sieht besser aus da sonst die array() Methode mit #ARRAY_ELEMENT vollgespamt wird
 void array_element() #ARRAY_ELEMENT:
+{}
+{
+    ausdruck()
+}
+void set_element() #SET_ELEMENT:
 {}
 {
     ausdruck()
@@ -397,6 +412,6 @@ void atom() #void :
   | ident=<DoubleLiteral> {jjtThis.value = ident.image; } #ATOM_DBL
   | ident=<BooleanLiteral> {jjtThis.value = ident.image; } #ATOM_BOL
   | ident = <StringLiteral> {jjtThis.value = ident.image; } #ATOM_STRING
-  | array()
+  | array()| atomset()
   | <RoundBracketOpen> junktoren() <RoundBracketClose>
 }
