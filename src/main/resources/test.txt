@@ -1,1 +1,1 @@
-Path p = ..\;
+{jjtThis.value = t.image;}

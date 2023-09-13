@@ -2,6 +2,17 @@ int x = 5;
 int y;
 int z = y = x++ + x / 2;
 z++;
+Path p = .;
+Path p = ..;
+Path p = ../;
+Path p = ..\;
+Path p = ./;
+Path p = .\;
+Path p = C:\;
+Path p = D:\;
+Path p = C:/;
+Path p = D:/;
+Path p = test/test/heytest/heytest/heytest/hey;
 
 int x = [1, 2, 3 + 3, 4, [getName(), 6, 7, [8]]];
 

@@ -26,9 +26,10 @@ TOKEN : {
 //  <TypeFiles: "Files" >|
   <TypeMap: "Map">
   |<TypeSet: "Set">
-  |<TypeSpecifiers: "int" | "char" | "String" | "boolean" | "Path"|  "Files" >
+  |<TypeSpecifiers: "int" | "char" | "String" | "boolean"| "Files" >
   |<LBRACKET : "[">|
    <RBRACKET : "]">
+   |<TypePath: "Path" >
    | <THIS: "this">
   |";" | "{" | "}" | "," // TODO introduce name
   | <TypeVoid: "void">
@@ -46,13 +47,16 @@ TOKEN : {
   | <OpSum : "+" | "-">
   | <OpUnaer: "!">
   | <OpIncrement: "++" | "--">
-  | <OpProd : "*" | "/" | "%">
+  | <OpProd : "*" | "%">
+  | <FWD: "/">
+
+
   | <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
   | <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
   | <DoubleLiteral : <IntegerLiteral> <Point> (["0"-"9"])* | <Point> (["0"-"9"])+ >
   | <StringLiteral: "\""(["A"-"Z", "a"-"z", "_", "0" - "9", " "])*"\"" > //ToDO vervollständigen
   | <CharLiteral:"\""(["A"-"Z", "a"-"z", "_", "0" - "9", " "])"\"" >//ToDO vervollständigen
-  | <PathLiteral2:"."|".." | ((["0"-"9"])* <Identifier>) >
+  |<PathLiteral2:".."|  ["A"-"Z"]":">
 
 
 }
@@ -118,7 +122,7 @@ void stmnt() #STATEMENT :
 
 void decl() #DECL :
 {} {
-
+ typePath() identifier() decide_declaration_typePath() |
  type() identifier() decide_declaration_type() |
  type_void() identifier() method_declaration()
 }
@@ -134,7 +138,11 @@ void decide_declaration_type() #void :
 {
     ([variable_declaration()] ";") #CONCLUDED_VAR_DEC | method_declaration()
 }
-
+void decide_declaration_typePath() #void :
+{}
+{
+    ([<SimpleEquals> Path() #ATOM_PATH] ";") #CONCLUDED_VAR_DEC | method_declaration()
+}
 void method_declaration() #METHDECL :
 {} {
  params() block()
@@ -163,6 +171,21 @@ void type() #TYPE :
       jjtThis.value = t.image;
   }
 }
+
+void typePath() #TYPE :
+{
+  Token t;
+}
+{
+  t = <TypePath>
+
+
+  {
+      jjtThis.value = t.image;
+  }
+
+}
+
 
 void Set() #KOMPLEX_TYPE :
 {}
@@ -248,14 +271,14 @@ void array()  #ATOM_ARRAY:
 }
 
 
-void Path()  #ATOM_PATH:
+void Path()  #ATOM_ELEMENT:
 {Token t;
  }
 
 {
 
-     t = <PathLiteral2> ["/" | "\\" Path()]
-
+     (t = <PathLiteral2> | t = <Point> | t = <Identifier> )[("/" | "\\") [Path()]]
+{jjtThis.value = t.image;}
 }
 
 
@@ -330,6 +353,7 @@ void produkt() #void :
 void produkt2() #OPERATION_PRIO_12 :
 {Token op;}
 {
+    op=<FWD> {jjtThis.value = op.image;} unaer_pre()|
     op=<OpProd> {jjtThis.value = op.image;} unaer_pre()
 }
 
