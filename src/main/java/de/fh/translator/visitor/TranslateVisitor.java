@@ -156,6 +156,16 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
     }
 
     @Override
+    public Object visit(ASTATOM_ELEMENT node, Object data) {
+        return null;
+    }
+
+    @Override
+    public Object visit(ASTATOM_PATH node, Object data) {
+        return null;
+    }
+
+    @Override
     public Object visit(ASTARRAY_ELEMENT node, Object data) {
         return childrenToText(node);
     }
