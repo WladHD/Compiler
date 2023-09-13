@@ -135,6 +135,11 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
     }
 
     @Override
+    public Object visit(ASTRETURN node, Object data) {
+        return null;
+    }
+
+    @Override
     public Object visit(ASTWHILE node, Object data) {
         return null;
     }
@@ -146,6 +151,21 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTFor node, Object data) {
+        return null;
+    }
+
+    @Override
+    public Object visit(ASTFORINIT node, Object data) {
+        return null;
+    }
+
+    @Override
+    public Object visit(ASTFORCOND node, Object data) {
+        return null;
+    }
+
+    @Override
+    public Object visit(ASTFOROPER node, Object data) {
         return null;
     }
 

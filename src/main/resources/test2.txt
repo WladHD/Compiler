@@ -16,9 +16,10 @@ Object.getName(false).lengthFromTo(x,x, 2+3+5);
 
 Set<int> generateDictionary(String x) {
     int i = 4;
+    return Hurensohn;
 }
 
-while (y!=420) {
+for(; ;) {
 
 
 int erg = 69;

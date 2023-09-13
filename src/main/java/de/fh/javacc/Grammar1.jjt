@@ -52,7 +52,7 @@ TOKEN : {
   | <OpProd : "*" | "%">
   | <FWD: "/">
 
-
+ | <Return : "return">
   | <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
   | <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
   | <DoubleLiteral : <IntegerLiteral> <Point> (["0"-"9"])* | <Point> (["0"-"9"])+ >
@@ -214,12 +214,13 @@ void identifier() #VAR_METHOD_NAME :
 
 void block() #BLOCK :
 {
-    Token start, end;
+
 } {
-   start = <GBracketOpen> (
-         (stmnt() | decl())
+   <GBracketOpen> (
+         (( <Return>  [ausdruck()] ";")#RETURN |stmnt() | decl()  )
        )*
-   end = <GBracketClose>
+
+   <GBracketClose>
 }
 
 void whileStmnt() #WHILE :
@@ -241,30 +242,31 @@ void forStmnt() #For :
 
 
 
-void forinit() #For :
+
+void forinit() #FORINIT :
 {
    Token start;
 } {
 
-    identifier()
+   [type() identifier() variable_declaration() |ausdruck() ]
 
 }
 
-void forcond() #For :
+void forcond() #FORCOND :
 {
    Token start;
 } {
 
- identifier()
+ [ausdruck() ]
 
 }
 
-void foroper() #For :
+void foroper() #FOROPER :
 {
    Token start;
 } {
 
- identifier()
+ [ausdruck() ]
 
 }
 void array()  #ATOM_ARRAY:
