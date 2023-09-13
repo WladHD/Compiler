@@ -1,0 +1,6 @@
+int i = 0;
+Path p = ../asd;
+
+void main() {
+System.out.print(p);
+}

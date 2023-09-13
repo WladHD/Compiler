@@ -155,12 +155,6 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
         return MessageFormat.format(ph, childrenToText(node, ", "));
     }
 
-    @Override
-    public Object visit(ASTATOM_ELEMENT node, Object data) {
-        return null;
-    }
-
-    @Override
     public Object visit(ASTATOM_PATH node, Object data) {
         return null;
     }
