@@ -58,14 +58,14 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
     }
 
     @Override
-    public Object visit(ASTGET_VAR_METHOD node, Object data) {
-        String ph = ".{0}{1}";
-        return MessageFormat.format(ph, data, childrenToText(node, ""));
+    public Object visit(ASTARRAYAUFRUF node, Object data) {
+        return null;
     }
 
     @Override
-    public Object visit(ASTArraycall node, Object data) {
-        return null;
+    public Object visit(ASTGET_VAR_METHOD node, Object data) {
+        String ph = ".{0}{1}";
+        return MessageFormat.format(ph, data, childrenToText(node, ""));
     }
 
     @Override
@@ -180,11 +180,6 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
     }
 
     @Override
-    public Object visit(ASTELSEIF node, Object data) {
-        return null;
-    }
-
-    @Override
     public Object visit(ASTELSE node, Object data) {
         return null;
     }
@@ -229,13 +224,23 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
         String children = childrenToText(node);
 
         if (!children.isEmpty())
-            children = java.io.File.separator + children ;
+            children = java.io.File.separator + children;
 
         return MessageFormat.format(ph, node.jjtGetValue(), children);
     }
 
     @Override
-    public Object visit(ASTMAP_ELEMENT node, Object data) {
+    public Object visit(ASTMAP_PAIR node, Object data) {
+        return null;
+    }
+
+    @Override
+    public Object visit(ASTMAP_KEY node, Object data) {
+        return null;
+    }
+
+    @Override
+    public Object visit(ASTMAP_VALUE node, Object data) {
         return null;
     }
 
@@ -337,17 +342,17 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
     }
 
     @Override
-    public Object visit(ASTATOM_DBL node, Object data) {
-        return null;
-    }
-
-    @Override
     public Object visit(ASTATOM_BOL node, Object data) {
         return data;
     }
 
     @Override
     public Object visit(ASTATOM_STRING node, Object data) {
+        return null;
+    }
+
+    @Override
+    public Object visit(ASTATOM_CHAR node, Object data) {
         return null;
     }
 }
