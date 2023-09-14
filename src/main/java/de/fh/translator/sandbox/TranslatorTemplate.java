@@ -1,17 +1,11 @@
 package de.fh.translator.sandbox;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class TranslatorTemplate {
 
@@ -46,7 +40,7 @@ public class TranslatorTemplate {
 
         @Override
         public Object p11(char op, Object a, Object b) {
-            if(!(a instanceof Set) || !(b instanceof Set) )
+            if (!(a instanceof Set) || !(b instanceof Set))
                 throw new RuntimeException("Wrong overload ...");
 
             return new Set<T>();
@@ -65,7 +59,7 @@ public class TranslatorTemplate {
         public Path(String s) {
             File jfile = new File(s);
 
-            if(!jfile.exists()) {
+            if (!jfile.exists()) {
                 files = new Files[0];
                 name = new String[0];
                 return;
@@ -87,8 +81,8 @@ public class TranslatorTemplate {
             }
 
             if (jfile.isFile()) {
-                files = new Files[] { new Files(this) };
-                name = new String[] { jfile.getAbsolutePath() };
+                files = new Files[]{new Files(this)};
+                name = new String[]{jfile.getAbsolutePath()};
             }
         }
 
