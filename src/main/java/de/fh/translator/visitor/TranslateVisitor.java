@@ -64,6 +64,11 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
     }
 
     @Override
+    public Object visit(ASTArraycall node, Object data) {
+        return null;
+    }
+
+    @Override
     public Object visit(ASTGET_METHOD_PARAMS node, Object data) {
         String ph = "({0})";
         return MessageFormat.format(ph, childrenToText(node, ", "));
@@ -165,6 +170,26 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
     }
 
     @Override
+    public Object visit(ASTFOREACH node, Object data) {
+        return null;
+    }
+
+    @Override
+    public Object visit(ASTIF node, Object data) {
+        return null;
+    }
+
+    @Override
+    public Object visit(ASTELSEIF node, Object data) {
+        return null;
+    }
+
+    @Override
+    public Object visit(ASTELSE node, Object data) {
+        return null;
+    }
+
+    @Override
     public Object visit(ASTFORINIT node, Object data) {
         return null;
     }
@@ -194,6 +219,11 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
     }
 
     @Override
+    public Object visit(ASTATOM_MAP node, Object data) {
+        return null;
+    }
+
+    @Override
     public Object visit(ASTATOM_PATHELEMENT node, Object data) {
         String ph = "{0}{1}";
         String children = childrenToText(node);
@@ -202,6 +232,11 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
             children = java.io.File.separator + children ;
 
         return MessageFormat.format(ph, node.jjtGetValue(), children);
+    }
+
+    @Override
+    public Object visit(ASTMAP_ELEMENT node, Object data) {
+        return null;
     }
 
     public Object visit(ASTATOM_PATH node, Object data) {

@@ -1,8 +1,11 @@
 package de.fh.translator.sandbox;
 
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Objects;
 
 public class TranslatorTemplate {
 
@@ -37,7 +40,7 @@ public class TranslatorTemplate {
 
         @Override
         public Object p11(char op, Object a, Object b) {
-            if(!(a instanceof Set) || !(b instanceof Set) )
+            if (!(a instanceof Set) || !(b instanceof Set))
                 throw new RuntimeException("Wrong overload ...");
 
             return new Set<T>();
@@ -53,9 +56,34 @@ public class TranslatorTemplate {
         public Files[] files;
         public String[] name;
 
-        public Path() {
-            files = new Files[0];
-            name = new String[0];
+        public Path(String s) {
+            File jfile = new File(s);
+
+            if (!jfile.exists()) {
+                files = new Files[0];
+                name = new String[0];
+                return;
+            }
+
+            if (jfile.isDirectory()) {
+                ArrayList<Files> locFil = new ArrayList<>();
+                ArrayList<String> locNames = new ArrayList<>();
+                for (java.io.File f : Objects.requireNonNull(jfile.listFiles())) {
+                    locFil.add(new Files(new Path(f.getAbsolutePath())));
+                    locNames.add(f.getAbsolutePath());
+                }
+                files = new Files[locFil.size()];
+                locFil.toArray(files);
+
+                name = new String[locNames.size()];
+                locNames.toArray(name);
+                return;
+            }
+
+            if (jfile.isFile()) {
+                files = new Files[]{new Files(this)};
+                name = new String[]{jfile.getAbsolutePath()};
+            }
         }
 
         public void remove() {
