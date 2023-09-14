@@ -18,12 +18,7 @@ public class TestParser {
 PARSER_END(TestParser)
 
 TOKEN : {
-//  <TypeChar: "char" > |
-//  <TypeInt: "int"> |
-//  <TypeString: "String" > |
-//  <TypeBoolean: "boolean" > |
-//  <TypePath:  "Path"> |
-//  <TypeFiles: "Files" >|
+
   <TypeMap: "Map">
   |<TypeSet: "Set">
   |<TypeSpecifiers: "int" | "char" | "String" | "boolean"| "Files" >
@@ -33,7 +28,7 @@ TOKEN : {
 
    | <IF: "if">
    | <ELSE: "else">
-  |";" |  "," // TODO introduce name
+  |";" |  ","
   | <GBracketOpen: "{">
   | <GBracketClose: "}">
   | <TypeVoid: "void">
@@ -57,16 +52,15 @@ TOKEN : {
   | <Return : "return">
   | <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
   | <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
-  | <DoubleLiteral : <IntegerLiteral> <Point> (["0"-"9"])* | <Point> (["0"-"9"])+ >
-  | <StringLiteral: "\""(["A"-"Z", "a"-"z", "_", "0" - "9", " "])*"\"" > //ToDO vervollständigen
-  | <CharLiteral:"\""(["A"-"Z", "a"-"z", "_", "0" - "9", " "])"\"" >//ToDO vervollständigen
-  |<PathLiteral2:".."|  ["A"-"Z"]":">
+  | <StringLiteral: "\""(~["\"","\n"])*"\"" >
+  | <CharLiteral:"'"(["'","\n"])"'" >
+  |<PathLiteral:".."|  ["A"-"Z"]":">
 
 
 }
 
 
-SKIP : {   " " | "\t" | "\n" | "\r" | <Kommentar: "//" (~["\n"])* >
+SKIP : {   " " | "\t" | "\n" | "\r" | <Kommentar: "//" (~["\n"])* |  "/*" ( ~["*"] | "*" ~["/"] )* "*/" >
 }
 
 // TODO check operator precedence https://www.javatpoint.com/java-operator-precedence
@@ -328,14 +322,14 @@ void Path()  #ATOM_PATHELEMENT:
 
 {
 
-     (t = <PathLiteral2> | t = <Point> | t = <Identifier> )[("/" | "\\") [Path()]]
+     (t = <PathLiteral> | t = <Point> | t = <Identifier> )[("/" | "\\") [Path()]]
 {jjtThis.value = t.image;}
 }
 
-void map_element() #MAP_ELEMENT:
+void map_element() #MAP_PAIR:
 {}
 {
-    atom() ":" atom()
+    atom() #MAP_KEY ":" atom() #MAP_VALUE
 }
 
 
@@ -462,7 +456,6 @@ void atom() #void :
   methodOrVariableCaller()
   | ident=<Identifier> {jjtThis.value = ident.image; } #ATOM_VARIABLE
   | ident=<IntegerLiteral> {jjtThis.value = ident.image; } #ATOM_INT
-  | ident=<DoubleLiteral> {jjtThis.value = ident.image; } #ATOM_DBL
   | ident=<BooleanLiteral> {jjtThis.value = ident.image; } #ATOM_BOL
   | ident = <StringLiteral> {jjtThis.value = ident.image; } #ATOM_STRING
   | ident = <CharLiteral> {jjtThis.value = ident.image; } #ATOM_CHAR
