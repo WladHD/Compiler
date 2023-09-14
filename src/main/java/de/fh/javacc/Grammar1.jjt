@@ -30,7 +30,7 @@ TOKEN : {
   |<LBRACKET : "[">|
    <RBRACKET : "]">
    |<TypePath: "Path" >
-   | <THIS: "this">
+
    | <IF: "if">
    | <ELSE: "else">
   |";" |  "," // TODO introduce name
@@ -48,13 +48,13 @@ TOKEN : {
   | <GreaterThan: ">">
   | <BinVergleich : ">="  | "<=" | "==" | "!=" >
   | <BinJunktor : "||" | "&&" >
-  | <OpSum : "+" | "-">
+  | <OpSum : "+" | "-" | "^" >
   | <OpUnaer: "!">
   | <OpIncrement: "++" | "--">
   | <OpProd : "*" | "%">
   | <FWD: "/">
-    | <ELSEIF: "elseif">
- | <Return : "return">
+  | <ELSEIF: "elseif">
+  | <Return : "return">
   | <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
   | <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
   | <DoubleLiteral : <IntegerLiteral> <Point> (["0"-"9"])* | <Point> (["0"-"9"])+ >
@@ -84,27 +84,40 @@ void methodOrVariableCaller() #REQUESTER_VAR_METHOD :
  Token t;
 } {
 
-  t = <Identifier> (methodOrVariableCalled() |arrayaufruf() [methodCallParams()] [methodOrVariableCalled()] )
-  { jjtThis.value = t.image; }
-  }
+
+   t = <Identifier> [methodCallParams()](Arrayaufruf())* [methodOrVariableCalled()]
+
+    { jjtThis.value = t.image; }
+}
+//void thisMethodOrVariableCalled() #GET_VAR_METHOD :
+//{
+// Token t;
+//
+//} {
+//  t = <Identifier> [Arrayaufruf()][methodCallParams()] [methodOrVariableCalled()]
+//  {
+//  jjtThis.value = t.image;
+//  }
+// }
+void Arrayaufruf() #ARRAYAUFRUF :
+{Token t;}
+{
+    "[" ausdruck() "]"
+}
+
+
+
+
+
 
 void methodOrVariableCalled() #GET_VAR_METHOD :
 {
- Token t;
+Token t;
 
 } {
-
-  <Point>(LOOKAHEAD(2) identifier() [methodCallParams()] | methodOrVariableCaller())
-
-
+  t = <Point>  methodOrVariableCaller()
+{jjtThis.value = t.image;}
  }
-void arrayaufruf() #Arraycall :
-  {
-
-  } {
-    <LBRACKET> ausdruck() <RBRACKET>
-
-   }
 
 
 void methodCallParams() #GET_METHOD_PARAMS :
@@ -289,7 +302,11 @@ void array()  #ATOM_ARRAY:
 {
 <LBRACKET> array_element() ("," array_element())* <RBRACKET>
 }
-
+void array_element() #ARRAY_ELEMENT:
+{}
+{
+    ausdruck()
+}
 void atomset()  #ATOM_SET:
 {}
 {
@@ -321,12 +338,7 @@ void map_element() #MAP_ELEMENT:
     atom() ":" atom()
 }
 
-// eigentlich unnötig, aber sieht besser aus da sonst die array() Methode mit #ARRAY_ELEMENT vollgespamt wird
-void array_element() #ARRAY_ELEMENT:
-{}
-{
-    ausdruck()
-}
+
 void set_element() #SET_ELEMENT:
 {}
 {
@@ -453,6 +465,7 @@ void atom() #void :
   | ident=<DoubleLiteral> {jjtThis.value = ident.image; } #ATOM_DBL
   | ident=<BooleanLiteral> {jjtThis.value = ident.image; } #ATOM_BOL
   | ident = <StringLiteral> {jjtThis.value = ident.image; } #ATOM_STRING
+  | ident = <CharLiteral> {jjtThis.value = ident.image; } #ATOM_CHAR
   | (LOOKAHEAD(3) array()| atomset()| atommap())
 
   | <RoundBracketOpen> junktoren() <RoundBracketClose>
