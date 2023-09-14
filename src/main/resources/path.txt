@@ -2,5 +2,6 @@ int i = 0;
 Path p = ../asd;
 
 void main() {
-System.out.print(p);
+    p.remove();
+    String s = " asdsd asd asd asd asda sdsd asd";
 }
