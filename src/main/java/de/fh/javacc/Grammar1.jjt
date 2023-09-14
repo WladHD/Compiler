@@ -31,6 +31,8 @@ TOKEN : {
    <RBRACKET : "]">
    |<TypePath: "Path" >
    | <THIS: "this">
+   | <IF: "if">
+   | <ELSE: "else">
   |";" |  "," // TODO introduce name
   | <GBracketOpen: "{">
   | <GBracketClose: "}">
@@ -51,7 +53,7 @@ TOKEN : {
   | <OpIncrement: "++" | "--">
   | <OpProd : "*" | "%">
   | <FWD: "/">
-
+    | <ELSEIF: "elseif">
  | <Return : "return">
   | <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
   | <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
@@ -81,32 +83,28 @@ void methodOrVariableCaller() #REQUESTER_VAR_METHOD :
 {
  Token t;
 } {
-    LOOKAHEAD(<Identifier> <Point>)
-  (t = <Identifier> methodOrVariableCalled() { jjtThis.value = t.image; })
-  | thisMethodOrVariableCalled() { jjtThis.value = "this"; }
 
-}
-void thisMethodOrVariableCalled() #GET_VAR_METHOD :
-{
- Token t;
-
-} {
-  [<THIS>] t = <Identifier> [methodCallParams()] [methodOrVariableCalled()]
-  {
-  jjtThis.value = t.image;
+  t = <Identifier> (methodOrVariableCalled() |arrayaufruf() [methodCallParams()] [methodOrVariableCalled()] )
+  { jjtThis.value = t.image; }
   }
- }
 
 void methodOrVariableCalled() #GET_VAR_METHOD :
 {
  Token t;
 
 } {
-  <Point> t = <Identifier> [methodCallParams()] [methodOrVariableCalled()]
-  {
-  jjtThis.value = t.image;
-  }
+
+  <Point>(LOOKAHEAD(2) identifier() [methodCallParams()] | methodOrVariableCaller())
+
+
  }
+void arrayaufruf() #Arraycall :
+  {
+
+  } {
+    <LBRACKET> ausdruck() <RBRACKET>
+
+   }
 
 
 void methodCallParams() #GET_METHOD_PARAMS :
@@ -119,7 +117,7 @@ void stmnt() #STATEMENT :
 {}
 {
 LOOKAHEAD(3)
-  block() | whileStmnt()  | forStmnt() | (ausdruck() ";")
+  block() | whileStmnt() | ifstmt() | forStmnt() | (ausdruck() ";")
 }
 
 
@@ -234,21 +232,38 @@ void forStmnt() #For :
 {
    Token start;
 } {
-  start = <For> <RoundBracketOpen> forinit() ";" forcond() ";" foroper() <RoundBracketClose> stmnt()
+  start = <For> <RoundBracketOpen> forinit() (";" forcond() ";" foroper()| ":" identifier() #FOREACH) <RoundBracketClose> stmnt()
+
 
 
 
 }
 
 
-
-
+void ifstmt() #IF :
+{
+   Token start;
+} {
+  start = <IF> <RoundBracketOpen> ausdruck() #CONDITION <RoundBracketClose> stmnt() (elseifstmt())* elsestmt()
+}
+void elseifstmt() #ELSEIF :
+{
+   Token start;
+} {
+  start = <ELSEIF> <RoundBracketOpen> ausdruck() #CONDITION <RoundBracketClose> stmnt()
+}
+void elsestmt() #ELSE :
+{
+   Token start;
+} {
+  start = <ELSE>  stmnt()
+}
 void forinit() #FORINIT :
 {
    Token start;
 } {
 
-   [type() identifier() variable_declaration() |ausdruck() ]
+   [type() identifier() [variable_declaration()] |ausdruck() ]
 
 }
 
@@ -281,6 +296,15 @@ void atomset()  #ATOM_SET:
 <GBracketOpen> set_element() ("," set_element())* <GBracketClose>
 }
 
+void atommap()  #ATOM_MAP:
+{}
+{
+<LBRACKET> map_element() ("," map_element())* <RBRACKET>
+}
+
+
+
+
 void Path()  #ATOM_PATHELEMENT:
 {Token t;
  }
@@ -291,7 +315,11 @@ void Path()  #ATOM_PATHELEMENT:
 {jjtThis.value = t.image;}
 }
 
-
+void map_element() #MAP_ELEMENT:
+{}
+{
+    atom() ":" atom()
+}
 
 // eigentlich unnötig, aber sieht besser aus da sonst die array() Methode mit #ARRAY_ELEMENT vollgespamt wird
 void array_element() #ARRAY_ELEMENT:
@@ -399,6 +427,19 @@ void unaer_post2() #OPERATION_PRIO_14 :
     atom() inc=<OpIncrement> {jjtThis.value = inc.image; }
 }
 
+//void prio15() #void :
+//{ Token inc; }
+//{
+//    LOOKAHEAD(2) atom() | prio152()
+//}
+//
+//void prio152() #ARRAYZUGRIFF :
+//{ Token inc; }
+//{
+//    (LOOKAHEAD(2) methodOrVariableCaller()|identifier()) "[" ausdruck() "]"
+//
+//}
+
 // OPERATION_PRIO_15 () [] . (Parentheses, Array subscript, Member selection)
 void atom() #void :
 {
@@ -412,6 +453,7 @@ void atom() #void :
   | ident=<DoubleLiteral> {jjtThis.value = ident.image; } #ATOM_DBL
   | ident=<BooleanLiteral> {jjtThis.value = ident.image; } #ATOM_BOL
   | ident = <StringLiteral> {jjtThis.value = ident.image; } #ATOM_STRING
-  | array()| atomset()
+  | (LOOKAHEAD(3) array()| atomset()| atommap())
+
   | <RoundBracketOpen> junktoren() <RoundBracketClose>
 }
