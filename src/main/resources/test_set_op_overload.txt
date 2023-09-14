@@ -1,0 +1,5 @@
+void main() {
+    Path p = ./asd/;
+    int x = 32;
+    System.out.println(true + false);
+}

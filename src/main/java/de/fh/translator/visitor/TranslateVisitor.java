@@ -117,7 +117,11 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
     @Override
     public Object visit(ASTKOMPLEX_TYPE node, Object data) {
         String ph = "<{0}>";
-        return MessageFormat.format(ph, childrenToText(node));
+        return MessageFormat.format(ph, replacePrimTypes(childrenToText(node, ", ")));
+    }
+
+    public String replacePrimTypes(String in) {
+        return in.replaceAll("int", "Integer").replaceAll("boolean", "Boolean").replaceAll("double", "Double");
     }
 
     @Override
@@ -136,7 +140,13 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTRETURN node, Object data) {
-        return null;
+        String ph = "return{0};";
+        String children = childrenToText(node);
+
+        if (!children.isEmpty())
+            children = " " + children;
+
+        return MessageFormat.format(ph, children);
     }
 
     @Override
@@ -177,22 +187,26 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTATOM_SET node, Object data) {
-        return null;
+        String ph = "new Set<>({0})";
+        String children = childrenToText(node, ", ");
+
+        return MessageFormat.format(ph, children);
     }
 
     @Override
     public Object visit(ASTATOM_PATHELEMENT node, Object data) {
-        return null;
-    }
+        String ph = "{0}{1}";
+        String children = childrenToText(node);
 
+        if (!children.isEmpty())
+            children = java.io.File.separator + children ;
 
-
-    public Object visit(ASTATOM_ELEMENT node, Object data) {
-        return null;
+        return MessageFormat.format(ph, node.jjtGetValue(), children);
     }
 
     public Object visit(ASTATOM_PATH node, Object data) {
-        return null;
+        String ph = "= new Path(\"{0}\")";
+        return MessageFormat.format(ph, childrenToText(node));
     }
 
     @Override
@@ -202,7 +216,7 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTSET_ELEMENT node, Object data) {
-        return null;
+        return childrenToText(node);
     }
 
     @Override
@@ -223,7 +237,6 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTOPERATION_PRIO_11 node, Object data) {
-        String ph_ConVar = "{0} {1}";
         System.out.println(node.jjtGetParent());
         System.out.println(node.jjtGetNumChildren());
 
