@@ -13,11 +13,13 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
 
     HashMap<VarMethodNames, IClosure<VarMethodNames, VarMethodType, VarValue>> getMethodClosureMap();
 
-    void addBoundVariable(VarMethodNames var, VarMethodType type);
+    IClosure<String, String, Boolean> getChildClosureForMethod(String methodName);
 
-    void addBoundVariableValue(VarMethodNames var, VarValue value);
+    boolean addBoundVariable(VarMethodNames var, VarMethodType type);
 
-    void addBoundMethod(VarMethodNames methodName, VarMethodType type, IClosure<VarMethodNames, VarMethodType, VarValue> closure);
+    boolean addBoundVariableValue(VarMethodNames var, VarValue value);
+
+    boolean addBoundMethod(VarMethodNames methodName, VarMethodType type, IClosure<VarMethodNames, VarMethodType, VarValue> closure);
 
     // Add this method to update a variable's value
     boolean updateVariableValue(VarMethodNames var, VarValue newValue);

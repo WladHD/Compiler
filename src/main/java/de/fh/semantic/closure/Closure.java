@@ -37,21 +37,52 @@ public class Closure implements IClosure<String, String, Boolean> {
     public HashMap<String, IClosure<String, String, Boolean>> getMethodClosureMap() {
         return methodClosureMap;
     }
-
     @Override
-    public void addBoundVariable(String var, String s) {
-
-        variableTypeMap.put(var, s);
+    public IClosure<String, String, Boolean> getChildClosureForMethod(String methodName) {
+        // Retrieve the child closure associated with the given method name
+        return methodClosureMap.get(methodName);
     }
 
     @Override
-    public void addBoundVariableValue(String var, Boolean o) {
-        variableValueMap.put(var, o);
+    public boolean addBoundVariable(String var, String s) {
+
+        boolean itWorked = true;
+        if (!variableTypeMap.containsKey(var)) {
+            // Variable doesn't exist in the current closure, add its value
+            variableTypeMap.put(var, s);
+        } else {
+
+            itWorked = false;
+        }
+        return itWorked;
+
     }
 
     @Override
-    public void addBoundMethod(String methodName, String s, IClosure<String, String, Boolean> closure) {
-        methodReturnTypeMap.put(methodName, s);
+    public boolean addBoundVariableValue(String var, Boolean o) {
+
+        boolean itWorked = true;
+        if (!variableTypeMap.containsKey(var)) {
+            // Variable doesn't exist in the current closure, add its value
+            variableValueMap.put(var, o);
+        } else {
+
+            itWorked = false;
+        }
+        return itWorked;
+    }
+
+    @Override
+    public boolean addBoundMethod(String methodName, String s, IClosure<String, String, Boolean> closure) {
+        boolean itWorked = true;
+        if (!methodReturnTypeMap.containsKey(methodName)) {
+            // Variable doesn't exist in the current closure, add its value
+            methodReturnTypeMap.put(methodName, s);
+        } else {
+
+            itWorked = false;
+        }
+        return itWorked;
     }
 
     @Override
