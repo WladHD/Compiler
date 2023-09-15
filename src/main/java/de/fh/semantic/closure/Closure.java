@@ -53,9 +53,16 @@ public class Closure implements IClosure<String, String, Boolean> {
     public boolean addMethodParameters(String methodName, HashMap<String, String> parameters) {
 
         boolean itWorked = true;
-        if (!methodReturnTypeMap.containsKey(methodName)) {
+        if (methodReturnTypeMap.containsKey(methodName)) {
             // Variable doesn't exist in the current closure, add its value
-            methodParametersMap.put(methodName, parameters);
+            if(!methodParametersMap.containsKey(methodName)){
+
+                methodParametersMap.put(methodName, parameters);
+            } else {
+
+                itWorked = false;
+            }
+
         } else {
 
             itWorked = false;
@@ -82,9 +89,15 @@ public class Closure implements IClosure<String, String, Boolean> {
     public boolean addBoundVariableValue(String var, Boolean o) {
 
         boolean itWorked = true;
-        if (!variableTypeMap.containsKey(var)) {
+        if (variableTypeMap.containsKey(var)) {
             // Variable doesn't exist in the current closure, add its value
-            variableValueMap.put(var, o);
+            if(!variableValueMap.containsKey(var)){
+                variableValueMap.put(var, o);
+            } else {
+
+                itWorked = false;
+            }
+
         } else {
 
             itWorked = false;

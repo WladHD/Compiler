@@ -37,9 +37,9 @@ public interface GodlyTestParserVisitor extends TestParserVisitor {
                 continue;
 
             try {
-                return m.invoke(this, node, node.jjtGetValue());
+                return m.invoke(this, node, data);
             } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException(e);
+                //throw new RuntimeException(e);
             }
         }
 

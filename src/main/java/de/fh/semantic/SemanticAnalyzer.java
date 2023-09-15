@@ -5,10 +5,6 @@ import de.fh.semantic.closure.Closure;
 import de.fh.semantic.err.SemanticException;
 import de.fh.semantic.err.UnknownSemanticException;
 
-import javax.swing.plaf.ColorUIResource;
-import javax.xml.transform.stream.StreamSource;
-import java.lang.reflect.Type;
-import java.sql.Statement;
 import java.util.*;
 
 public class SemanticAnalyzer implements ISemanticAnalyzer<SimpleNode> {
@@ -22,7 +18,17 @@ public class SemanticAnalyzer implements ISemanticAnalyzer<SimpleNode> {
     }
 
     public String doTreeSemanticCheck(SimpleNode rootNode, Closure currentClosure) throws SemanticException{
+        TreeTraverse tv = new TreeTraverse(currentClosure);
+
+        Object errorMessage = tv.visit(rootNode, null);
+        currentClosure = tv.getClosure();
+
+
+        if(!errorMessage.equals("")){
+            throw new UnknownSemanticException(errorMessage.toString());
+        }
         String iDontFuckingKnowHowToNameIt = "";
+        /*
         boolean semanticOK = true;
         String errorMessage = null;
         String rootNodeAsString = rootNode.toString();
@@ -35,7 +41,7 @@ public class SemanticAnalyzer implements ISemanticAnalyzer<SimpleNode> {
                 switch (rootNodeAsString) {
                     case "PROGRAM":
                         for(int i = 0; i < rootNode.jjtGetNumChildren(); i++) {
-                            doTreeSemanticCheck((SimpleNode) rootNode.jjtGetChild(i), currentClosure);
+                            //doTreeSemanticCheck((SimpleNode) rootNode.jjtGetChild(i), currentClosure);
                         }
                         break;
                     case "DECL":
@@ -53,7 +59,7 @@ public class SemanticAnalyzer implements ISemanticAnalyzer<SimpleNode> {
                                     name = returnValue;
                                 }
                                 case "CONCLUDED_VAR_DEC"-> {
-                                    value = collectChildren((SimpleNode) rootNode.jjtGetChild(children).jjtGetChild(0));
+                                    //value = collectChildren((SimpleNode) rootNode.jjtGetChild(children).jjtGetChild(0));
                                 }
                                 case "MethDecl"-> {
                                     isMethod = true;
@@ -65,11 +71,11 @@ public class SemanticAnalyzer implements ISemanticAnalyzer<SimpleNode> {
                         if (!name.isEmpty() && !type.isEmpty() && !isMethod) {
                             currentClosure.addBoundVariable(name, type);
                             if(!(value == null)){
-                                currentClosure.addBoundVariableValue(name, value);
+                                //currentClosure.addBoundVariableValue(name, value);
                             }
                         } else if (!name.isEmpty() && !type.isEmpty() && isMethod) {
 
-                            currentClosure.addBoundMethod(name, type, currentClosure.createNewClosure());
+                            //currentClosure.addBoundMethod(name, type, currentClosure.createNewClosure());
 
                         } else {
                             if (!name.isEmpty() && type.isEmpty()){
@@ -93,19 +99,19 @@ public class SemanticAnalyzer implements ISemanticAnalyzer<SimpleNode> {
                         String varValueStatement = doTreeSemanticCheck((SimpleNode) rootNode.jjtGetChild(0).jjtGetChild(0), currentClosure);
 
 
-                        boolean itWorked = currentClosure.updateVariableValue(varNameStatement, varValueStatement);
+                        //boolean itWorked = currentClosure.updateVariableValue(varNameStatement, varValueStatement);
 
-                        if (!itWorked){
+                        /*if (!itWorked){
                             System.out.println(varNameStatement);
                             System.out.println(varValueStatement);
                             errorMessage = "You tried to Update a Variable that does not exist";
                             semanticOK = false;
                             break;
-                        }
+                        }*//*
 
                         break;
                     case "BLOCK":
-                        doTreeSemanticCheck((SimpleNode) rootNode.jjtGetChild(0), (Closure) currentClosure.createNewClosure());
+                        //doTreeSemanticCheck((SimpleNode) rootNode.jjtGetChild(0), (Closure) currentClosure.createNewClosure());
 
                         break;
                     case "VARIABLE_ASSIGNMENT_PRIO_1":
@@ -174,7 +180,7 @@ public class SemanticAnalyzer implements ISemanticAnalyzer<SimpleNode> {
         //System.out.println(rootNode.jjtGetNumChildren());
         if(!semanticOK){
             throw new UnknownSemanticException(errorMessage);
-        }
+        }*/
         return  iDontFuckingKnowHowToNameIt;
     }
 
@@ -273,7 +279,7 @@ public class SemanticAnalyzer implements ISemanticAnalyzer<SimpleNode> {
 
     private String checkVariableTypeMap (SimpleNode currentChild, Closure currentClosure, boolean CheckForBoundOnly){
         String returnValue = "";
-        AbstractMap.SimpleEntry<String, Object> varTypMap = currentClosure.getVariableTypeAndValue(currentChild.jjtGetValue().toString(), CheckForBoundOnly);
+        AbstractMap.SimpleEntry<String, Boolean> varTypMap = currentClosure.getVariableTypeAndValue(currentChild.jjtGetValue().toString(), CheckForBoundOnly);
 
         if (varTypMap != null) {
             String variableType = varTypMap.getKey();
