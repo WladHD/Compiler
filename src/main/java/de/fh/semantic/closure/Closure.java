@@ -9,6 +9,8 @@ public class Closure implements IClosure<String, String, Boolean> {
     private final HashMap<String, Boolean> variableValueMap;
     private final HashMap<String, String> methodReturnTypeMap;
     private final HashMap<String, IClosure<String, String, Boolean>> methodClosureMap;
+    private final HashMap<String, HashMap<String, String>> methodParametersMap;
+
 
     public Closure(Closure parent) {
         this.parent = parent;
@@ -16,6 +18,7 @@ public class Closure implements IClosure<String, String, Boolean> {
         this.variableValueMap = new HashMap<>();
         this.methodReturnTypeMap = new HashMap<>();
         this.methodClosureMap = new HashMap<>();
+        this.methodParametersMap = new HashMap<>();
     }
 
     @Override
@@ -41,6 +44,23 @@ public class Closure implements IClosure<String, String, Boolean> {
     public IClosure<String, String, Boolean> getChildClosureForMethod(String methodName) {
         // Retrieve the child closure associated with the given method name
         return methodClosureMap.get(methodName);
+    }
+    @Override
+    public HashMap<String, String> getMethodParameters(String methodName) {
+        return methodParametersMap.get(methodName);
+    }
+    @Override
+    public boolean addMethodParameters(String methodName, HashMap<String, String> parameters) {
+
+        boolean itWorked = true;
+        if (!methodReturnTypeMap.containsKey(methodName)) {
+            // Variable doesn't exist in the current closure, add its value
+            methodParametersMap.put(methodName, parameters);
+        } else {
+
+            itWorked = false;
+        }
+        return itWorked;
     }
 
     @Override

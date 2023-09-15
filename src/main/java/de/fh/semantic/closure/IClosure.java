@@ -15,6 +15,10 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
 
     IClosure<String, String, Boolean> getChildClosureForMethod(String methodName);
 
+    HashMap<String, String> getMethodParameters(String methodName);
+
+    boolean addMethodParameters(String methodName, HashMap<String, String> parameters);
+
     boolean addBoundVariable(VarMethodNames var, VarMethodType type);
 
     boolean addBoundVariableValue(VarMethodNames var, VarValue value);
