@@ -13,7 +13,7 @@ public class Main {
     public static void main(String[] args) throws ParseException {
         Compiler<SimpleNode> compiler = new Compiler<>(
                 new LexParser(),
-                new SemanticAnalyzer(),
+                null,
                 new Translator(),
                 true
         );
@@ -23,7 +23,7 @@ public class Main {
             return;
         }
 
-        String source = "test2.txt";
+        String source = "arrays.txt";
         String output = "./src/test/java/TranslatorTemplate.java";
 
         if(args.length > 0) {
