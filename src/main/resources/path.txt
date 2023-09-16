@@ -1,7 +1,7 @@
 void main() {
     /* Path p = D:\Arbeit\testing\test2;
     Path newS = D:\Arbeit\testing\test1;
-    System.out.println(p);
+    System.println(p);
 
     p.moveTo(newS); */
 

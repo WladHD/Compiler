@@ -2,10 +2,9 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Objects;
-import java.util.Scanner;
+import java.util.*;
 
 public class TranslatorTemplate {
 
@@ -15,7 +14,7 @@ public class TranslatorTemplate {
         try {
             mainMethod = Wrapper.class.getDeclaredMethod("main");
         } catch (NoSuchMethodException e) {
-            System.out.println("Es fehlt die main() Methode im Source Code");
+            System.println("Es fehlt die main() Methode im Source Code");
             throw new RuntimeException(e);
         }
 
@@ -33,16 +32,126 @@ public class TranslatorTemplate {
     }
 
     public static class Set<T> {
+        final ArrayList<T> contents;
+
+        @SafeVarargs
+        public Set(T... pContents) {
+            contents = new ArrayList<>();
+            addContents(pContents);
+        }
+
+        public void addAllContents(ArrayList<T> pContents) {
+            contents.addAll(pContents);
+        }
+
+        @SafeVarargs
+        public final void addContents(T... pContents) {
+            for (T pContent : pContents) {
+                if (pContent == null)
+                    continue;
+                contents.add(pContent);
+            }
+        }
+
+        public boolean contains(T element) {
+            return contents.contains(element);
+        }
+
+        public Set<T> add(Set<T> s2) {
+            Set<T> newSet = new Set<>();
+            newSet.addAllContents(this.contents);
+            newSet.addAllContents(s2.contents);
+            return newSet;
+        }
+
+        private Set<T> diff(Set<T> s2) {
+            Set<T> newSet = add(s2);
+
+            for (T in : this.contents) {
+                if (s2.contains(in))
+                    newSet.contents.remove(in);
+            }
+
+            for (T in : s2.contents) {
+                if (this.contains(in))
+                    newSet.contents.remove(in);
+            }
+
+            return newSet;
+        }
+
+        private Set<T> inter(Set<T> s2) {
+            Set<T> newSet = new Set<>();
+
+            for (T in : this.contents) {
+                if (s2.contains(in))
+                    newSet.addContents(in);
+            }
+
+            return newSet;
+        }
+
+        public String toString() {
+            return Arrays.toString(contents.toArray());
+        }
+    }
+
+    public static class System {
+
+        @Deprecated
+        public static OutputStream out = java.lang.System.out;
+
+        @Deprecated
+        public static InputStream in = java.lang.System.in;
+
+        public static void print(Object s) {
+            java.lang.System.out.print(s.toString());
+        }
+
+        public static void println(Object s) {
+            java.lang.System.out.println(s.toString());
+        }
+
+        public static String readString() {
+            return new Scanner(java.lang.System.in).nextLine();
+        }
     }
 
     public static class Map<TA, TB> {
 
-        public Map() {
+        private final HashMap<TA, TB> hashMap;
 
+        public Map() {
+            hashMap = new HashMap<>();
         }
 
         public Map(Pair<TA, TB>... pairs) {
+            hashMap = new HashMap<>();
 
+            for (Pair<TA, TB> p : pairs)
+                hashMap.put(p.getKey(), p.getValue());
+        }
+
+        public boolean containsKey(TA key) {
+            return hashMap.containsKey(key);
+        }
+
+        public TB get(TA key) {
+            return hashMap.get(key);
+        }
+
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("{ ");
+
+            for (TA key : hashMap.keySet()) {
+                sb.append("(").append(key.toString()).append(", ").append(hashMap.get(key)).append(") ");
+            }
+
+            sb.append("}");
+
+            return sb.toString();
         }
     }
 
@@ -108,10 +217,10 @@ public class TranslatorTemplate {
 
     // TODO test
     public static class Path {
+        private final String currentPath;
         public Files[] files;
         public String[] name;
         private java.io.File current;
-        private final String currentPath;
 
         public Path(String s) {
             this.currentPath = s;
@@ -119,8 +228,8 @@ public class TranslatorTemplate {
         }
 
         private static boolean ask() {
-            System.out.println("Es soll eine Verzeichnisoperation durchgeführt werden. Fortfahren? [Y, J / N]");
-            String s = new Scanner(System.in).nextLine();
+            System.println("Es soll eine Verzeichnisoperation durchgeführt werden. Fortfahren? [Y, J / N]");
+            String s = System.readString();
             return s.equalsIgnoreCase("Y") || s.equalsIgnoreCase("J");
         }
 
@@ -154,8 +263,8 @@ public class TranslatorTemplate {
         }
 
         public void remove() {
-            System.out.println("Removing path " + this);
-            System.out.println("REMOVING: " + current.getAbsolutePath());
+            System.println("Removing path " + this);
+            System.println("REMOVING: " + current.getAbsolutePath());
             if (ask()) {
                 PathUtils.deleteDirectory(current);
             }
@@ -165,10 +274,10 @@ public class TranslatorTemplate {
         }
 
         public void copyTo(Path p) {
-            System.out.println("Copy path " + this + " to " + p);
+            System.println("Copy path " + this + " to " + p);
 
             try {
-                System.out.println("COPY FROM " + current.getAbsolutePath() + " TO " + p.current.getAbsolutePath());
+                System.println("COPY FROM " + current.getAbsolutePath() + " TO " + p.current.getAbsolutePath());
                 if (ask())
                     PathUtils.copyDirectoryCompatibityMode(current, p.current);
             } catch (IOException e) {
@@ -177,7 +286,7 @@ public class TranslatorTemplate {
         }
 
         public void moveTo(Path p) {
-            System.out.println("Move path " + this + " to " + p);
+            System.println("Move path " + this + " to " + p);
             copyTo(p);
             remove();
         }
@@ -190,39 +299,39 @@ public class TranslatorTemplate {
 
     // TODO test
     public static class Files {
-        public String type;
-        public String name;
-        public Path path;
+        public final String type;
+        public final String name;
+        public final Path path;
         private java.io.File current;
 
         public Files(Path path, java.io.File f) {
             this.path = path;
             this.current = f;
-            update();
-        }
-
-        public void update() {
             this.type = current.isFile() ? "file" : "dir";
             this.name = current.getName();
         }
 
         public void remove() {
-            System.out.println("Removing " + this);
+            System.println("Removing " + this);
             path.remove();
         }
 
         public void rename(String s) {
-            System.out.println("Renaming " + this);
+            System.println("Renaming " + this);
             path.moveTo(new Path(current.getParent() + File.separator + s));
         }
 
         public void moveTo(Path p) {
-            System.out.println("Moving " + this + " to " + p);
+            System.println("Moving " + this + " to " + p);
             path.moveTo(p);
         }
 
         public String getContent() {
-            return "CONTENT " + name;
+            try {
+                return new String(java.nio.file.Files.readAllBytes(Paths.get(current.getAbsolutePath())));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         @Override
