@@ -8,6 +8,8 @@ import de.fh.translator.Translator;
 import de.fh.translator.sandbox.TranslatorTemplate;
 
 public class Main {
+    private final static boolean standalone = false;
+
     public static void main(String[] args) throws ParseException {
         Compiler<SimpleNode> compiler = new Compiler<>(
                 new LexParser(),
@@ -16,14 +18,19 @@ public class Main {
                 true
         );
 
-        int y = 4;
-        int x = y++ + -3;
+        if(standalone && args.length == 0) {
+            System.out.println("<Pfad zu Source Datei> [Optional: Pfad zu Output Datei]");
+            return;
+        }
 
-        x = y += 23;
+        String source = "test2.txt";
+        String output = "./src/test/java/TranslatorTemplate.java";
 
-        int[] asd = new int[] { y, y++, y += 2 };
-        int xd = 'a' - 'b';
+        if(args.length > 0) {
+            source = args[0];
+            output = args.length > 1 ? args[1] : null;
+        }
 
-        compiler.executePipelineFromResource("test2.txt", null);
+        compiler.executePipelineFromResource(source, output);
     }
 }

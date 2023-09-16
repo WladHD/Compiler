@@ -44,8 +44,6 @@ public class Compiler<T extends Node> implements ICompiler<T> {
 
     @Override
     public void executePipeline(InputStream is, String outputPath) {
-        outputPath = "./src/test/java/TranslatorTemplate.java";
-
         if (debug)
             System.out.println("[RUNNING IN DEBUG MODE]");
         System.out.println("Starte lexikalische und syntaktische Analyse ...");
@@ -82,20 +80,22 @@ public class Compiler<T extends Node> implements ICompiler<T> {
             String javaCodeSource = getTranslator().getJavaCode(rootNode);
             System.out.println(javaCodeSource);
             System.out.println("Erfolgreich");
-            System.out.println("Starte Übersetzung zu Java Byte Code ... ");
+
+            /* System.out.println("Starte Übersetzung zu Java Byte Code ... ");
             byte[] javaCodeCompiler = getTranslator().getJavaByteCode(javaCodeSource);
             System.out.println("Erfolgreich");
-            // TODO SAVE BYTECODE ... maybe source as well?
+            // TODO SAVE BYTECODE ... maybe source as well?*/
 
-            System.out.printf("Unter '%s' gespeichert%n", outputPath);
-
-            try(PrintWriter out = new PrintWriter(outputPath)) {
-                out.println(javaCodeSource);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
+            if (outputPath != null) {
+                System.out.println("Speichere generierten Java Source Code ... ");
+                try (PrintWriter out = new PrintWriter(outputPath)) {
+                    out.println(javaCodeSource);
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+                System.out.printf("Unter '%s' gespeichert%n", outputPath);
             }
         }
-
 
 
     }
