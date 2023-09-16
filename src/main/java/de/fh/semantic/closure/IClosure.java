@@ -23,12 +23,22 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
 
     boolean addBoundVariableValue(VarMethodNames var, VarValue value);
 
+    void addBoundVariableValueWithoutCheck(String var, Boolean o);
+
     boolean addBoundMethod(VarMethodNames methodName, VarMethodType type, IClosure<VarMethodNames, VarMethodType, VarValue> closure);
 
     // Add this method to update a variable's value
     boolean updateVariableValue(VarMethodNames var, VarValue newValue);
 
     IClosure<VarMethodNames, VarMethodType, VarValue> getParent();
+
+    boolean methodExists(String methodName);
+
+    boolean variableExists(String varName);
+
+    boolean parameterExists(String methodName, String paramName);
+
+    String getParameterType(String methodName, String paramName);
 
     AbstractMap.SimpleEntry<VarMethodType, VarValue> getVariableTypeAndValue(VarMethodNames varName, boolean checkOnlyBoundVariables);
 

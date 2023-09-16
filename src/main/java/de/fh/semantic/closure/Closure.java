@@ -51,39 +51,66 @@ public class Closure implements IClosure<String, String, Boolean> {
     }
     @Override
     public boolean addMethodParameters(String methodName, HashMap<String, String> parameters) {
-
         boolean itWorked = true;
-        if (methodReturnTypeMap.containsKey(methodName)) {
-            // Variable doesn't exist in the current closure, add its value
-            if(!methodParametersMap.containsKey(methodName)){
 
+
+            if (!methodParametersMap.containsKey(methodName)) {
+                // If there are no existing parameters for the method, add the provided parameters
                 methodParametersMap.put(methodName, parameters);
             } else {
+                // Parameters already exist for the method
+                // Check if any of the new parameter names already exist
+                for (String paramName : parameters.keySet()) {
+                    if (methodParametersMap.get(methodName).containsKey(paramName)) {
+                        itWorked = false;
+                        break; // Parameter name already exists, exit loop
+                    }
+                }
 
-                itWorked = false;
+                // If all new parameter names are unique, add them
+                if (itWorked) {
+                    methodParametersMap.get(methodName).putAll(parameters);
+                }
             }
 
-        } else {
 
-            itWorked = false;
-        }
         return itWorked;
     }
 
-    @Override
+
     public boolean addBoundVariable(String var, String s) {
-
         boolean itWorked = true;
-        if (!variableTypeMap.containsKey(var)) {
-            // Variable doesn't exist in the current closure, add its value
-            variableTypeMap.put(var, s);
-        } else {
 
+        // Check if the variable exists in method parameters (including nested HashMaps)
+        if (containsKeyInNestedMap(methodParametersMap, var)) {
             itWorked = false;
-        }
-        return itWorked;
+        } else if (!variableTypeMap.containsKey(var)) {
+            // If the variable doesn't exist in the current closure, check the parent closure
+            if (parent != null) {
+                itWorked = parent.addBoundVariable(var, s);
+            }
 
+            if (itWorked) {
+                // If the variable doesn't exist in the parent closure either, add its value to the current closure
+                variableTypeMap.put(var, s);
+            }
+        } else {
+            itWorked = false; // Variable already exists in the current closure
+        }
+
+        return itWorked;
     }
+
+    // Helper method to check if a key exists in nested HashMaps
+    private boolean containsKeyInNestedMap(HashMap<String, HashMap<String, String>> nestedMap, String key) {
+        for (HashMap<String, String> innerMap : nestedMap.values()) {
+            if (innerMap.containsKey(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     @Override
     public boolean addBoundVariableValue(String var, Boolean o) {
@@ -104,13 +131,18 @@ public class Closure implements IClosure<String, String, Boolean> {
         }
         return itWorked;
     }
-
+    @Override
+    public void addBoundVariableValueWithoutCheck(String var, Boolean o) {
+        variableValueMap.put(var, o);
+    }
     @Override
     public boolean addBoundMethod(String methodName, String s, IClosure<String, String, Boolean> closure) {
         boolean itWorked = true;
         if (!methodReturnTypeMap.containsKey(methodName)) {
             // Variable doesn't exist in the current closure, add its value
             methodReturnTypeMap.put(methodName, s);
+            // Save the provided closure in the methodClosureMap under the method name
+            methodClosureMap.put(methodName, closure);
         } else {
 
             itWorked = false;
@@ -127,7 +159,7 @@ public class Closure implements IClosure<String, String, Boolean> {
             variableValueMap.put(var, newValue);
         } else if (parent != null) {
             // Variable not found in the current closure, check parent closures recursively
-            parent.updateVariableValue(var, newValue);
+            itWorked = parent.updateVariableValue(var, newValue);
         } else {
 
             itWorked = false;
@@ -138,7 +170,48 @@ public class Closure implements IClosure<String, String, Boolean> {
     public IClosure<String, String, Boolean> getParent() {
         return parent;
     }
+    @Override
+    public boolean methodExists(String methodName) {
+        return methodReturnTypeMap.containsKey(methodName);
+    }
+    @Override
+    public boolean variableExists(String varName) {
+        return variableTypeMap.containsKey(varName);
+    }
+    @Override
+    public boolean parameterExists(String methodName, String paramName) {
+        // Check if the method exists in the closure
+        if (methodParametersMap.containsKey(methodName)) {
+            // Check if the parameter exists for the specified method
+            HashMap<String, String> parameters = methodParametersMap.get(methodName);
+            return parameters.containsKey(paramName);
+        }
+        return false; // Method or parameter not found
+    }
 
+    @Override
+    public String getParameterType(String methodName, String paramName) {
+        // Check if the method exists in the current closure
+        if (methodParametersMap.containsKey(methodName)) {
+            // Get the parameter map for the specified method
+            HashMap<String, String> parameters = methodParametersMap.get(methodName);
+
+            // Check if the parameter exists in the method's parameter map
+            if (parameters.containsKey(paramName)) {
+                return parameters.get(paramName); // Return the parameter type
+            }
+        }
+
+        // If the method or parameter was not found in the current closure, check parent closures
+        if (parent != null) {
+            String parentParamType = parent.getParameterType(methodName, paramName);
+            if (parentParamType != null) {
+                return parentParamType; // Return the parameter type from the parent closure
+            }
+        }
+
+        return null; // Method or parameter not found in the current closure or its parents
+    }
     @Override
     public AbstractMap.SimpleEntry<String, Boolean> getVariableTypeAndValue(String varName, boolean checkOnlyBoundVariables) {
 
