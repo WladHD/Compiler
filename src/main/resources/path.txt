@@ -1,7 +1,10 @@
-int i = 0;
-Path p = ../asd;
-
 void main() {
-    p.remove();
-    String s = " asdsd asd asd asd asda sdsd asd";
+    /* Path p = D:\Arbeit\testing\test2;
+    Path newS = D:\Arbeit\testing\test1;
+    System.out.println(p);
+
+    p.moveTo(newS); */
+
+    Path deleteMe = D:\Arbeit\testing\test1\testHELLO;
+    deleteMe.remove();
 }

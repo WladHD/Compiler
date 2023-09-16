@@ -1,14 +1,22 @@
 int x = 5;
 int y;
 int z = y = x++ + x / 2;
+
 z++;
 boolean sdf = !true;
 
-
+char asd = 'x';
+String myString = "sdfsdf";
 int x = [1, 2, 3 + 3, 4, [getName(), 6, 7, [8]]];
 
 void main() {
     int x = 4;
+}
+
+if(true) {
+    int i = 4;
+} else {
+    int i = 5;
 }
 
 void y(int x, Set<int> b){
@@ -18,6 +26,9 @@ Object.getName(false).lengthFromTo(x,x, 2+3+5);
 Set<int> generateDictionary(String x) {
     int i = 4;
     return Hurensohn;
+}
+
+for(String s : sdf) {
 }
 
 for(; ;) {

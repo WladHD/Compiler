@@ -44,6 +44,8 @@ public class Compiler<T extends Node> implements ICompiler<T> {
 
     @Override
     public void executePipeline(InputStream is, String outputPath) {
+        outputPath = "./src/test/java/TranslatorTemplate.java";
+
         if (debug)
             System.out.println("[RUNNING IN DEBUG MODE]");
         System.out.println("Starte lexikalische und syntaktische Analyse ...");
@@ -87,7 +89,7 @@ public class Compiler<T extends Node> implements ICompiler<T> {
 
             System.out.printf("Unter '%s' gespeichert%n", outputPath);
 
-            try(PrintWriter out = new PrintWriter("./src/test/java/Translated.java")) {
+            try(PrintWriter out = new PrintWriter(outputPath)) {
                 out.println(javaCodeSource);
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);

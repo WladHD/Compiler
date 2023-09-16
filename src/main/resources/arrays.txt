@@ -1,0 +1,11 @@
+
+void main() {
+    int[] asd = [1, 2, 3, 4];
+    int sd = asd[2];
+
+    Map<String, String> myMap = [ "key1": "value1", "key2": "value2"];
+
+    if(true) {
+        int i = 4;
+    }
+}

@@ -5,13 +5,10 @@ import de.fh.utils.ClassLoaderReader;
 import de.fh.utils.GodlyTestParserVisitor;
 
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 public class TranslateVisitor implements GodlyTestParserVisitor {
 
     public final static String LINE_SEPARATOR = "\n\t   ";
-    private boolean fancyFlag = false;
 
 
     private String childrenToText(SimpleNode root) {
@@ -25,12 +22,7 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
             for (int i = 0; i < root.jjtGetNumChildren(); ++i) {
                 SimpleNode n = (SimpleNode) root.jjtGetChild(i);
                 if (n != null) {
-                    Object val = visit(n, n.jjtGetValue());
-
-                    if (fancyFlag) {
-                        fancyFlag = false;
-                        return (String) val;
-                    }
+                    Object val = visit(n, null);
 
                     carry.append(val == null ? "/* ?" + n.getClass().getSimpleName() + "? */" : val);
 
@@ -54,18 +46,19 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
     @Override
     public Object visit(ASTREQUESTER_VAR_METHOD node, Object data) {
         String ph = "{0}{1}";
-        return MessageFormat.format(ph, data, childrenToText(node));
+        return MessageFormat.format(ph, node.jjtGetValue(), childrenToText(node));
     }
 
     @Override
     public Object visit(ASTARRAYAUFRUF node, Object data) {
-        return null;
+        String ph = "[{0}]";
+        return MessageFormat.format(ph, childrenToText(node));
     }
 
     @Override
     public Object visit(ASTGET_VAR_METHOD node, Object data) {
-        String ph = ".{0}{1}";
-        return MessageFormat.format(ph, data, childrenToText(node, ""));
+        String ph = "{0}{1}";
+        return MessageFormat.format(ph, node.jjtGetValue(), childrenToText(node, ""));
     }
 
     @Override
@@ -81,9 +74,8 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTSTATEMENT node, Object data) {
-        // TODO WHILE Statement in andere Node einteilen
-        String ph = "{0};{1}";
-        return MessageFormat.format(ph, childrenToText(node), LINE_SEPARATOR);
+        String ph = "{0}{2}{1}";
+        return MessageFormat.format(ph, childrenToText(node), LINE_SEPARATOR, node.jjtGetValue());
     }
 
     @Override
@@ -116,13 +108,18 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
     @Override
     public Object visit(ASTTYPE node, Object data) {
         String ph = "{0}{1}";
-        return MessageFormat.format(ph, data, childrenToText(node));
+        return MessageFormat.format(ph, node.jjtGetValue(), childrenToText(node));
     }
 
     @Override
     public Object visit(ASTKOMPLEX_TYPE node, Object data) {
         String ph = "<{0}>";
         return MessageFormat.format(ph, replacePrimTypes(childrenToText(node, ", ")));
+    }
+
+    @Override
+    public Object visit(ASTTYPE_ARRAY node, Object data) {
+        return "[]";
     }
 
     public String replacePrimTypes(String in) {
@@ -134,7 +131,7 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
         String children = childrenToText(node);
         String ph = "{0}" + (children.isEmpty() ? "" : " ") + "{1}";
 
-        return MessageFormat.format(ph, data, children);
+        return MessageFormat.format(ph, node.jjtGetValue(), children);
     }
 
     @Override
@@ -156,47 +153,66 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTWHILE node, Object data) {
-        return null;
+        String ph = "while ({0}) {1}";
+        return MessageFormat.format(ph, visit((SimpleNode) node.jjtGetChild(0), null), visit((SimpleNode) node.jjtGetChild(1), null), LINE_SEPARATOR);
     }
 
     @Override
     public Object visit(ASTCONDITION node, Object data) {
-        return null;
+        return childrenToText(node);
     }
 
     @Override
-    public Object visit(ASTFor node, Object data) {
-        return null;
+    public Object visit(ASTFOR node, Object data) {
+        String ph = "for ({0}) {1}";
+        return MessageFormat.format(ph, visit((SimpleNode) node.jjtGetChild(0), null), visit((SimpleNode) node.jjtGetChild(1), null), LINE_SEPARATOR);
     }
 
     @Override
-    public Object visit(ASTFOREACH node, Object data) {
-        return null;
+    public Object visit(ASTFOR_BODY node, Object data) {
+        return childrenToText(node);
+    }
+
+    @Override
+    public Object visit(ASTFOR_BODY_NORMAL node, Object data) {
+        return childrenToText(node, "; ");
+    }
+
+    @Override
+    public Object visit(ASTFOR_BODY_EACH node, Object data) {
+        return childrenToText(node, " : ");
     }
 
     @Override
     public Object visit(ASTIF node, Object data) {
-        return null;
+        String ph = "if ({0}) {1}{2}";
+        return MessageFormat.format(ph,
+                visit((SimpleNode) node.jjtGetChild(0), null),
+                visit((SimpleNode) node.jjtGetChild(1), null),
+                node.jjtGetNumChildren() == 3 ? visit((SimpleNode) node.jjtGetChild(2), null) : "");
+
     }
 
     @Override
     public Object visit(ASTELSE node, Object data) {
-        return null;
+        String ph = " else {0}";
+        return MessageFormat.format(ph, childrenToText(node), LINE_SEPARATOR);
+
     }
 
     @Override
     public Object visit(ASTFORINIT node, Object data) {
-        return null;
+        return childrenToText(node);
     }
 
     @Override
     public Object visit(ASTFORCOND node, Object data) {
-        return null;
+        return childrenToText(node);
     }
 
     @Override
     public Object visit(ASTFOROPER node, Object data) {
-        return null;
+        return childrenToText(node);
     }
 
     @Override
@@ -215,33 +231,38 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTATOM_MAP node, Object data) {
-        return null;
+        String ph = "new Map<>({0})";
+        return MessageFormat.format(ph, childrenToText(node, ", "));
     }
 
     @Override
     public Object visit(ASTATOM_PATHELEMENT node, Object data) {
         String ph = "{0}{1}";
         String children = childrenToText(node);
+        String separator = java.io.File.separator;
+        if(separator.equals("\\"))
+            separator = "\\\\";
 
         if (!children.isEmpty())
-            children = java.io.File.separator + children;
+            children = separator + children;
 
         return MessageFormat.format(ph, node.jjtGetValue(), children);
     }
 
     @Override
     public Object visit(ASTMAP_PAIR node, Object data) {
-        return null;
+        String ph = "new Pair<>({0})";
+        return MessageFormat.format(ph, childrenToText(node, ", "));
     }
 
     @Override
     public Object visit(ASTMAP_KEY node, Object data) {
-        return null;
+        return childrenToText(node);
     }
 
     @Override
     public Object visit(ASTMAP_VALUE node, Object data) {
-        return null;
+        return childrenToText(node);
     }
 
     public Object visit(ASTATOM_PATH node, Object data) {
@@ -262,78 +283,48 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
     @Override
     public Object visit(ASTVARIABLE_ASSIGNMENT_PRIO_1 node, Object data) {
         String ph_ConVar = "{0} {1}";
-        return MessageFormat.format(ph_ConVar, data, childrenToText(node));
+        return MessageFormat.format(ph_ConVar, node.jjtGetValue(), childrenToText(node));
     }
 
     @Override
     public Object visit(ASTOPERATION_PRIO_4_AND_3 node, Object data) {
-        return null;
+        String ph_ConVar = "{0} {1}";
+        return MessageFormat.format(ph_ConVar, node.jjtGetValue(), childrenToText(node));
     }
 
     @Override
     public Object visit(ASTOPERATION_PRIO_9 node, Object data) {
-        return null;
+        String ph_ConVar = "{0} {1}";
+        return MessageFormat.format(ph_ConVar, node.jjtGetValue(), childrenToText(node));
     }
 
     @Override
     public Object visit(ASTOPERATION_PRIO_11 node, Object data) {
-        System.out.println(node.jjtGetParent());
-        System.out.println(node.jjtGetNumChildren());
-
-        ArrayList<SimpleNode> sn = childrenToArray((SimpleNode) node.jjtGetParent());
-
-        System.out.println(Arrays.toString(sn.toArray()));
-
-        ArrayList<Object> current = new ArrayList<>();
-        current.add(visit(sn.get(0), null));
-
-        for (int i = 1; i < sn.size(); i++) {
-            if (sn.get(i) instanceof ASTOPERATION_PRIO_11 a) {
-                current.add(0, a.jjtGetValue());
-
-                current.add(2, (a.jjtGetNumChildren() == 1 ? visit((SimpleNode) a.jjtGetChild(0), null) : childrenToText(a)));
-
-
-                ArrayList<Object> temp = new ArrayList<>();
-                String template = "OpOverload.p11(''{0}'', {1}, {2})";
-                temp.add(MessageFormat.format(template, current.get(0), current.get(1), current.get(2)));
-
-                current = temp;
-
-            } else {
-                current.set(0, current.get(0).toString() + " " + visit(sn.get(i), null).toString());
-            }
-        }
-
-        fancyFlag = true;
-
-        System.out.println(current.get(0));
-
-
-        return current.get(0);
+        String ph_ConVar = "{0} {1}";
+        return MessageFormat.format(ph_ConVar, node.jjtGetValue(), childrenToText(node));
     }
 
     @Override
     public Object visit(ASTOPERATION_PRIO_12 node, Object data) {
         String ph_ConVar = "{0} {1}";
-        return MessageFormat.format(ph_ConVar, data, childrenToText(node));
+        return MessageFormat.format(ph_ConVar, node.jjtGetValue(), childrenToText(node));
     }
 
     @Override
     public Object visit(ASTOPERATION_PRIO_13 node, Object data) {
         String ph_ConVar = "{0}{1}";
-        return MessageFormat.format(ph_ConVar, data, childrenToText(node));
+        return MessageFormat.format(ph_ConVar, node.jjtGetValue(), childrenToText(node));
     }
 
     @Override
     public Object visit(ASTOPERATION_PRIO_14 node, Object data) {
         String ph_ConVar = "{0}{1}";
-        return MessageFormat.format(ph_ConVar, childrenToText(node), data);
+        return MessageFormat.format(ph_ConVar, childrenToText(node), node.jjtGetValue());
     }
 
     @Override
     public Object visit(ASTATOM_VARIABLE node, Object data) {
-        return data;
+        return node.jjtGetValue();
     }
 
     @Override
@@ -343,16 +334,18 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTATOM_BOL node, Object data) {
-        return data;
+        return node.jjtGetValue();
     }
 
     @Override
     public Object visit(ASTATOM_STRING node, Object data) {
-        return null;
+        String ph_ConVar = "{0}";
+        return MessageFormat.format(ph_ConVar, node.jjtGetValue());
     }
 
     @Override
     public Object visit(ASTATOM_CHAR node, Object data) {
-        return null;
+        String ph_ConVar = "{0}";
+        return MessageFormat.format(ph_ConVar, node.jjtGetValue());
     }
 }
