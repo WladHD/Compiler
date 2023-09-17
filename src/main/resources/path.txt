@@ -1,10 +1,7 @@
 void main() {
-    /* Path p = D:\Arbeit\testing\test2;
-    Path newS = D:\Arbeit\testing\test1;
-    System.println(p);
+    Path p = D:\Arbeit\testing\test2;
+    Path newS = D:\Arbeit\testing\test1\test.txt;
 
-    p.moveTo(newS); */
-
-    Path deleteMe = D:\Arbeit\testing\test1\testHELLO;
-    deleteMe.remove();
+    System.println(newS);
+    System.println(newS.files[0].getContent());
 }
