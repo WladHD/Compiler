@@ -318,7 +318,10 @@ Token t1 = null;
 
 {
 
-     (t = <PathLiteral> | t = <Point> | t = <Identifier> {jjtThis.value = t.image;}  ["." t1= <Identifier>]{jjtThis.value =  (t.image +  (t1 != null ? "." + t1.image : ""));} )[("/" | "\\") [Path()]]
+     (
+    t = <PathLiteral> {jjtThis.value = t.image;} |
+    t = <Point> {jjtThis.value = t.image;}|
+    t = <Identifier> ["." t1= <Identifier>]{jjtThis.value = (t.image +  (t1 != null ? "." + t1.image : ""));}) [("/" | "\\") [Path()]]
 
 }
 
