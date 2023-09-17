@@ -50,8 +50,9 @@ TOKEN : {
   | <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
   | <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
   | <StringLiteral: "\""(~["\"","\n"])*"\"" >
-  | <CharLiteral:"'" (~["'","\n"]) "'" >
-  |<PathLiteral:".."|  ["A"-"Z"] ":">
+  | <CharLiteral:"'"(["'","\n"])"'" >
+  |<PathLiteral:".."|  ["A"-"Z"]":">
+
 }
 
 
@@ -107,11 +108,10 @@ void methodCallParams() #GET_METHOD_PARAMS :
 }
 
 void stmnt() #STATEMENT :
-{Token t = null;}
+{}
 {
-  (LOOKAHEAD(block()) block() | whileStmnt() | ifstmt() | forStmnt() | ausdruck() t = ";")
-  {jjtThis.value = (t == null ? "" : t.image);}
-
+LOOKAHEAD(3)
+  block() | whileStmnt() | ifstmt() | forStmnt() | (ausdruck() ";")
 }
 
 
@@ -159,7 +159,7 @@ void type() #TYPE :
   Token t;
 }
 {
-  ((t = <TypeSpecifiers> type_array()) | (t = <TypeSet> Set() type_array()) | (t = <TypeMap> Map() type_array()))
+  (        t =<TypeSpecifiers> | t = <TypeSet> Set() | t = <TypeMap> Map())
 
 
   {
@@ -172,12 +172,13 @@ void typePath() #TYPE :
   Token t;
 }
 {
-  t = <TypePath> type_array()
+  t = <TypePath>
 
 
   {
       jjtThis.value = t.image;
   }
+
 }
 
 
@@ -190,12 +191,6 @@ void Map() #KOMPLEX_TYPE :
 {}
 {
    <LessThan> type() "," type() <GreaterThan>
-}
-
-void type_array() #void :
-{}
-{
-    ["[]" #TYPE_ARRAY]
 }
 
 void identifier() #VAR_METHOD_NAME :
@@ -227,23 +222,15 @@ void whileStmnt() #WHILE :
   start = <While> <RoundBracketOpen> ausdruck() #CONDITION <RoundBracketClose> stmnt()
 }
 
-void forStmnt() #FOR :
+void forStmnt() #For :
 {
    Token start;
 } {
-  start = <For> <RoundBracketOpen> (LOOKAHEAD(3) forStmntBody() | forStmntBodyEach()) #FOR_BODY <RoundBracketClose> stmnt()
-}
+  start = <For> <RoundBracketOpen> forinit() (";" forcond() ";" foroper()| ":" identifier() #FOREACH) <RoundBracketClose> stmnt()
 
-void forStmntBody() #FOR_BODY_NORMAL : {
-}
-{
-    forinit() ";" forcond() ";" foroper()
-}
 
-void forStmntBodyEach() #FOR_BODY_EACH : {
-}
-{
-    forinit() ":" ausdruck()
+
+
 }
 
 
@@ -251,14 +238,14 @@ void ifstmt() #IF :
 {
    Token start;
 } {
-  start = <IF> <RoundBracketOpen> ausdruck() #CONDITION <RoundBracketClose> stmnt() [LOOKAHEAD(<ELSE>) elsestmt()]
+  start = <IF> <RoundBracketOpen> ausdruck() #CONDITION <RoundBracketClose> stmnt() elsestmt()
 }
 
 void elsestmt() #ELSE :
 {
    Token start;
 } {
-  start = <ELSE> stmnt()
+  start = <ELSE>  stmnt()
 }
 void forinit() #FORINIT :
 {
@@ -313,12 +300,13 @@ void atommap()  #ATOM_MAP:
 
 void Path()  #ATOM_PATHELEMENT:
 {Token t;
+Token t1 = null;
  }
 
 {
 
-     (t = <PathLiteral> | t = <Point> | t = <Identifier> )[("/" | "\\") [Path()]]
-{jjtThis.value = t.image;}
+     (t = <PathLiteral> | t = <Point> | t = <Identifier> {jjtThis.value = t.image;}  ["." t1= <Identifier>]{jjtThis.value =  (t.image +  "." + t1.image);} )[("/" | "\\") [Path()]]
+
 }
 
 void map_element() #MAP_PAIR:
