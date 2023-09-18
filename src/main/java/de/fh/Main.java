@@ -13,12 +13,12 @@ public class Main {
     public static void main(String[] args) throws ParseException {
         Compiler<SimpleNode> compiler = new Compiler<>(
                 new LexParser(),
-                null,
+                new SemanticAnalyzer(),
                 new Translator(),
                 true
         );
 
-        if(standalone && args.length == 0) {
+        if (standalone && args.length == 0) {
             System.out.println("<Pfad zu Source Datei> [Optional: Pfad zu Output Datei]");
             return;
         }
@@ -26,7 +26,7 @@ public class Main {
         String source = "arrays.txt";
         String output = "./src/test/java/TranslatorTemplate.java";
 
-        if(args.length > 0) {
+        if (args.length > 0) {
             source = args[0];
             output = args.length > 1 ? args[1] : null;
         }
