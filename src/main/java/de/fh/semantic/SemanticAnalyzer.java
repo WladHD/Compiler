@@ -14,7 +14,6 @@ public class SemanticAnalyzer implements ISemanticAnalyzer<SimpleNode> {
         Closure mainClosure = new Closure(null);
         doTreeSemanticCheck(rootNode, mainClosure);
 
-
     }
 
     public String doTreeSemanticCheck(SimpleNode rootNode, Closure currentClosure) throws SemanticException{

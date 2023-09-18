@@ -36,6 +36,10 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
 
     boolean variableExists(String varName);
 
+    boolean variableExistsAnywhere(String varName);
+
+    AbstractMap.SimpleEntry<Boolean, String> getVariableTypeAnywhere(String varName);
+
     boolean parameterExists(String methodName, String paramName);
 
     String getParameterType(String methodName, String paramName);

@@ -117,10 +117,6 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
         return MessageFormat.format(ph, replacePrimTypes(childrenToText(node, ", ")));
     }
 
-    @Override
-    public Object visit(ASTTYPE_ARRAY node, Object data) {
-        return "[]";
-    }
 
     public String replacePrimTypes(String in) {
         return in.replaceAll("int", "Integer").replaceAll("boolean", "Boolean").replaceAll("double", "Double");
@@ -163,24 +159,13 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
     }
 
     @Override
-    public Object visit(ASTFOR node, Object data) {
-        String ph = "for ({0}) {1}";
-        return MessageFormat.format(ph, visit((SimpleNode) node.jjtGetChild(0), null), visit((SimpleNode) node.jjtGetChild(1), null), LINE_SEPARATOR);
+    public Object visit(ASTFor node, Object data) {
+        return null;
     }
 
     @Override
-    public Object visit(ASTFOR_BODY node, Object data) {
-        return childrenToText(node);
-    }
-
-    @Override
-    public Object visit(ASTFOR_BODY_NORMAL node, Object data) {
-        return childrenToText(node, "; ");
-    }
-
-    @Override
-    public Object visit(ASTFOR_BODY_EACH node, Object data) {
-        return childrenToText(node, " : ");
+    public Object visit(ASTFOREACH node, Object data) {
+        return null;
     }
 
     @Override
@@ -348,4 +333,5 @@ public class TranslateVisitor implements GodlyTestParserVisitor {
         String ph_ConVar = "{0}";
         return MessageFormat.format(ph_ConVar, node.jjtGetValue());
     }
+
 }

@@ -42,9 +42,25 @@ public class Closure implements IClosure<String, String, Boolean> {
     }
     @Override
     public IClosure<String, String, Boolean> getChildClosureForMethod(String methodName) {
-        // Retrieve the child closure associated with the given method name
-        return methodClosureMap.get(methodName);
+        // First, check if the method exists in the current closure
+        IClosure<String, String, Boolean> childClosure = methodClosureMap.get(methodName);
+
+        // If the method is not found in the current closure, check in children
+        if (childClosure == null) {
+            for (IClosure<String, String, Boolean> child : methodClosureMap.values()) {
+                // Recursively search in the children closures
+                childClosure = child.getChildClosureForMethod(methodName);
+
+                // If found in a child closure, break the loop
+                if (childClosure != null) {
+                    break;
+                }
+            }
+        }
+
+        return childClosure;
     }
+
     @Override
     public HashMap<String, String> getMethodParameters(String methodName) {
         return methodParametersMap.get(methodName);
@@ -86,14 +102,11 @@ public class Closure implements IClosure<String, String, Boolean> {
             itWorked = false;
         } else if (!variableTypeMap.containsKey(var)) {
             // If the variable doesn't exist in the current closure, check the parent closure
-            if (parent != null) {
-                itWorked = parent.addBoundVariable(var, s);
-            }
 
-            if (itWorked) {
-                // If the variable doesn't exist in the parent closure either, add its value to the current closure
-                variableTypeMap.put(var, s);
-            }
+            variableTypeMap.put(var, s);
+
+
+
         } else {
             itWorked = false; // Variable already exists in the current closure
         }
@@ -178,6 +191,52 @@ public class Closure implements IClosure<String, String, Boolean> {
     public boolean variableExists(String varName) {
         return variableTypeMap.containsKey(varName);
     }
+    @Override
+    public boolean variableExistsAnywhere(String varName) {
+        // Check if the variable exists in the current closure
+        if (variableTypeMap.containsKey(varName)) {
+            return true;
+        }
+
+        // If the variable is not found in the current closure, check parent closures
+        if (parent != null) {
+            if (parent.variableExistsAnywhere(varName)) {
+                return true;
+            }
+        }
+
+        // If the variable is not found in parent closures, check children closures
+        for (IClosure<String, String, Boolean> childClosure : methodClosureMap.values()) {
+            if (childClosure.variableExistsAnywhere(varName)) {
+                return true;
+            }
+        }
+
+        // If the variable is not found in any closure, return false
+        return false;
+    }
+    @Override
+    public AbstractMap.SimpleEntry<Boolean, String> getVariableTypeAnywhere(String varName) {
+        // Check if the variable exists in the current closure
+        if (variableTypeMap.containsKey(varName)) {
+            return new AbstractMap.SimpleEntry<>(true, variableTypeMap.get(varName));
+        }
+
+        // If the variable is not found in the current closure, check in parent closures recursively
+        if (parent != null) {
+            AbstractMap.SimpleEntry<Boolean, String> parentResult = parent.getVariableTypeAnywhere(varName);
+
+            // If the variable is found in a parent closure, return the result
+            if (parentResult.getKey()) {
+                return parentResult;
+            }
+        }
+
+        // If the variable is not found in any closure, return false and null type
+        return new AbstractMap.SimpleEntry<>(false, null);
+    }
+
+
     @Override
     public boolean parameterExists(String methodName, String paramName) {
         // Check if the method exists in the closure
