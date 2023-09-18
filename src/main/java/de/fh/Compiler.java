@@ -51,7 +51,7 @@ public class Compiler<T extends Node> implements ICompiler<T> {
     @Override
     public void executePipeline(InputStream is, String outputPath) {
         if (debug)
-            System.out.println("[RUNNING IN DEBUG MODE]");
+            System.out.println("[RUNNING IN DEBUG MODE (verbose mode)]");
         System.out.println("Starte lexikalische und syntaktische Analyse ...");
         T rootNode;
 
