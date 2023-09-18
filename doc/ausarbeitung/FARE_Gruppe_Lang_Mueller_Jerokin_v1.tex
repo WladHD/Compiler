@@ -503,7 +503,7 @@ void path()  #ATOM_PATHELEMENT:
 	\end{longtable}
 	
 	\noindent
-	Um die Funktionsweise der Grammatik zu verdeutlichen, wird ein AST erzeugt und verschriftlicht.
+	Um die Funktionsweise der Grammatik zu verdeutlichen, wird ein AST in Listing \ref{lst:bsplAst} aus dem Quelltext in Listing \ref{lst:bsplCode} erzeugt und verschriftlicht.
 \begin{lstlisting}[caption={Beispiel eines akzeptierten Source Code}, label=lst:bsplCode]
 // resources/beispiel.txt
 void main() {
@@ -586,32 +586,104 @@ Derzeitig erfolgen nachstehend genannte Prüfungen.
 	
 	2 & Initialisierung von Variablen und Methoden  \\ \midrule
 	
-	\caption{Stichpunkte zur Umsetzung der semantischen Prüfung}
+	\caption{Umsetzung der semantischen Prüfung}
 	\label{table:semanticCheck}
 \end{longtable}
 
-
-
-
+\noindent
+Die Bereiche 3 und 4 in Tabelle \ref{table:bereiche} sollen durch die semantische Prüfung abgedeckt werden.
+\begin{lstlisting}[caption={Erzeugter AST eines akzeptierten Source Codes in Listing \ref{lst:bsplCode}}, label=lst:semanticCode]
+void main() {
+	int x;
+	int x;
 	
-	
+	int y = "56";
+	int y = 56;
+}
 
+void test1() { int test = 5; }
 
-%\newpage
-%\addcontentsline{toc}{section}{Glossar}
-%\printglossary[type=main]
+void test2() { int test = 6; }
+
+\end{lstlisting}
+
+\noindent
+Anfangend mit \textit{Deklaration von Variablen und Methoden} in Tabelle \ref{table:semanticCheck} wird geprüft, ob eine Variable oder Methode bereits deklariert wurde. Es wird mit Closures gearbeitet, um sicherzustellen, dass gleich benannte Variablen in verschiedenen Methoden korrekterweise zugelassen werden (vgl. Listing \ref{lst:semanticCode}, Z. 9, 11). Wiederholte Deklarationen werden nicht zugelassen (vgl. Listing \ref{lst:semanticCode}, Z. 2, 3).
+
+\noindent
+\textit{Initialisierung von Variablen und Methoden} in Tabelle \ref{table:semanticCheck} prüft, ob der zugewiesene Wert auch dem Datentyp der deklarierten Variable entspricht. Da \textit{"56"} vom Tokentyp \textit{StringLiteral} und die deklarierte Variable \textit{y} vom Datentyp \textit{int} ist, wird die Zuweisung abgelehnt.
+Wird in der semantischen Prüfung festgestellt, dass ein Fehler vorliegt, so wird eine Exception geworfen, welche den Compiler mit einer Fehlermeldung abbricht.
 
 \newpage
-\addcontentsline{toc}{section}{Abkürzungsverzeichnis}
-\section*{Abkürzungsverzeichnis}
-\begin{acronym}[BA]
-\acro{patdb}[SHIP - DB]{SHIP - Patientendashboard}
-\acro{rapp}[React - App]{React - Applikation}
-\acro{rmod}[Modul]{React - Modul}
-\acroplural{rmod}[Moduls]{React - Moduls}
-\acro{rcom}[Komponente]{React - Komponente}
-\acroplural{rcom}[Komponenten]{React - Komponenten}
-\end{acronym}
+\section{Übersetzung}
+Die Übersetzung ist der letzte Schritt in Tabelle \ref{table:bereiche} und ist dafür verantwortlich, den erhaltenen AST zu Java Source Code zu übersetzen.
+Dieser wird im Anschluss compiliert und zu einer ausführbaren jar-Datei verpackt.
+Die Funktionsweise des Übersetzers liegt darin, über den AST zu iterieren und die Knoten mit passendem Java Code zu versehen.
+\begin{lstlisting}[caption={Beispiel eines akzeptierten Source Code}, label=lst:bsplCodeTranslator]
+// de/fh/translator/visitor/TranslateVisitor, Zeile 154 - 158
+@Override
+public Object visit(ASTWHILE node, Object data) {
+	String ph = "while ({0}) {1}";
+	return MessageFormat.format(ph, visit((SimpleNode) node.jjtGetChild(0), null), visit((SimpleNode) node.jjtGetChild(1), null), LINE_SEPARATOR);
+}
+\end{lstlisting}
+
+\noindent
+Als Beispiel einer Übersetzung lässt sich Listing \ref{lst:bsplCodeTranslator} heranführen. Hier wird der AST Typ \textit{WHILE} anhand von Java Regeln befüllt und übersetzt. Alle übersetzten Knoten werden zu einem einzelnen String zusammengefasst, was in dem Java Source Code resultiert. Hiermit erhält der Mustercode in Listing \ref{lst:bsplCode} folgenden Java Source Code:
+\begin{lstlisting}[caption={Beispiel eines akzeptierten Source Code}, label=lst:bsplCodeTranslatorFinal]
+// GENERATED CODE
+void main () {
+	Path p = new Path("D:\\Arbeit\\testing\\test2");
+	Set<Integer> setA = new Set<>(0, 1, 2);
+	int x = 5;
+	int y ;
+	int z = y = x++ + x / 2;
+}
+\end{lstlisting}
+
+\noindent
+Der in Listing \ref{lst:bsplCodeTranslatorFinal} generierte Java Source Code wird in einer Wrapperklasse eingefügt, wobei Hilfsklassen wie \textit{Set<T>, Map<TA, TB>, System, Path, Files} mit geforderten Methoden der Aufgabenstellung vorliegen. Die gezeigte Methode \textit{main} in Listing \ref{lst:bsplCodeTranslatorFinal} wird durch die Einsprungsmethode \textit{main} der Oberklasse aufgerufen.
+
+\newpage
+\section{Anleitung zur Ausführung}
+In diesem Kapitel wird beschrieben, wie das kompilierte Programm verwendet werden kann sowie wie aus dem Source Code das Programm selbst erstellt werden kann.
+
+\paragraph{Verwendung des kompilierten Programms} \mbox{} \\
+Das Programm \textit{FARECompiler.jar} akzeptiert zwei Parameter und kann wie folgt aufgerufen werden:
+
+\noindent
+\textit{java -jar FARECompiler.jar <SourceCode> [OutputPath]}
+
+\noindent
+\textit{SourceCode} gibt den Pfad zur Textdatei an, in welcher sich der Quellcode befindet.
+\textit{OutputPath} gibt jeweils den Pfad zur zu erstellenden jar-Datei an.
+Wird der \textit{OutputPath} nicht gesetzt, wird der generierte AST und Java Code nur auf der Konsole angezeigt.
+
+\noindent
+Sollten zwei Parameter vorliegen, wird bei erfolgreichem Kompilieren eine ausführbare jar-Datei am \textit{OutputPath} erstellt.
+Diese kann dann mit folgendem Befehl gestartet werden:
+
+\noindent
+\textit{java -jar ErzeugteDatei.jar}
+
+
+\paragraph{Kompilierung des Source Codes} \mbox{} \\
+Um den FARE Compiler selbst zu kompilieren, muss der Source Code als Maven Projekt initialisiert werden.
+Für die bloße Generierung der JavaCC und JJTree Klassen, wird folgender Maven Befehl benötigt:
+
+\noindent
+\textit{mvn generate-sources}
+
+\noindent
+Hierbei werden die durch die Grammatik1.jjt definierte JavaCC Klassen unter dem Ordner \path{target/generated-sources} angelegt.
+Um das Maven Projekt jedoch in eine ausführbare jar-Datei umzuwandeln, wird folgender Befehl benötigt:
+
+\noindent
+\textit{mvn clean generate-sources package}
+
+\noindent
+Hierbei wird das Projekt kompiliert und unter \path{target} als ausführbare jar-Datei angelegt.
+
 
 \newpage
 %\addcontentsline{toc}{section}{Abbildungsverzeichnis}
