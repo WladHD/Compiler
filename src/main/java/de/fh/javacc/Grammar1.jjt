@@ -9,7 +9,7 @@ package de.fh.javacc.generated;
 public class TestParser {
   public static SimpleNode parse(java.io.InputStream is) throws ParseException {
       TestParser parser = new TestParser(is);
-      return parser.compilationUnit(); // SimpleNode root = parser.program()
+      return parser.compilationUnit();
   }
 }
 
@@ -62,11 +62,11 @@ SKIP : {   " " | "\t" | "\n" | "\r" | <Kommentar: "//" (~["\n"])* |  "/*" ( ~["*
 SimpleNode compilationUnit() #PROGRAM :
 {
     boolean first = true;
-    SimpleNode result = null; // Initialize the result
+    SimpleNode result = null;
 } {(
        (LOOKAHEAD(2) stmnt() | decl() | (methodOrVariableCaller() ";")) { if (first) result = jjtThis; else result.jjtAddChild(jjtThis, result.jjtGetNumChildren()); }
     )*
-    { return result; } // Return the result
+    { return result; }
 }
 void methodOrVariableCaller() #REQUESTER_VAR_METHOD :
 {
@@ -136,7 +136,7 @@ void decide_declaration_type() #void :
 void decide_declaration_typePath() #void :
 {}
 {
-    ([<SimpleEquals> Path() #ATOM_PATH] ";") #CONCLUDED_VAR_DEC | method_declaration()
+    ([<SimpleEquals> path() #ATOM_PATH] ";") #CONCLUDED_VAR_DEC | method_declaration()
 }
 void method_declaration() #METHDECL :
 {} {
@@ -311,7 +311,7 @@ void atommap()  #ATOM_MAP:
 
 
 
-void Path()  #ATOM_PATHELEMENT:
+void path()  #ATOM_PATHELEMENT:
 {Token t;
 Token t1 = null;
  }
@@ -321,8 +321,7 @@ Token t1 = null;
      (
     t = <PathLiteral> {jjtThis.value = t.image;} |
     t = <Point> {jjtThis.value = t.image;}|
-    t = <Identifier> ["." t1= <Identifier>]{jjtThis.value = (t.image +  (t1 != null ? "." + t1.image : ""));}) [("/" | "\\") [Path()]]
-
+    t = <Identifier> ["." t1= <Identifier>]{jjtThis.value = (t.image +  (t1 != null ? "." + t1.image : ""));}) [("/" | "\\") [path()]]
 }
 
 void map_element() #MAP_PAIR:

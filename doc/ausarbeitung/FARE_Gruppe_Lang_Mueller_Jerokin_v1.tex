@@ -395,7 +395,45 @@ void atom() #void :
 	\end{lstlisting}
 	
 	\noindent
-	Ähnlich zum reinen JavaCC können Regeln für die Grammatik definiert werden (vgl. Listing \ref{lst:atom}, Z. 7 - 16 )
+	Ähnlich zum reinen JavaCC können Regeln für die Grammatik definiert werden (vgl. Listing \ref{lst:atom}, Z. 7 - 16).
+	Die Erweiterung liegt in der Annotation für die Erstellung des AST, welche die Werte \textit{void, ATOM\_VARIABLE, ATOM\_INT, ATOM\_BOL, ATOM\_STRING, ATOM\_CHAR} annehmen kann. Im Sachkontext wird im Normalfall keine Node im AST angelegt (vgl. Listing \ref{lst:atom}, Z. 2).
+	Sollte jedoch eine Regel in den Zeilen 8 - 12 angewandt werden, so wird ein entsprechend benannter Knoten zum AST mit dem Inhalt des Tokens hinzugefügt (vgl. Listing \ref{lst:atom}, Z. 8 - 12). Nach diesem Prinzip wird für alle Regeln an sinnvollen Stellen ein Knoten zum AST hinzugefügt. Diese Kombination von JavaCC und JJTree ermöglicht die simultane Lexikalische Analyse und Syntaxanalyse.
+	
+	Nach der Anführung eines Beispiels wird folgend grob die Grammatik beschrieben. Insgesamt liegen 51 grammatische Regeln vor.
+\begin{lstlisting}[caption={Wurzel des AST sowie erste Regel der Grammatik}, label=lst:rootNode]
+// de/fh/javacc/Grammar1.jjt, Zeile 62 - 70
+SimpleNode compilationUnit() #PROGRAM :
+{
+	boolean first = true;
+	SimpleNode result = null;
+} {(
+	(LOOKAHEAD(2) stmnt() | decl() | (methodOrVariableCaller() ";")) { if (first) result = jjtThis; else result.jjtAddChild(jjtThis, result.jjtGetNumChildren()); }
+	)*
+	{ return result; }
+}
+\end{lstlisting}	
+	
+	\noindent
+	Da die Ausführung der ersten Regel einen AST als Rückgabewert liefert, stellt die Regel in Listing \ref{lst:rootNode} eine Sonderform dar.
+	Wie erkannt werden kann, wird in jedem Fall ein neuer Knoten mit dem Namen \textit{PROGRAM} erzeugt.
+	Unter diesem Knoten können nun \textit{stmnt(), decl()} und Methodenaufrufe vorliegen.
+	Fortführend wird beispielhaft die Regel zur Erzeugung des Literals \path{Path} angebracht.
+	\begin{lstlisting}[caption={Wurzel des AST sowie erste Regel der Grammatik}, label=lst:rootNode]
+// de/fh/javacc/Grammar1.jjt, Zeile 314 - 325
+void path()  #ATOM_PATHELEMENT:
+{Token t;
+	Token t1 = null;
+}
+
+{
+	
+	(
+	t = <PathLiteral> {jjtThis.value = t.image;} |
+	t = <Point> {jjtThis.value = t.image;}|
+	t = <Identifier> ["." t1= <Identifier>]{jjtThis.value = (t.image +  (t1 != null ? "." + t1.image : ""));}) [("/" | "\\") [Path()]]
+}
+	\end{lstlisting}	
+	
 	
 	
 	
