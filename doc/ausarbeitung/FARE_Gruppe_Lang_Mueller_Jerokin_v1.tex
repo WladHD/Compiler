@@ -399,7 +399,7 @@ void atom() #void :
 	Die Erweiterung liegt in der Annotation für die Erstellung des AST, welche die Werte \textit{void, ATOM\_VARIABLE, ATOM\_INT, ATOM\_BOL, ATOM\_STRING, ATOM\_CHAR} annehmen kann. Im Sachkontext wird im Normalfall keine Node im AST angelegt (vgl. Listing \ref{lst:atom}, Z. 2).
 	Sollte jedoch eine Regel in den Zeilen 8 - 12 angewandt werden, so wird ein entsprechend benannter Knoten zum AST mit dem Inhalt des Tokens hinzugefügt (vgl. Listing \ref{lst:atom}, Z. 8 - 12). Nach diesem Prinzip wird für alle Regeln an sinnvollen Stellen ein Knoten zum AST hinzugefügt. Diese Kombination von JavaCC und JJTree ermöglicht die simultane Lexikalische Analyse und Syntaxanalyse.
 	
-	Nach der Anführung eines Beispiels wird folgend grob die Grammatik beschrieben. Insgesamt liegen 51 grammatische Regeln vor.
+	Nach der Anführung eines Beispiels wird folgend grob die Grammatik beschrieben. Insgesamt liegen 51 grammatische Regeln vor sowie 51 verschiedene AST Knotentypen.
 \begin{lstlisting}[caption={Wurzel des AST sowie erste Regel der Grammatik}, label=lst:rootNode]
 // de/fh/javacc/Grammar1.jjt, Zeile 62 - 70
 SimpleNode compilationUnit() #PROGRAM :
@@ -416,9 +416,9 @@ SimpleNode compilationUnit() #PROGRAM :
 	\noindent
 	Da die Ausführung der ersten Regel einen AST als Rückgabewert liefert, stellt die Regel in Listing \ref{lst:rootNode} eine Sonderform dar.
 	Wie erkannt werden kann, wird in jedem Fall ein neuer Knoten mit dem Namen \textit{PROGRAM} erzeugt.
-	Unter diesem Knoten können nun \textit{stmnt(), decl()} und Methodenaufrufe vorliegen.
-	Fortführend wird beispielhaft die Regel zur Erzeugung des Literals \path{Path} angebracht.
-	\begin{lstlisting}[caption={Wurzel des AST sowie erste Regel der Grammatik}, label=lst:rootNode]
+	Unter diesem Knoten können nun beliebig viele \textit{stmnt(), decl()} und Methodenaufrufe vorliegen.
+	Fortführend wird beispielhaft die Regel zur Erzeugung des Literals \textit{Path} angebracht.
+	\begin{lstlisting}[caption={Grammatikregel für das Literal Path}, label=lst:pathNode]
 // de/fh/javacc/Grammar1.jjt, Zeile 314 - 325
 void path()  #ATOM_PATHELEMENT:
 {Token t;
@@ -430,15 +430,169 @@ void path()  #ATOM_PATHELEMENT:
 	(
 	t = <PathLiteral> {jjtThis.value = t.image;} |
 	t = <Point> {jjtThis.value = t.image;}|
-	t = <Identifier> ["." t1= <Identifier>]{jjtThis.value = (t.image +  (t1 != null ? "." + t1.image : ""));}) [("/" | "\\") [Path()]]
+	t = <Identifier> ["." t1= <Identifier>]{jjtThis.value = (t.image +  (t1 != null ? "." + t1.image : ""));}) [("/" | "\\") [path()]]
 }
-	\end{lstlisting}	
+	\end{lstlisting}
+	
+	\noindent
+	Die Zeilen 10 und 11 in Listing \ref{lst:pathNode} sagen aus, dass ein Teil des Pfades aus \textit{., .., <Laufwerkbuchstabe>:} bestehen kann.
+	Weiterführend kann der Pfad aus einem Namen bestehen und anschließend nach einen Separator \textit{$\backslash$, /} wiederholt werden.
+	Momentan besteht die Limitation des Pfades daraus, dass dieser keine Leerzeichen enthalten darf.
+	
+	\noindent
+	Nach diesem Muster werden die restlichen Regeln ebenfalls umgesetzt. Wie einleitend genannt, gibt es 51 verschiedene AST Typen, die im Folgenden alphabetisch aufgelistet werden.
 	
 	
+	\begin{longtable}{|c|}
+		\toprule{}
+		 AST Typ \\ \midrule  
+		ASTARRAY\_ELEMENT \\
+		ASTARRAYAUFRUF \\
+		ASTATOM\_ARRAY \\
+		ASTATOM\_BOL \\
+		ASTATOM\_CHAR \\
+		ASTATOM\_INT \\
+		ASTATOM\_MAP \\
+		ASTATOM\_PATH \\
+		ASTATOM\_PATHELEMENT \\
+		ASTATOM\_SET \\
+		ASTATOM\_STRING \\
+		ASTATOM\_VARIABLE \\
+		ASTBLOCK \\
+		ASTCONCLUDED\_VAR\_DEC \\
+		ASTCONDITION \\
+		ASTDECL \\
+		ASTDECL\_METHOD\_PARAMS \\
+		ASTELSE \\
+		ASTFOR \\
+		ASTFOR\_BODY \\
+		ASTFOR\_BODY\_EACH \\
+		ASTFOR\_BODY\_NORMAL \\
+		ASTFORCOND \\
+		ASTFORINIT \\
+		ASTFOROPER \\
+		ASTGET\_METHOD\_PARAMS \\
+		ASTGET\_VAR\_METHOD \\
+		ASTIF \\
+		ASTKOMPLEX\_TYPE \\
+		ASTMAP\_KEY \\
+		ASTMAP\_PAIR \\
+		ASTMAP\_VALUE \\
+		ASTMETHDECL \\
+		ASTOPERATION\_PRIO\_4\_AND\_3 \\
+		ASTOPERATION\_PRIO\_9 \\
+		ASTOPERATION\_PRIO\_11 \\
+		ASTOPERATION\_PRIO\_12 \\
+		ASTOPERATION\_PRIO\_13 \\
+		ASTOPERATION\_PRIO\_14 \\
+		ASTPARAM \\
+		ASTPARAM\_PAIR \\
+		ASTPROGRAM \\
+		ASTREQUESTER\_VAR\_METHOD \\
+		ASTRETURN \\
+		ASTSET\_ELEMENT \\
+		ASTSTATEMENT \\
+		ASTTYPE \\
+		ASTTYPE\_ARRAY \\
+		ASTVAR\_METHOD\_NAME \\
+		ASTVARIABLE\_ASSIGNMENT\_PRIO\_1 \\
+		ASTWHILE \\ \midrule
+		
+		\caption{Alle möglichen Typen von AST Knoten}
+		\label{table:alleNodes}
+	\end{longtable}
 	
+	\noindent
+	Um die Funktionsweise der Grammatik zu verdeutlichen, wird ein AST erzeugt und verschriftlicht.
+\begin{lstlisting}[caption={Beispiel eines akzeptierten Source Code}, label=lst:bsplCode]
+// resources/beispiel.txt
+void main() {
+	Path p = D:\Arbeit\testing\test2;
+	Set<int> setA = {0,1,2};
 	
+	int x = 5;
+	int y;
+	int z = y = x++ + x / 2;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Erzeugter AST eines akzeptierten Source Codes in Listing \ref{lst:bsplCode}}, label=lst:bsplAst]
+// Ausgabe
+PROGRAM = null
+ DECL = null
+  TYPE = void
+   VAR_METHOD_NAME = main
+   METHDECL = null
+    DECL_METHOD_PARAMS = null
+    BLOCK = null
+     DECL = null
+      TYPE = Path
+      VAR_METHOD_NAME = p
+      CONCLUDED_VAR_DEC = null
+       ATOM_PATH = null
+        ATOM_PATHELEMENT = D:
+         ATOM_PATHELEMENT = Arbeit
+          ATOM_PATHELEMENT = testing
+           ATOM_PATHELEMENT = test2
+     DECL = null
+      TYPE = Set
+       KOMPLEX_TYPE = null
+        TYPE = int
+      VAR_METHOD_NAME = setA
+      CONCLUDED_VAR_DEC = null
+       VARIABLE_ASSIGNMENT_PRIO_1 = =
+        ATOM_SET = null
+         SET_ELEMENT = null
+          ATOM_INT = 0
+         SET_ELEMENT = null
+          ATOM_INT = 1
+         SET_ELEMENT = null
+          ATOM_INT = 2
+     DECL = null
+      TYPE = int
+      VAR_METHOD_NAME = x
+      CONCLUDED_VAR_DEC = null
+       VARIABLE_ASSIGNMENT_PRIO_1 = =
+        ATOM_INT = 5
+     DECL = null
+      TYPE = int
+      VAR_METHOD_NAME = y
+      CONCLUDED_VAR_DEC = null
+     DECL = null
+      TYPE = int
+      VAR_METHOD_NAME = z
+      CONCLUDED_VAR_DEC = null
+       VARIABLE_ASSIGNMENT_PRIO_1 = =
+        VAR_METHOD_NAME = y
+         VARIABLE_ASSIGNMENT_PRIO_1 = =
+          OPERATION_PRIO_14 = ++
+           REQUESTER_VAR_METHOD = x
+          OPERATION_PRIO_11 = +
+           REQUESTER_VAR_METHOD = x
+           OPERATION_PRIO_12 = /
+            ATOM_INT = 2
+\end{lstlisting}
+
+\newpage
+\section{Semantik}
+Nach der Erzeugung des AST wird dieser der semantischen Prüfung übergeben.
+Derzeitig erfolgen nachstehend genannte Prüfungen.
+
+\begin{longtable}{|c|c|}
+	\toprule{}
+	Num & Name \\ \midrule  
 	
+	1 & Deklaration von Variablen und Methoden \\
 	
+	2 & Initialisierung von Variablen und Methoden  \\ \midrule
+	
+	\caption{Stichpunkte zur Umsetzung der semantischen Prüfung}
+	\label{table:semanticCheck}
+\end{longtable}
+
+
+
+
 	
 	
 

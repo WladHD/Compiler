@@ -1,0 +1,8 @@
+void main() {
+	Path p = D:\Arbeit\testing\test2;
+	Set<int> setA = {0,1,2};
+
+	int x = 5;
+    int y;
+    int z = y = x++ + x / 2;
+}
