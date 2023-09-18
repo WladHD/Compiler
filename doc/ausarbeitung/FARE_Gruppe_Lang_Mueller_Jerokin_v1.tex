@@ -1,0 +1,378 @@
+\documentclass[a4paper,11pt,numbers=noenddot]{article}
+
+\usepackage[main=ngerman, english]{babel}
+%\usepackage{natbib}
+%\bibliographystyle{plainnat}
+%\setcitestyle{square,aysep={},yysep={;}}
+%\setcitestyle{authoryear,square,semicolon} 
+%\setcitestyle{numbers,square}
+
+\usepackage[latin1]{inputenc}
+\usepackage[babel, german=quotes]{csquotes} % einfache Handhabung von quotations
+\usepackage[backend=bibtex8,style=authoryear]{biblatex} %biblatex mit biber laden
+\ExecuteBibliographyOptions{
+	sorting=nyt, %Sortierung Autor, Titel, Jahr
+	bibwarn=true, %Probleme mit den Daten, die Backend betreffen anzeigen
+	isbn=false, %keine isbn anzeigen
+	url=true, %keine url anzeigen
+	maxcitenames=2,
+	maxbibnames=99
+}
+\renewcommand*{\nameyeardelim}{\addcomma\space}
+\addbibresource{res/literaturBibLatex.bib} %Bibliographiedateien laden
+
+\setlength{\parindent}{1em}
+\linespread{1.2}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+
+\hypersetup{
+	colorlinks=true,
+	linkcolor=black,
+	filecolor=black,      
+	urlcolor=black,
+	citecolor=black,
+	pdftitle={FARE Compiler} % PDFTITLE
+}
+
+
+\usepackage{geometry}
+\usepackage{textpos} 
+\usepackage[table]{xcolor}
+\definecolor{lightgray}{gray}{0.9}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{csquotes}
+\usepackage{ifthen}
+\usepackage{booktabs}
+\usepackage{tabu}
+\usepackage[inline]{enumitem}
+\usepackage{enumitem}
+\usepackage{calc}
+\usepackage{pifont}
+\usepackage{colortbl}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{listings}
+\usepackage{subfig}
+\usepackage{ragged2e}
+\usepackage{xcolor}
+
+\newcommand\signature[2]{% Name; Department
+	\noindent\begin{minipage}{6.5cm}
+		\noindent\vspace{3cm}\par
+		\noindent\rule{6.5cm}{1pt}\par
+		\noindent\textbf{#1}\par
+		\noindent#2%
+\end{minipage}}
+
+\geometry{a4paper, left=45mm, right=15mm, top=30mm, bottom=25mm, headsep=1cm, headheight=0cm}
+\definecolor{accent}{rgb}{0.41, 0.6, 0.76}
+
+\usepackage{fancyhdr}
+\usepackage[nottoc]{tocbibind}
+
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\fancyhf{}
+\fancyhead[C]{\Roman{page}}
+\pagestyle{fancy}
+
+\fancypagestyle{fancy}{}
+
+\definecolor{lightgray}{rgb}{.9,.9,.9}
+\definecolor{darkgray}{rgb}{.4,.4,.4}
+\definecolor{purple}{rgb}{0.65, 0.12, 0.82}
+
+\lstdefinelanguage{JavaScript}{
+	keywords={typeof, new, true, false, catch, function, return, null, catch, switch, var, if, in, while, do, else, case, break},
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={class, export, boolean, throw, implements, import, this},
+	ndkeywordstyle=\color{darkgray}\bfseries,
+	identifierstyle=\color{black},
+	sensitive=false,
+	comment=[l]{//},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{purple}\ttfamily,
+	stringstyle=\color{black}\ttfamily,
+	morestring=[b]',
+	morestring=[b]"
+}
+
+\lstset{
+	language=JavaScript,
+	backgroundcolor=\color{lightgray},
+	extendedchars=true,
+	basicstyle=\footnotesize\ttfamily,
+	showstringspaces=false,
+	showspaces=false,
+	numbers=left,
+	numberstyle=\footnotesize,
+	numbersep=9pt,
+	tabsize=2,
+	breaklines=true,
+	showtabs=false,
+	captionpos=b
+}
+
+\newenvironment{changemargin}[2]{%
+	\begin{list}{}{%
+			\setlength{\topsep}{0pt}%
+			\setlength{\leftmargin}{#1}%
+			\setlength{\rightmargin}{#2}%
+			\setlength{\listparindent}{\parindent}%
+			\setlength{\itemindent}{\parindent}%
+			\setlength{\parsep}{\parskip}%
+		}%
+		\item[]}{\end{list}}
+
+\lstdefinelanguage{none}{
+	identifierstyle=
+}
+
+\colorlet{punct}{red!60!black}
+\definecolor{background}{HTML}{EEEEEE}
+\definecolor{delim}{RGB}{20,105,176}
+\colorlet{numb}{magenta!60!black}
+
+\lstdefinelanguage{json}{
+	basicstyle=\footnotesize\ttfamily,
+	numbers=left,
+	numberstyle=\footnotesize,
+	stepnumber=1,
+	numbersep=8pt,
+	showstringspaces=false,
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{background},
+	literate=
+	*{0}{{{\color{numb}0}}}{1}
+	{1}{{{\color{numb}1}}}{1}
+	{2}{{{\color{numb}2}}}{1}
+	{3}{{{\color{numb}3}}}{1}
+	{4}{{{\color{numb}4}}}{1}
+	{5}{{{\color{numb}5}}}{1}
+	{6}{{{\color{numb}6}}}{1}
+	{7}{{{\color{numb}7}}}{1}
+	{8}{{{\color{numb}8}}}{1}
+	{9}{{{\color{numb}9}}}{1}
+	{:}{{{\color{punct}{:}}}}{1}
+	{,}{{{\color{punct}{,}}}}{1}
+	{\{}{{{\color{delim}{\{}}}}{1}
+	{\}}{{{\color{delim}{\}}}}}{1}
+	{[}{{{\color{delim}{[}}}}{1}
+	{]}{{{\color{delim}{]}}}}{1},
+}
+
+
+\usepackage[printonlyused]{acronym}
+
+\makeatletter
+\renewcommand*\AC@acs[1]{%
+	\expandafter\AC@get\csname fn@#1\endcsname\@firstoftwo{#1}}
+\makeatother
+
+%biblatex patch, working now
+%\linespread{1.25}
+%\makeatletter
+%\def\blx@err@patch#1{}
+%\makeatother
+
+\usepackage{setspace}
+\usepackage[automake]{glossaries}
+\glsdisablehyper
+
+\newglossary[nlg]{nu}{not}{ntn}{Not Used}
+
+\newglossaryentry{Widget}
+{
+	type=nu,
+	name=Widget,
+	description={Ein Widget ist innerhalb des Dashboards ein Element, welches Informationen anzeigt und interaktiv verwendet werden kann},
+	plural=Widgets,
+	%nonumberlist
+}
+
+\makeglossaries
+
+\colorlet{punct}{red!60!black}
+\definecolor{background}{HTML}{EEEEEE}
+\definecolor{delim}{RGB}{20,105,176}
+\colorlet{numb}{magenta!60!black}
+\definecolor{accent}{rgb}{0.41, 0.6, 0.76}
+
+\begin{document}
+	\begin{titlepage}
+		\begin{textblock}{6.5}(-2.5,-3)
+			\begin{color}{accent}
+				\rule{6.6cm}{33cm}    
+			\end{color}
+		\end{textblock}
+		\begin{textblock}{6.5}(-2,-1)
+			{\large \textsf{Ausarbeitung}}
+		\end{textblock}
+		
+		\doublespacing
+		\begin{textblock}{8.2}(3.1,1)
+			{
+				\noindent \LARGE 
+				\textsf{\textbf{Entwicklung eines Compilers für die Sprache FARE zur Zielsprache Java \\[0.3cm]
+			} }}
+		\end{textblock}
+		\onehalfspacing
+		
+		\begin{textblock}{8.2}(3.1,3.5)
+			{\noindent \large
+				\textsf{\textbf{Development of a compiler for the language FARE\\ to the target language Java  \\[0.3cm]
+			} }}
+		\end{textblock}
+		
+		\begin{textblock}{6}(3.1,5.5)
+			\noindent
+			\textsf{An der Fachhochschule Dortmund\\
+				im Fachbereich Informatik\\
+				Studiengang Medizinische Informatik Master\\
+				im Modul Formale Sprachen und Compilerbau\\
+				erstellte Ausarbeitung eines FARE-Compilers
+			}
+		\end{textblock}
+		
+		
+		
+		
+		\begin{textblock}{6}(-2,7.5)\noindent
+			\textsf{von \\Johannes Lang \\
+				Matr.-Nr. 7217450 \\ [0.2cm]
+				Henning Müller \\
+				Matr.-Nr. 7105852 \\ [0.2cm]
+				Wladislaw Jerokin \\
+				Matr.-Nr. 7205290 \\ [1cm]
+				Betreuung durch: \\
+				Prof. Dr. Robert Rettinger \\ [1cm]
+				%In enger Zusammenarbeit mit: \\
+				%Dr. Georg Lodde \\ [1cm]
+				Dortmund, \today
+			}
+		\end{textblock}
+		
+		%	\begin{textblock}{6.5}(-1,10.8)
+			%		\noindent
+			%			\textsf{An der Fachhochschule Dortmund\\
+				%			im Fachbereich Informatik\\
+				%			Studiengang Medizinische Informatik\\
+				%			erstellte Projektarbeit fï¿½r das \\
+				%			Modul Wissenschaftliches Arbeiten
+				%		}
+			%	\end{textblock}
+		
+	\end{titlepage}
+	
+	\onehalfspacing
+	\setlength\arrayrulewidth{1.1pt}
+	\newpage
+	\tableofcontents
+	
+	\newpage
+	\setcounter{page}{1}
+	\fancyhf{}
+	\fancyhead[C]{\thepage}
+	\pagestyle{fancy}
+	\fancypagestyle{fancy}{}
+	
+	\section{Einleitung}
+	Grundlegend definiert sich ein Compiler als Programm, welches einen gegebenen Quellcode zu Maschinencode, Bytecode oder einer anderen Programmiersprache übersetzen kann \parencite[vgl.][]{RobertSheldon.2023}.
+	Die Entwicklung eines solchen Compilers ist eine komplexe Aufgabe, die aus mehreren Teilgebieten besteht.
+	In dieser Ausarbeitung werden folgende Teilgebiete behandelt:
+	
+	\begin{longtable}{|c|c|}
+		\toprule{}
+		Num & Name \\ \midrule  
+		
+		1 & Lexikalische Analyse \\
+		
+		2 & Syntaxanalyse  \\
+		
+		3 & Semantische Analyse  \\
+		
+		4 & Fehlerbehandlung  \\
+		
+		5 & Codeerzeugung  \\ \midrule
+		
+		\caption{Behandelte fünf Teilbereiche des Compilerbaus}
+		\label{table:bereiche}
+	\end{longtable}
+	
+	\noindent
+	Die in dieser Ausarbeitung behandelte Aufgabe besteht darin, die Bereiche in Tabelle \ref{table:bereiche} für eine Scriptsprache für den Umgang mit Dateien und Pfaden zu entwickeln.
+	Folgend werden die herausgearbeiteten Token, Grammatik und Semantik in jeweils eigenen Kapiteln beschrieben.
+	Der Compiler wird in Java geschrieben und benutzt die Bibliotheken JavaCC und die JavaCC-interne JJTree für Bereiche 1 und 2 in Tabelle \ref{table:bereiche}.
+	
+	
+	\section{Token}
+	\begin{lstlisting}[caption={Definierte JavaCC Token}, label=lst:fhir:impl:VerlaufsdokuAllgemein]
+		Observation[...]
+		&_sort=-date
+		&status:not=entered-in-error
+		&identifier=[...]HIS/Cerner/Medico/Observation/ClinicalImpression|
+		&subject=<Patient>
+		_include=Observation:encounter
+	\end{lstlisting}
+	
+	
+	
+	
+	
+	
+	
+
+
+%\newpage
+%\addcontentsline{toc}{section}{Glossar}
+%\printglossary[type=main]
+
+\newpage
+\addcontentsline{toc}{section}{Abkürzungsverzeichnis}
+\section*{Abkürzungsverzeichnis}
+\begin{acronym}[BA]
+\acro{patdb}[SHIP - DB]{SHIP - Patientendashboard}
+\acro{rapp}[React - App]{React - Applikation}
+\acro{rmod}[Modul]{React - Modul}
+\acroplural{rmod}[Moduls]{React - Moduls}
+\acro{rcom}[Komponente]{React - Komponente}
+\acroplural{rcom}[Komponenten]{React - Komponenten}
+\end{acronym}
+
+\newpage
+%\addcontentsline{toc}{section}{Abbildungsverzeichnis}
+\listoffigures
+
+\newpage
+\listoftables
+
+\newpage
+\addcontentsline{toc}{section}{Listings}
+\lstlistoflistings
+
+\newpage
+\addcontentsline{toc}{section}{Literatur}
+%\bibliography{literatur}
+\printbibliography
+
+\newpage
+\pagenumbering{gobble}
+%\addcontentsline{toc}{section}{Eigenständigkeitserklärungen}
+\section*{Versicherung der Eigenständigkeit}
+Hiermit versichere ich, dass
+ich die vorliegende Arbeit selbständig angefertigt und mich keiner fremden Hilfe bedient sowie keine
+anderen als die angegebenen Quellen und Hilfsmittel benutzt habe. Alle Stellen, die wörtlich oder
+sinngemäß veröffentlichten oder nicht veröffentlichten Schriften und anderen Quellen entnommen sind,
+habe ich als solche kenntlich gemacht. Diese Arbeit hat in gleicher oder ähnlicher Form noch keiner
+Prüfungsbehörde vorgelegen.
+
+\signature{Johannes Lang \\ \textnormal{\textit{Matr. 7217450}} \\
+	Henning Müller \\ \textnormal{\textit{Matr. 7105852}} \\
+	Wladislaw Jerokin \\ \textnormal{\textit{Matr. 7205290}}
+	}{Dortmund, den \today}
+
+\end{document}

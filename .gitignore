@@ -36,3 +36,26 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Latex ###
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.aux
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.bbl
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.blg
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.glg
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.glo
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.gls
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.glsdefs
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.ist
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.lof
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.log
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.lol
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.lot
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.nlg
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.not
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.ntn
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.out
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.pdf
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.run.xml
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.synctex.gz
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1.toc
+/doc/ausarbeitung/FARE_Gruppe_Lang_Mueller_Jerokin_v1-blx.bib
