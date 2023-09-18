@@ -630,7 +630,7 @@ public Object visit(ASTWHILE node, Object data) {
 
 \noindent
 Als Beispiel einer Übersetzung lässt sich Listing \ref{lst:bsplCodeTranslator} heranführen. Hier wird der AST Typ \textit{WHILE} anhand von Java Regeln befüllt und übersetzt. Alle übersetzten Knoten werden zu einem einzelnen String zusammengefasst, was in dem Java Source Code resultiert. Hiermit erhält der Mustercode in Listing \ref{lst:bsplCode} folgenden Java Source Code:
-\begin{lstlisting}[caption={Beispiel eines akzeptierten Source Code}, label=lst:bsplCodeTranslatorFinal]
+\begin{lstlisting}[caption={Ausschnitt des generierten Java Codes vom Source Code in Listing \ref{lst:bsplCode}}, label=lst:bsplCodeTranslatorFinal]
 // GENERATED CODE
 void main () {
 	Path p = new Path("D:\\Arbeit\\testing\\test2");
@@ -683,11 +683,6 @@ Um das Maven Projekt jedoch in eine ausführbare jar-Datei umzuwandeln, wird folg
 
 \noindent
 Hierbei wird das Projekt kompiliert und unter \path{target} als ausführbare jar-Datei angelegt.
-
-
-\newpage
-%\addcontentsline{toc}{section}{Abbildungsverzeichnis}
-\listoffigures
 
 \newpage
 \listoftables
