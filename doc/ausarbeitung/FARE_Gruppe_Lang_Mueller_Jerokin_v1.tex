@@ -306,18 +306,96 @@
 	\noindent
 	Die in dieser Ausarbeitung behandelte Aufgabe besteht darin, die Bereiche in Tabelle \ref{table:bereiche} für eine Scriptsprache für den Umgang mit Dateien und Pfaden zu entwickeln.
 	Folgend werden die herausgearbeiteten Token, Grammatik und Semantik in jeweils eigenen Kapiteln beschrieben.
-	Der Compiler wird in Java geschrieben und benutzt die Bibliotheken JavaCC und die JavaCC-interne JJTree für Bereiche 1 und 2 in Tabelle \ref{table:bereiche}.
+	
+	\subsection{Herangehensweise}
+	\label{sec:Herangehensweise}
+	Der Compiler wird in Java geschrieben und benutzt die Bibliotheken JavaCC und die JavaCC-interne JJTree.
+	Somit wird die Lexikalische Analyse und die Syntaxanalyse durch die definierte Grammatik durchgeführt.
+	Um dies kurz auszuführen wird mit JavaCC geprüft, ob ein gegebener Quellcode zur definierten Sprache und Grammatik zugehört (Lexikalische Analyse).
+	Durch erweiterte Annotation der Grammatik wird folgend der AST durch JJTree generiert (Syntaxanalyse).
+	Falls keine Fehler vorliegen, wird der AST zur Semantischen Analyse und Fehlerbehandlung übergeben, wo auf semantische Korrektheit geprüft wird.
+	Abschließend wird bei korrekter Semantik der AST zur Codeerzeugung übergeben, bei welcher vorerst Java Source Code erzeugt und danach compiliert wird.
 	
 	
+	
+	
+	
+	
+	\newpage
 	\section{Token}
-	\begin{lstlisting}[caption={Definierte JavaCC Token}, label=lst:fhir:impl:VerlaufsdokuAllgemein]
-		Observation[...]
-		&_sort=-date
-		&status:not=entered-in-error
-		&identifier=[...]HIS/Cerner/Medico/Observation/ClinicalImpression|
-		&subject=<Patient>
-		_include=Observation:encounter
+	\label{sec:Token}
+	\begin{lstlisting}[caption={Definierte JavaCC Token}, label=lst:token]
+// de/fh/javacc/Grammar1.jjt, Zeile 20 - 54
+<TypeMap: "Map">
+| <TypeSet: "Set">
+| <TypeSpecifiers: "int" | "char" | "String" | "boolean"| "Files" >
+| <LBRACKET : "[">
+| <RBRACKET : "]">
+| <TypePath: "Path" >
+| <IF: "if">
+| <ELSE: "else">
+| ";" |  ","
+| <GBracketOpen: "{">
+| <GBracketClose: "}">
+| <TypeVoid: "void">
+| <While: "while">
+| <For: "for">
+| <SimpleEquals: "="| "+=" |"-=" |"*="| "/=" | "%=" >
+| <Point: ".">
+| <RoundBracketOpen: "(">
+| <RoundBracketClose: ")">
+| <BooleanLiteral: "true" | "false" >
+| <LessThan: "<">
+| <GreaterThan: ">">
+| <BinVergleich : ">="  | "<=" | "==" | "!=" >
+| <BinJunktor : "||" | "&&" >
+| <OpSum : "+" | "-" >
+| <OpUnaer: "!">
+| <OpIncrement: "++" | "--">
+| <OpProd : "*" | "%">
+| <FWD: "/">
+| <Return : "return">
+| <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
+| <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
+| <StringLiteral: "\""(~["\"","\n"])*"\"" >
+| <CharLiteral:"'" (~["'","\n"]) "'" >
+| <PathLiteral:".."|  ["A"-"Z"] ":">
 	\end{lstlisting}
+	
+	\noindent
+	Insgesamt werden 34 verschiedene Token in Listing \ref{lst:token} definiert. Wenn nicht anders genannt, wird im Folgenden bei Zeilenangaben Listing \ref{lst:token} referenziert.
+	Die akzeptierten Variablentypen der Programmiersprache sind \textit{Map, Set, int, char, String, boolean, Files, Path} (vgl. Z. 2 - 4, 7).
+	Methoden erweitern diese um den Typen \textit{void} (vgl. Z. 13).
+	Zulässige Ausdrücke sind \textit{if, else, while, for} (vgl. Z. 8, 9, 14, 15).
+	Zuweisungen und Operationen werden nach dem Java Operator Vorrang eingeteilt \parencite[vgl.][]{javatpoint.2023}.
+	Diese werden in Zeilen 5, 6 sowie 16 bis 29 definiert.
+	Als grundlegende Token werden \textit{Identifier} und Literale für \textit{Integer, String, Char und Path} definiert.
+	Bei \textit{PathLiteral} handelt es sich um eine Sonderform. Der Pfad an sich wird durch grammatische Regeln definiert und ist in Kapitel \ref{sec:Grammatik} beschrieben.
+	
+	\section{Grammatik}
+	\label{sec:Grammatik}
+	Wie in Kapitel \ref{sec:Herangehensweise} genannt, wird JavaCC und JJTree genutzt. Um die erweiterte Grammatik zu demonstrieren, wird im Folgenden ein Beispiel angebracht.
+	
+		\begin{lstlisting}[caption={Beispiel der erweiterten Grammatik für Nutzung von JavaCC und JJTree anhand der Regel atom()}, label=lst:atom]
+// de/fh/javacc/Grammar1.jjt, Zeile 436 - 449
+void atom() #void :
+{
+	Token ident = null;
+} {
+	LOOKAHEAD(2)
+	methodOrVariableCaller()
+	| ident=<Identifier> {jjtThis.value = ident.image; } #ATOM_VARIABLE
+	| ident=<IntegerLiteral> {jjtThis.value = ident.image; } #ATOM_INT
+	| ident=<BooleanLiteral> {jjtThis.value = ident.image; } #ATOM_BOL
+	| ident = <StringLiteral> {jjtThis.value = ident.image; } #ATOM_STRING
+	| ident = <CharLiteral> {jjtThis.value = ident.image; } #ATOM_CHAR
+	| (LOOKAHEAD(3) array()| atomset()| atommap())
+	| <RoundBracketOpen> junktoren() <RoundBracketClose>
+}
+	\end{lstlisting}
+	
+	\noindent
+	Ähnlich zum reinen JavaCC können Regeln für die Grammatik definiert werden (vgl. Listing \ref{lst:atom}, Z. 7 - 16 )
 	
 	
 	

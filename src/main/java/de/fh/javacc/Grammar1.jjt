@@ -41,7 +41,7 @@ TOKEN : {
   | <GreaterThan: ">">
   | <BinVergleich : ">="  | "<=" | "==" | "!=" >
   | <BinJunktor : "||" | "&&" >
-  | <OpSum : "+" | "-" | "^" >
+  | <OpSum : "+" | "-" >
   | <OpUnaer: "!">
   | <OpIncrement: "++" | "--">
   | <OpProd : "*" | "%">
@@ -436,7 +436,6 @@ void unaer_post2() #OPERATION_PRIO_14 :
 void atom() #void :
 {
     Token ident = null;
-    Token inc=null;
 } {
     LOOKAHEAD(2)
   methodOrVariableCaller()
@@ -446,6 +445,5 @@ void atom() #void :
   | ident = <StringLiteral> {jjtThis.value = ident.image; } #ATOM_STRING
   | ident = <CharLiteral> {jjtThis.value = ident.image; } #ATOM_CHAR
   | (LOOKAHEAD(3) array()| atomset()| atommap())
-
   | <RoundBracketOpen> junktoren() <RoundBracketClose>
 }
