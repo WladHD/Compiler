@@ -2,447 +2,389 @@ options {
     VISITOR = true;
     MULTI = true;
     IGNORE_CASE = false;
+    GENERATE_STRING_BUILDER = true;
+    NODE_DEFAULT_VOID = true;
+    DEBUG_LOOKAHEAD = true;
 }
 
 PARSER_BEGIN(TestParser)
 package de.fh.javacc.generated;
-public class TestParser {
-  public static SimpleNode parse(java.io.InputStream is) throws ParseException {
-      TestParser parser = new TestParser(is);
-      return parser.compilationUnit();
-  }
-}
+import java.util.ArrayList;
 
+public class TestParser {
+    public static SimpleNode parse(java.io.InputStream is) throws ParseException {
+        return new TestParser(is).program();
+    }
+}
 PARSER_END(TestParser)
 
 TOKEN : {
+    // TYPES
+    <TYPE_SPECIFIERS: "Map" | "int" | "char" | "String" | "boolean"| "Files" | "Path" > |
+    <TYPE_SPECIFIERS_VOID: "void"> |
 
-  <TypeMap: "Map">
-  |<TypeSet: "Set">
-  |<TypeSpecifiers: "int" | "char" | "String" | "boolean"| "Files" >
-  |<LBRACKET : "[">|
-   <RBRACKET : "]">
-   |<TypePath: "Path" >
+    // SEPARATORS
+    <BRACKET_SQUARE_LEFT: "[">          | // PRIO 15
+    <BRACKET_SQUARE_RIGHT: "]">         | // PRIO 15
+    <BRACKET_ROUND_LEFT: "(">           | // PRIO 15
+    <BRACKET_ROUND_RIGHT: ")">          | // PRIO 15
+    <BRACKET_CURLY_LEFT: "{">           |
+    <BRACKET_CURLY_RIGHT: "}">          |
+    <DOT: ".">                          | // PRIO 15
+    <PATH_SLASH_SEPARATOR: "\\">        | // AND OP_MUL
+    <SEMICOLON: ";">                    |
+    <COMMA: ",">                        |
 
-   | <IF: "if">
-   | <ELSE: "else">
-  |";" |  ","
-  | <GBracketOpen: "{">
-  | <GBracketClose: "}">
-  | <TypeVoid: "void">
-  | <While: "while">
-  | <For: "for">
-  | <SimpleEquals: "="| "+=" |"-=" |"*="| "/=" | "%=" >
-  | <Point: ".">
-  | <RoundBracketOpen: "(">
-  | <RoundBracketClose: ")">
-  | <BooleanLiteral: "true" | "false" >
-  | <LessThan: "<">
-  | <GreaterThan: ">">
-  | <BinVergleich : ">="  | "<=" | "==" | "!=" >
-  | <BinJunktor : "||" | "&&" >
-  | <OpSum : "+" | "-" >
-  | <OpUnaer: "!">
-  | <OpIncrement: "++" | "--">
-  | <OpProd : "*" | "%">
-  | <FWD: "/">
-  | <Return : "return">
-  | <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
-  | <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
-  | <StringLiteral: "\""(~["\"","\n"])*"\"" >
-  | <CharLiteral:"'" (~["'","\n"]) "'" >
-  |<PathLiteral:".."|  ["A"-"Z"] ":">
+    // OPERATION
+    <OP_ASSIGNMENT: "="| "+=" |"-=" |"*="| "/=" | "%=">     | // PRIO 1
+    <OP_LOGICAL_OR: "||">               | // PRIO 3
+    <OP_LOGICAL_AND: "&&">              | // PRIO 4
+    <OP_BITWISE_EXCLUSIVE_OR: "^">      | // PRIO 6
+    <OP_RELATIONAL_EQUALS: "==" | "!="> | // PRIO 8
+    <OP_LESS_THAN: "<">                 | // PRIO 9
+    <OP_GREATER_THAN: ">">              | // PRIO 9
+    <OP_RELATIONAL_COMPARE: "<=" | ">=">    | // PRIO 9
+    <OP_SUM: "+" | "-">                 | // PRIO 11
+    <OP_DIV: "/">                       | // PRIO 12
+    <OP_MUL: "*" | "%">           | // PRIO 12
+    <OP_INCREMENT: "++" | "--">         | // PRIO 13 (pre) AND 14 (post)
+    <OP_PRE: "!">                       | // PRIO 13
+    // PRIO 15 Round Brackets, Array Subscript, Member Selection
+
+    // STATEMENTS
+    <ST_IF: "if">           |
+    <ST_ELSE: "else">       |
+    <ST_WHILE: "while">     |
+    <ST_RETURN: "return">   |
+
+    // LITERAL
+    <LITERAL_IDENTIFIER: ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])*> |
+    <LITERAL_BOOLEAN: "true" | "false">             |
+    <LITERAL_STRING: "\""(~["\"","\n"])*"\"">       |
+    <LITERAL_CHAR: "'" (~["'","\n"]) "'">           |
+    <LITERAL_INTEGER: (["0"-"9"])+>                 |
+    <LITERAL_PATH: (<DOT> | ".." | (["A"-"Z"] ":"))? ((<PATH_SLASH_SEPARATOR> | <OP_DIV>) | (((<PATH_SLASH_SEPARATOR> | <OP_DIV>) (["A"-"Z", ".", "a"-"z", "_", "0" - "9"])+ ((["A"-"Z", ".", "a"-"z", " ", "_", "0" - "9"])* (["A"-"Z", ".", "a"-"z", "_", "0" - "9"])+))+) (<PATH_SLASH_SEPARATOR> | <OP_DIV>)?) >
 }
 
 
-SKIP : {   " " | "\t" | "\n" | "\r" | <Kommentar: "//" (~["\n"])* |  "/*" ( ~["*"] | "*" ~["/"] )* "*/" >
+SKIP : {
+    " "                     |
+    "\t"                    |
+    "\n"                    |
+    "\r"                    |
+    <COMMENT_SINGLE_LINE: "//" (~["\n"])*>     |
+    <COMMENT_MULTI_LINE: "/*" (~["*"] | "*" ~["/"] )* "*/">
 }
 
-// TODO check operator precedence https://www.javatpoint.com/java-operator-precedence
-SimpleNode compilationUnit() #PROGRAM :
+// Used java operator precedence: https://www.javatpoint.com/java-operator-precedence
+SimpleNode program() throws ParseException #PROGRAM :
 {
     boolean first = true;
     SimpleNode result = null;
-} {(
-       (LOOKAHEAD(2) stmnt() | decl() | (methodOrVariableCaller() ";")) { if (first) result = jjtThis; else result.jjtAddChild(jjtThis, result.jjtGetNumChildren()); }
-    )*
+}
+{
+    (class_contents() { if (first) result = jjtThis; else result.jjtAddChild(jjtThis, result.jjtGetNumChildren()); })+
+
     { return result; }
 }
-void methodOrVariableCaller() #REQUESTER_VAR_METHOD :
-{
- Token t;
-} {
 
-
-   t = <Identifier> [methodCallParams()](Arrayaufruf())* [methodOrVariableCalled()]
-
-    { jjtThis.value = t.image; }
-}
-
-void Arrayaufruf() #ARRAYAUFRUF :
-{Token t;}
-{
-    "[" ausdruck() "]"
-}
-
-
-
-
-
-
-void methodOrVariableCalled() #GET_VAR_METHOD :
-{
-Token t;
-
-} {
-  t = <Point>  methodOrVariableCaller()
-{jjtThis.value = t.image;}
- }
-
-
-void methodCallParams() #GET_METHOD_PARAMS :
+void class_contents() :
 {}
 {
-    <RoundBracketOpen> [junktoren() #PARAM(true) ("," junktoren() #PARAM)*] <RoundBracketClose>
+    LOOKAHEAD(method_declaration())
+    method_declaration() |
+    expression()
 }
 
-void stmnt() #STATEMENT :
-{Token t = null;}
-{
-  (LOOKAHEAD(block()) block() | whileStmnt() | ifstmt() | forStmnt() | ausdruck() t = ";")
-  {jjtThis.value = (t == null ? "" : t.image);}
-
-}
-
-
-void decl() #DECL :
-{} {
- typePath() identifier() decide_declaration_typePath() |
- type() identifier() decide_declaration_type() |
- type_void() identifier() method_declaration()
-}
-
-void type_void() #TYPE :
-{Token t;}
-{
-    t = <TypeVoid> {jjtThis.value = t;}
-}
-
-void decide_declaration_type() #void :
+void expression() :
 {}
 {
-    ([variable_declaration()] ";") #CONCLUDED_VAR_DEC | method_declaration()
+    var_declaration() ";" |
+    block()
 }
-void decide_declaration_typePath() #void :
+
+void method_declaration() #METHOD_DECLARATION :
 {}
 {
-    ([<SimpleEquals> path() #ATOM_PATH] ";") #CONCLUDED_VAR_DEC | method_declaration()
-}
-void method_declaration() #METHDECL :
-{} {
- params() block()
+    (type_specifier_void() | type_specifier()) identifier() method_param_declaration() block()
 }
 
-void params() #DECL_METHOD_PARAMS :
-{} {
-   <RoundBracketOpen> [param_pair() ("," param_pair())*] <RoundBracketClose>
-}
-
-void param_pair() #PARAM_PAIR :
+void method_param_declaration() #METHOD_PARAMETERS :
 {}
 {
-    type() identifier()
+    <BRACKET_ROUND_LEFT> ((type_specifier() identifier()) #METHOD_PARAM)*  <BRACKET_ROUND_RIGHT>
 }
 
-void type() #TYPE :
-{
-  Token t;
-}
-{
-  ((t = <TypeSpecifiers> type_array()) | (t = <TypeSet> Set() type_array()) | (t = <TypeMap> Map() type_array()))
-
-
-  {
-      jjtThis.value = t.image;
-  }
-}
-
-void typePath() #TYPE :
-{
-  Token t;
-}
-{
-  t = <TypePath> type_array()
-
-
-  {
-      jjtThis.value = t.image;
-  }
-}
-
-
-void Set() #KOMPLEX_TYPE :
+void var_declaration() :
 {}
 {
-  <LessThan> type() <GreaterThan>
-}
-void Map() #KOMPLEX_TYPE :
-{}
-{
-   <LessThan> type() "," type() <GreaterThan>
-}
-
-void type_array() #void :
-{}
-{
-    ["[]" #TYPE_ARRAY]
-}
-
-void identifier() #VAR_METHOD_NAME :
-{
-  Token t;
-}
-{
-  t=<Identifier>
-  {
-    jjtThis.value = t.image;
-  }
+    (type_specifier() pure_identifier() [op_assignment()]) #VAR_DECLARATION |
+    LOOKAHEAD(identifier() op_assignment())
+    (identifier() op_assignment()) #VAR_INIT |
+    op_prio_3()
 }
 
 void block() #BLOCK :
-{
-
-} {
-   <GBracketOpen> (
-         (( <Return>  [ausdruck()] ";")#RETURN |stmnt() | decl()  )
-       )*
-
-   <GBracketClose>
-}
-
-void whileStmnt() #WHILE :
-{
-   Token start;
-} {
-  start = <While> <RoundBracketOpen> ausdruck() #CONDITION <RoundBracketClose> stmnt()
-}
-
-void forStmnt() #FOR :
-{
-   Token start;
-} {
-  start = <For> <RoundBracketOpen> (LOOKAHEAD(3) forStmntBody() | forStmntBodyEach()) #FOR_BODY <RoundBracketClose> stmnt()
-}
-
-void forStmntBody() #FOR_BODY_NORMAL : {
-}
-{
-    forinit() ";" forcond() ";" foroper()
-}
-
-void forStmntBodyEach() #FOR_BODY_EACH : {
-}
-{
-    forinit() ":" ausdruck()
-}
-
-
-void ifstmt() #IF :
-{
-   Token start;
-} {
-  start = <IF> <RoundBracketOpen> ausdruck() #CONDITION <RoundBracketClose> stmnt() [LOOKAHEAD(<ELSE>) elsestmt()]
-}
-
-void elsestmt() #ELSE :
-{
-   Token start;
-} {
-  start = <ELSE> stmnt()
-}
-void forinit() #FORINIT :
-{
-   Token start;
-} {
-
-   [type() identifier() [variable_declaration()] |ausdruck() ]
-
-}
-
-void forcond() #FORCOND :
-{
-   Token start;
-} {
-
- [ausdruck() ]
-
-}
-
-void foroper() #FOROPER :
-{
-   Token start;
-} {
-
- [ausdruck() ]
-
-}
-void array()  #ATOM_ARRAY:
 {}
 {
-<LBRACKET> array_element() ("," array_element())* <RBRACKET>
+    <BRACKET_CURLY_LEFT> (expression())* <BRACKET_CURLY_RIGHT>
 }
-void array_element() #ARRAY_ELEMENT:
+
+// PRIO 1
+void op_assignment() #OP_PRIO_1 :
+{
+    Token t;
+}
+{
+    // TODO identifier() ... is only 1 identifier ...
+    t = <OP_ASSIGNMENT> {jjtThis.value = t.image;} (LOOKAHEAD(identifier() <OP_ASSIGNMENT>) op_assignment_redo())* op_prio_3()
+}
+
+void op_assignment_redo() :
+{
+    Token t;
+}
+{
+    identifier() t = <OP_ASSIGNMENT> {jjtThis.value = t.image;} #OP_PRIO_1
+}
+
+// PRIO 3
+void op_prio_3() #OP_PRIO_3(>1) :
 {}
 {
-    ausdruck()
+    op_prio_4() (op_prio_3_operator() op_prio_4())*
 }
-void atomset()  #ATOM_SET:
+
+void op_prio_3_operator() #OPERATOR_3 :
+{
+    Token t;
+}
+{
+    t = <OP_LOGICAL_OR> {jjtThis.value = t.image;}
+}
+
+// PRIO 4
+void op_prio_4() #OP_PRIO_4(>1) :
 {}
 {
-<GBracketOpen> set_element() ("," set_element())* <GBracketClose>
+    op_prio_6() (op_prio_4_operator() op_prio_6())*
 }
 
-void atommap()  #ATOM_MAP:
+void op_prio_4_operator() #OPERATOR_4 :
+{
+    Token t;
+}
+{
+    t = <OP_LOGICAL_AND> {jjtThis.value = t.image;}
+}
+
+// PRIO 6
+void op_prio_6() #OP_PRIO_6(>1) :
 {}
 {
-<LBRACKET> map_element() ("," map_element())* <RBRACKET>
+    op_prio_8() (op_prio_6_operator() op_prio_8())*
 }
 
-
-
-
-void path()  #ATOM_PATHELEMENT:
-{Token t;
-Token t1 = null;
- }
-
+void op_prio_6_operator() #OPERATOR_6 :
 {
-
-     (
-    t = <PathLiteral> {jjtThis.value = t.image;} |
-    t = <Point> {jjtThis.value = t.image;}|
-    t = <Identifier> ["." t1= <Identifier>]{jjtThis.value = (t.image +  (t1 != null ? "." + t1.image : ""));}) [("/" | "\\") [path()]]
+    Token t;
+}
+{
+    t = <OP_BITWISE_EXCLUSIVE_OR> {jjtThis.value = t.image;}
 }
 
-void map_element() #MAP_PAIR:
+// PRIO 8
+void op_prio_8() #OP_PRIO_8(>1) :
 {}
 {
-    atom() #MAP_KEY ":" atom() #MAP_VALUE
+    op_prio_9() (op_prio_8_operator() op_prio_9())*
 }
 
+void op_prio_8_operator() #OPERATOR_8 :
+{
+    Token t;
+}
+{
+    t = <OP_RELATIONAL_EQUALS> {jjtThis.value = t.image;}
+}
 
-void set_element() #SET_ELEMENT:
+// PRIO 9
+void op_prio_9() #OP_PRIO_9(>1) :
 {}
 {
-    ausdruck()
+    op_prio_11() (op_prio_9_operator() op_prio_11())*
 }
 
-// TODO = += -= *= /= %= hinzufügen
-void variable_declaration() #VARIABLE_ASSIGNMENT_PRIO_1 :
-{Token t;} {
- t = <SimpleEquals> {jjtThis.value = t.image;} ausdruck()
-}
-
-void ausdruck() #void :
+void op_prio_9_operator() #OPERATOR_9 :
 {
-   Token ident;
-} {
+    Token t;
+}
+{
+    t = <OP_RELATIONAL_COMPARE> {jjtThis.value = t.image;} |
+    t = <OP_GREATER_THAN>       {jjtThis.value = t.image;} |
+    t = <OP_LESS_THAN>          {jjtThis.value = t.image;}
+}
+
+// PRIO 11
+void op_prio_11() #OP_PRIO_11(>1) :
+{}
+{
+    op_prio_12() (op_prio_11_operator() op_prio_12())*
+}
+
+void op_prio_11_operator() #OPERATOR_12 :
+{
+    Token t;
+}
+{
+    t = <OP_SUM> {jjtThis.value = t.image;}
+}
+
+// PRIO 12
+void op_prio_12() #OP_PRIO_12(>1) :
+{}
+{
+    op_prio_13() (op_prio_12_operator() op_prio_13())*
+}
+
+void op_prio_12_operator() #OPERATOR_12 :
+{
+    Token t;
+}
+{
+    t = <OP_MUL> {jjtThis.value = t.image;} |
+    t = <OP_DIV> {jjtThis.value = t.image;}
+}
+
+// PRIO 13
+void op_prio_13() #OP_PRIO_13(>1) :
+{}
+{
+    op_prio_14() | (op_prio_13_operator() op_prio_15())
+}
+
+void op_prio_13_operator() #OPERATOR_13 :
+{
+    Token t;
+}
+{
+    t = <OP_INCREMENT>  {jjtThis.value = t.image;} |
+    t = <OP_SUM>        {jjtThis.value = t.image;} |
+    t = <OP_PRE>        {jjtThis.value = t.image;}
+}
+
+// PRIO 14
+void op_prio_14() #OP_PRIO_14(>1) :
+{}
+{
+    op_prio_15() [op_prio_14_operator()]
+}
+
+void op_prio_14_operator() #OPERATOR_14 :
+{
+    Token t;
+}
+{
+    t = <OP_INCREMENT>
+
+    {jjtThis.value = t.image;}
+}
+
+// PRIO 15
+void op_prio_15() #OP_PRIO_15(>1) :
+{}
+{
+    atom() (op_prio_15_method() | op_prio_15_variable() | op_prio_15_array_selector())*
+}
+
+void op_prio_15_method() #OPERATOR_15_METHOD_CALL :
+{}
+{
     LOOKAHEAD(2)
-  (ident=<Identifier> {jjtThis.value = ident.image; } variable_declaration()) #VAR_METHOD_NAME
-  | junktoren()
+    <BRACKET_ROUND_LEFT> <BRACKET_ROUND_RIGHT> |
+    (<BRACKET_ROUND_LEFT> op_prio_15_method_params() <BRACKET_ROUND_RIGHT>)
 }
 
-
-void junktoren() #void :
-{} {
-   vergleich() (junktoren2())*
-}
-
-// TODO OPERATION PRIO 4 &&     und OPERATION PRIO 3 || aufsplitten
-void junktoren2() #OPERATION_PRIO_4_AND_3 :
-{ Token t; }
-{
-    t=<BinJunktor> {jjtThis.value = t.image;} vergleich()
-}
-
-void vergleich() #void :
-{} {
-   summe() (vergleich2())*
-}
-
-// TODO OPERATION PRIO 8 == !=
-
-// < <= > >=
-void vergleich2() #OPERATION_PRIO_9 :
-{Token op;}
-{
-    (op=<BinVergleich> | op = <LessThan> | op = <GreaterThan>) {jjtThis.value = op.image;} summe()
-}
-
-void summe() #void :
-{} {
-    produkt() (summe2())*
-}
-
-// + -
-void summe2() #OPERATION_PRIO_11 :
-{Token op;}
-{
-    op=<OpSum> {jjtThis.value = op.image;} produkt()
-}
-
-void produkt() #void :
-{} {
-    unaer_pre() (produkt2())*
-}
-
-// * / %
-void produkt2() #OPERATION_PRIO_12 :
-{Token op;}
-{
-    op=<FWD> {jjtThis.value = op.image;} unaer_pre()|
-    op=<OpProd> {jjtThis.value = op.image;} unaer_pre()
-}
-
-void unaer_pre() #void :
-{} {
-  unaer_pre2() | unaer_post()
-}
-
-// ++ -- (pre) + - ! ~ (type)
-void unaer_pre2() #OPERATION_PRIO_13 :
-{ Token op; }
-{
-    (op = <OpSum> | op = <OpUnaer> | op = <OpIncrement>) {jjtThis.value = op.image;} atom()
-    // Nach Java IDE darf kein Post-Increment mehr kommen, wenn ein pre Increment vorliegt, weshalb direkt zum atom geskippt wird
-}
-
-void unaer_post() #void :
+void op_prio_15_method_params() #OPERATOR_15_METHOD_CALL_PARAMS :
 {}
 {
-    LOOKAHEAD(atom() <OpIncrement>)
-    unaer_post2() | atom()
+    op_prio_15_method_param() (<COMMA> op_prio_15_method_param())*
 }
 
-// ++ -- (post)
-void unaer_post2() #OPERATION_PRIO_14 :
-{ Token inc; }
+void op_prio_15_method_param() #OPERATOR_15_METHOD_CALL_PARAM :
+{}
 {
-    atom() inc=<OpIncrement> {jjtThis.value = inc.image; }
+    op_prio_3()
 }
 
-
-void atom() #void :
+void op_prio_15_variable() #OPERATOR_15_METHOD_CALL :
+{}
 {
-    Token ident = null;
-} {
-    LOOKAHEAD(2)
-  methodOrVariableCaller()
-  | ident=<Identifier> {jjtThis.value = ident.image; } #ATOM_VARIABLE
-  | ident=<IntegerLiteral> {jjtThis.value = ident.image; } #ATOM_INT
-  | ident=<BooleanLiteral> {jjtThis.value = ident.image; } #ATOM_BOL
-  | ident = <StringLiteral> {jjtThis.value = ident.image; } #ATOM_STRING
-  | ident = <CharLiteral> {jjtThis.value = ident.image; } #ATOM_CHAR
-  | (LOOKAHEAD(3) array()| atomset()| atommap())
-  | <RoundBracketOpen> junktoren() <RoundBracketClose>
+    <DOT> #OPERATOR_15_VARIABLE_CALL identifier()
+}
+
+void op_prio_15_array_selector() #OPERATOR_15_METHOD_CALL :
+{}
+{
+    <BRACKET_SQUARE_LEFT> #OPERATOR_15_ARRAY_INDEX_CALL(true) op_prio_3() <BRACKET_SQUARE_RIGHT>
+}
+
+void pure_identifier() #LITERAL_IDENTIFIER :
+{
+    Token t;
+}
+{
+    t = <LITERAL_IDENTIFIER> {jjtThis.value = t.image;}
+}
+
+void type_specifier_specifier() :
+{}
+{
+    type_array_brackets()
+}
+
+void type_array_brackets() #TYPE_ARRAY :
+{}
+{
+    <BRACKET_SQUARE_LEFT> <BRACKET_SQUARE_RIGHT>
+}
+
+void type_specifier() #TYPE :
+{
+    Token t;
+}
+{
+    t = <TYPE_SPECIFIERS> {jjtThis.value = t.image;} [type_specifier_specifier()]
+}
+
+void type_specifier_void() #TYPE :
+{
+ Token t;
+}
+
+{
+    t = <TYPE_SPECIFIERS_VOID> {jjtThis.value = t.image;}
+}
+
+void identifier() #LITERAL_IDENTIFIER :
+{
+    Token t;
+}
+{
+    t = <LITERAL_IDENTIFIER> {jjtThis.value = t.image;}
+}
+
+void atom() :
+{
+    Token t;
+}
+{
+
+    (t = <LITERAL_INTEGER> {jjtThis.value = t.image;})    #LITERAL_INTEGER      |
+    (t = <LITERAL_BOOLEAN> {jjtThis.value = t.image;})    #LITERAL_BOOLEAN      |
+    (t = <LITERAL_CHAR> {jjtThis.value = t.image;})       #LITERAL_CHAR         |
+    (t = <LITERAL_STRING> {jjtThis.value = t.image;})     #LITERAL_STRING       |
+    (t = <LITERAL_PATH> {jjtThis.value = t.image;})       #LITERAL_PATH         |
+    identifier()                                                                |
+    <BRACKET_ROUND_LEFT> op_prio_3() <BRACKET_ROUND_RIGHT>
 }

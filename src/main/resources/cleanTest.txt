@@ -1,0 +1,8 @@
+Path p = C:/ho me/ro bert/hel lo.txt ;
+int z = y = x++ + x / 2;
+
+void main() {
+    System.print("Bitte geben Sie den Pfad ein:");
+    String neu = System.readString();
+    System.println(anzahl(neu, test, hello));
+}
