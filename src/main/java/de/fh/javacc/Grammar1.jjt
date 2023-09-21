@@ -101,6 +101,7 @@ void class_contents() :
 void expression() :
 {}
 {
+    LOOKAHEAD([var_declaration()] ";")
     [var_declaration()] ";"     |
     block()                     |
     bl_for()                    |
@@ -433,6 +434,45 @@ void identifier() #LITERAL_IDENTIFIER :
     t = <LITERAL_IDENTIFIER> {jjtThis.value = t.image;}
 }
 
+void native_array_container() #ARRAY_CONTAINER_NATIVE :
+{}
+{
+    <BRACKET_CURLY_LEFT> [array_container_body()] <BRACKET_CURLY_RIGHT>
+}
+
+void array_container() #ARRAY_CONTAINER :
+{}
+{
+    <BRACKET_SQUARE_LEFT> [array_container_body()] <BRACKET_SQUARE_RIGHT>
+}
+
+void array_container_body() :
+{}
+{
+    LOOKAHEAD(array_container_body_map())
+    array_container_body_map() |
+    array_container_body_set()
+}
+
+void array_container_body_set() :
+{}
+{
+    op_prio_3() #ARRAY_ELEMENT(true) (<COMMA> op_prio_3() #ARRAY_ELEMENT(true))*
+}
+
+void array_container_body_map() :
+{}
+{
+    array_container_map_element() (<COMMA> array_container_map_element())*
+}
+
+void array_container_map_element() #MAP_ELEMENT :
+{}
+{
+    op_prio_3() #MAP_ELEMENT_KEY <COLON> op_prio_3() #MAP_ELEMENT_VALUE
+}
+
+
 void atom() :
 {
     Token t;
@@ -444,5 +484,7 @@ void atom() :
     (t = <LITERAL_STRING> {jjtThis.value = t.image;})     #LITERAL_STRING       |
     (t = <LITERAL_PATH> {jjtThis.value = t.image;})       #LITERAL_PATH         |
     identifier()                                                                |
+    array_container()                                                           |
+    native_array_container()                                                    |
     <BRACKET_ROUND_LEFT> op_prio_3() <BRACKET_ROUND_RIGHT>
 }

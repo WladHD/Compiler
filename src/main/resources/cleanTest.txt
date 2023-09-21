@@ -24,3 +24,7 @@ else if(false) x--;
 else if(false) x--;
 else if(false) return x;
 else x--;
+
+Set<int> x = [1, 2, 3, 4];
+Map<String, int> y = ["sdf":1, "sdf":2, "sdf":3];
+int[] x = {1, 2, 3, 4, 5};
