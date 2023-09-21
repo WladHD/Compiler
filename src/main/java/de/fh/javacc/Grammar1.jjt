@@ -20,7 +20,7 @@ PARSER_END(TestParser)
 
 TOKEN : {
     // TYPES
-    <TYPE_SPECIFIERS: "Map" | "int" | "char" | "String" | "boolean"| "Files" | "Path" > |
+    <TYPE_SPECIFIERS: "Map" | "int" | "char" | "String" | "boolean"| "Files" | "Path" | "Set" > |
     <TYPE_SPECIFIERS_VOID: "void"> |
 
     // SEPARATORS
@@ -33,6 +33,7 @@ TOKEN : {
     <DOT: ".">                          | // PRIO 15
     <PATH_SLASH_SEPARATOR: "\\">        | // AND OP_MUL
     <SEMICOLON: ";">                    |
+    <COLON: ":">                        |
     <COMMA: ",">                        |
 
     // OPERATION
@@ -55,6 +56,7 @@ TOKEN : {
     <ST_IF: "if">           |
     <ST_ELSE: "else">       |
     <ST_WHILE: "while">     |
+    <ST_FOR: "for">         |
     <ST_RETURN: "return">   |
 
     // LITERAL
@@ -63,7 +65,7 @@ TOKEN : {
     <LITERAL_STRING: "\""(~["\"","\n"])*"\"">       |
     <LITERAL_CHAR: "'" (~["'","\n"]) "'">           |
     <LITERAL_INTEGER: (["0"-"9"])+>                 |
-    <LITERAL_PATH: (<DOT> | ".." | (["A"-"Z"] ":"))? ((<PATH_SLASH_SEPARATOR> | <OP_DIV>) | (((<PATH_SLASH_SEPARATOR> | <OP_DIV>) (["A"-"Z", ".", "a"-"z", "_", "0" - "9"])+ ((["A"-"Z", ".", "a"-"z", " ", "_", "0" - "9"])* (["A"-"Z", ".", "a"-"z", "_", "0" - "9"])+))+) (<PATH_SLASH_SEPARATOR> | <OP_DIV>)?) >
+    <LITERAL_PATH: (<DOT> | ".." | (["A"-"Z"] <COLON>))? ((<PATH_SLASH_SEPARATOR> | <OP_DIV>) | (((<PATH_SLASH_SEPARATOR> | <OP_DIV>) (["A"-"Z", ".", "a"-"z", "_", "0" - "9"])+ ((["A"-"Z", ".", "a"-"z", " ", "_", "0" - "9"])* (["A"-"Z", ".", "a"-"z", "_", "0" - "9"])+))+) (<PATH_SLASH_SEPARATOR> | <OP_DIV>)?) >
 }
 
 
@@ -99,8 +101,58 @@ void class_contents() :
 void expression() :
 {}
 {
-    var_declaration() ";" |
-    block()
+    [var_declaration()] ";"     |
+    block()                     |
+    bl_for()                    |
+    bl_while()                  |
+    bl_if()                     |
+    bl_return() ";"
+}
+
+void bl_return() #ST_RETURN :
+{}
+{
+    <ST_RETURN> [op_prio_3()]
+}
+
+void bl_if() #ST_IF :
+{}
+{
+    <ST_IF> <BRACKET_ROUND_LEFT> op_prio_3() #ST_IF_COND <BRACKET_ROUND_RIGHT> expression() #ST_IF_EXPR(true)
+    (LOOKAHEAD(<ST_ELSE> <ST_IF>) (<ST_ELSE> <ST_IF> <BRACKET_ROUND_LEFT> op_prio_3() #ST_IF_COND <BRACKET_ROUND_RIGHT> expression() #ST_IF_EXPR(true)) #ST_ELSE_IF)*
+    [LOOKAHEAD(<ST_ELSE> expression()) <ST_ELSE> expression() #ST_ELSE_EXPR]
+}
+
+void bl_while() #ST_WHILE :
+{}
+{
+    <ST_WHILE> <BRACKET_ROUND_LEFT> op_prio_3() #ST_WHILE_COND <BRACKET_ROUND_RIGHT> expression() #ST_WHILE_EXPR
+}
+
+
+void bl_for() #ST_FOR :
+{}
+{
+    <ST_FOR> <BRACKET_ROUND_LEFT> bl_for_body() <BRACKET_ROUND_RIGHT> expression() #ST_FOR_EXPR
+}
+
+void bl_for_body() :
+{}
+{
+    LOOKAHEAD(bl_for_each())
+    bl_for_each() | bl_for_normal()
+}
+
+void bl_for_each() #ST_FOR_EACH_BODY :
+{}
+{
+    (type_specifier() pure_identifier()) #ST_FOR_EACH_BODY_DECL <COLON> op_prio_3() #ST_FOR_EACH_BODY_ARR
+}
+
+void bl_for_normal() #ST_FOR_NORMAL_BODY :
+{}
+{
+    [var_declaration()] #ST_FOR_NORMAL_BODY_DECL <SEMICOLON> [op_prio_3()] #ST_FOR_NORMAL_BODY_COND <SEMICOLON> [op_prio_3()] #ST_FOR_NORMAL_BODY_INC
 }
 
 void method_declaration() #METHOD_DECLARATION :
@@ -340,13 +392,20 @@ void pure_identifier() #LITERAL_IDENTIFIER :
 void type_specifier_specifier() :
 {}
 {
-    type_array_brackets()
+    type_array_brackets() |
+    type_gl_brackets()
 }
 
 void type_array_brackets() #TYPE_ARRAY :
 {}
 {
     <BRACKET_SQUARE_LEFT> <BRACKET_SQUARE_RIGHT>
+}
+
+void type_gl_brackets() #TYPE_TYPESAFE :
+{}
+{
+    <OP_LESS_THAN> (type_specifier() (<COMMA> type_specifier())*)* <OP_GREATER_THAN>
 }
 
 void type_specifier() #TYPE :
@@ -379,7 +438,6 @@ void atom() :
     Token t;
 }
 {
-
     (t = <LITERAL_INTEGER> {jjtThis.value = t.image;})    #LITERAL_INTEGER      |
     (t = <LITERAL_BOOLEAN> {jjtThis.value = t.image;})    #LITERAL_BOOLEAN      |
     (t = <LITERAL_CHAR> {jjtThis.value = t.image;})       #LITERAL_CHAR         |
