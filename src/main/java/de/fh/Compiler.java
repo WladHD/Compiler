@@ -70,12 +70,7 @@ public class Compiler<T extends Node> implements ICompiler<T> {
         System.out.println("Starte semantische Analyse und Fehlerprüfung ... ");
 
         if (getSemanticAnalyzer() != null) {
-            try {
-                getSemanticAnalyzer().doSemanticCheck(rootNode);
-            } catch (SemanticException e) {
-                System.out.println(e.getMessage());
-                return;
-            }
+            getSemanticAnalyzer().doSemanticCheck(rootNode);
         }
 
         System.out.println("Erfolgreich");

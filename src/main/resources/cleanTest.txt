@@ -1,5 +1,7 @@
 Path p = C:/ho me/ro bert/hel lo.txt ;
 int z = y = x++ + (x / 2);
+z = 45;
+int ysd = 34;
 
 void main() {
     System.print("Bitte geben Sie den Pfad ein:");
@@ -7,6 +9,16 @@ void main() {
     System.println(anzahl(neu, test, hello));
 
     System.print(getInt() + y);
+
+    int ysd =34 ;
+
+    int x = 4;
+}
+
+int[] test(int hello) {
+    int z = 0;
+    int ysd =34 ;
+    return engo;
 }
 
 Set<int, int> yes;
@@ -27,4 +39,8 @@ else x--;
 
 Set<int> x = [1, 2, 3, 4];
 Map<String, int> y = ["sdf":1, "sdf":2, "sdf":3];
-int[] x = {1, 2, 3, 4, 5};
+int[] xs = {1, 2, 3, 4, 5};
+
+int[] emptyNArray = {};
+Set<int> emptySet = [];
+Map<int, int> emptymap = [];

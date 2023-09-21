@@ -1,6 +1,8 @@
 package de.fh.utils;
 
 import de.fh.javacc.generated.*;
+import de.fh.semantic.closure.IClosure;
+import de.fh.semantic.err.SemanticException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -21,11 +23,19 @@ public interface GodlyTestParserVisitor extends TestParserVisitor {
         return sn;
     }
 
+    default Object visit(Node n, Object data) {
+        return visit((SimpleNode) n, data);
+    }
+
     default void visitAll(SimpleNode root) {
+        visitAll(root, root.jjtGetValue());
+    }
+
+    default void visitAll(SimpleNode root, Object obj) {
         if (root.jjtGetNumChildren() != 0) {
             for (int i = 0; i < root.jjtGetNumChildren(); ++i) {
                 SimpleNode sn = (SimpleNode) root.jjtGetChild(i);
-                visit(sn, sn.jjtGetValue());
+                visit(sn, obj);
             }
         }
     }
@@ -39,7 +49,7 @@ public interface GodlyTestParserVisitor extends TestParserVisitor {
             try {
                 return m.invoke(this, node, data);
             } catch (IllegalAccessException | InvocationTargetException e) {
-                //throw new RuntimeException(e);
+                throw new RuntimeException(e.getCause());
             }
         }
 

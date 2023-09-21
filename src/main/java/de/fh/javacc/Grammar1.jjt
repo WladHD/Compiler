@@ -4,7 +4,6 @@ options {
     IGNORE_CASE = false;
     GENERATE_STRING_BUILDER = true;
     NODE_DEFAULT_VOID = true;
-    DEBUG_LOOKAHEAD = true;
 }
 
 PARSER_BEGIN(TestParser)
@@ -171,7 +170,7 @@ void method_param_declaration() #METHOD_PARAMETERS :
 void var_declaration() :
 {}
 {
-    (type_specifier() pure_identifier() [op_assignment()]) #VAR_DECLARATION |
+    (type_specifier() (LOOKAHEAD(pure_identifier() op_assignment()) (pure_identifier() op_assignment()) #VAR_INIT | pure_identifier())) #VAR_DECLARATION |
     LOOKAHEAD(identifier() op_assignment())
     (identifier() op_assignment()) #VAR_INIT |
     op_prio_3()
@@ -190,7 +189,7 @@ void op_assignment() #OP_PRIO_1 :
 }
 {
     // TODO identifier() ... is only 1 identifier ...
-    t = <OP_ASSIGNMENT> {jjtThis.value = t.image;} (LOOKAHEAD(identifier() <OP_ASSIGNMENT>) op_assignment_redo())* op_prio_3()
+    t = <OP_ASSIGNMENT> {jjtThis.value = t.image;} op_assignment_redo()
 }
 
 void op_assignment_redo() :
@@ -198,7 +197,9 @@ void op_assignment_redo() :
     Token t;
 }
 {
-    identifier() t = <OP_ASSIGNMENT> {jjtThis.value = t.image;} #OP_PRIO_1
+    LOOKAHEAD(identifier() <OP_ASSIGNMENT> op_assignment_redo())
+    (identifier() (t = <OP_ASSIGNMENT> {jjtThis.value = t.image;} op_assignment_redo()) #OP_PRIO_1) #VAR_INIT |
+    op_prio_3()
 }
 
 // PRIO 3
@@ -285,7 +286,7 @@ void op_prio_11() #OP_PRIO_11(>1) :
     op_prio_12() (op_prio_11_operator() op_prio_12())*
 }
 
-void op_prio_11_operator() #OPERATOR_12 :
+void op_prio_11_operator() #OPERATOR_11 :
 {
     Token t;
 }
@@ -382,6 +383,7 @@ void op_prio_15_array_selector() #OPERATOR_15_METHOD_CALL :
     <BRACKET_SQUARE_LEFT> #OPERATOR_15_ARRAY_INDEX_CALL(true) op_prio_3() <BRACKET_SQUARE_RIGHT>
 }
 
+// TODO concat with identifier() ?
 void pure_identifier() #LITERAL_IDENTIFIER :
 {
     Token t;
