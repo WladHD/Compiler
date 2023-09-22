@@ -1,1 +1,1 @@
-String y = "asd" + 1;
+Set<boolean> s = [true, true, true, true, "sdf" == "sdfsdf"];

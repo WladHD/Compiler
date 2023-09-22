@@ -19,7 +19,7 @@ PARSER_END(TestParser)
 
 TOKEN : {
     // TYPES
-    <TYPE_SPECIFIERS: "Map" | "int" | "char" | "String" | "boolean"| "Files" | "Path" | "Set" > |
+    <TYPE_SPECIFIERS: "Map" | "int" | "char" | "String" | "boolean" | "Files" | "Path" | "Set" > |
     <TYPE_SPECIFIERS_VOID: "void"> |
 
     // SEPARATORS
@@ -59,8 +59,8 @@ TOKEN : {
     <ST_RETURN: "return">   |
 
     // LITERAL
-    <LITERAL_IDENTIFIER: ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])*> |
     <LITERAL_BOOLEAN: "true" | "false">             |
+    <LITERAL_IDENTIFIER: ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])*> |
     <LITERAL_STRING: "\""(~["\"","\n"])*"\"">       |
     <LITERAL_CHAR: "'" (~["'","\n"]) "'">           |
     <LITERAL_INTEGER: (["0"-"9"])+>                 |

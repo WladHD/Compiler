@@ -249,7 +249,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
         Object typeReturnType = visit(operation, data);
         ComplexParserType expectedType = cast(data).getVariableTypeAndValue(identifier, false).getKey();
 
-        if (!expectedType.equals(typeReturnType)) {
+        if (!expectedType.isEqual(typeReturnType)) {
             throw new ExpectedTypeMissmatchSemanticException(expectedType, typeReturnType);
         }
 
@@ -268,7 +268,6 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTOP_PRIO_1 node, Object data) {
-        System.out.println(data);
         if (node.jjtGetNumChildren() == 1)
             return visit(node.jjtGetChild(0), data);
 
@@ -288,7 +287,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTOP_PRIO_4 node, Object data) {
-        return null;
+        return inferOperatorFromTwoArguments(node, data);
     }
 
     @Override
@@ -326,18 +325,22 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
         return null;
     }
 
-    @Override
-    public Object visit(ASTOP_PRIO_11 node, Object data) {
-        ComplexParserType currentType = (ComplexParserType) visit(node.jjtGetChild(1), data);
+    public ComplexParserType inferOperatorFromTwoArguments(SimpleNode node, Object data) {
+        ComplexParserType currentType = (ComplexParserType) visit(node.jjtGetChild(0), data);
 
-        for(int i = 1; i < node.jjtGetNumChildren(); i += 2) {
-            ASTOPERATOR_11 op = (ASTOPERATOR_11) node.jjtGetChild(i);
+        for (int i = 1; i < node.jjtGetNumChildren(); i += 2) {
             ComplexParserType cpt2 = (ComplexParserType) visit(node.jjtGetChild(i + 1), data);
-
-            currentType = ComplexParserTypeIdentifier.inferDatatype(currentType, cpt2, (String) op.jjtGetValue());
+            currentType = ComplexParserTypeIdentifier.inferDatatype(currentType, cpt2, (String) ((SimpleNode) node.jjtGetChild(i)).jjtGetValue());
         }
 
-        return null;
+        Main.logger.info(currentType.toString());
+
+        return currentType;
+    }
+
+    @Override
+    public Object visit(ASTOP_PRIO_11 node, Object data) {
+        return inferOperatorFromTwoArguments(node, data);
     }
 
     @Override
@@ -430,6 +433,9 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
     public Object visit(ASTTYPE node, Object data) {
         ComplexParserType cpt = new ComplexParserType(ParserTypes.match((String) node.jjtGetValue()));
 
+        Main.logger.info((String) node.jjtGetValue());
+        Main.logger.info(cpt.toString());
+
         for (SimpleNode sn : childrenToArray(node))
             visit(sn, cpt);
 
@@ -438,32 +444,54 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTARRAY_CONTAINER_NATIVE node, Object data) {
-        return null;
+        if (node.jjtGetNumChildren() == 0)
+            return new ComplexParserType(ParserTypes.EMPTY_ARRAY_CONTAINER);
+
+        ArrayList<Object> cpt = new ArrayList<>();
+
+        for (SimpleNode sn : childrenToArray(node))
+            cpt.add(visit(sn, data));
+
+        return cpt;
     }
 
     @Override
     public Object visit(ASTARRAY_CONTAINER node, Object data) {
-        return null;
+        if (node.jjtGetNumChildren() == 0)
+            return new ComplexParserType(ParserTypes.EMPTY_ARRAY_CONTAINER);
+
+        ArrayList<Object> cpt = new ArrayList<>();
+
+        for (SimpleNode sn : childrenToArray(node))
+            cpt.add(visit(sn, data));
+
+        return cpt;
     }
 
     @Override
     public Object visit(ASTARRAY_ELEMENT node, Object data) {
-        return null;
+        return visit(node.jjtGetChild(0), data);
     }
 
     @Override
     public Object visit(ASTMAP_ELEMENT node, Object data) {
-        return null;
+
+        ArrayList<Object> cpt = new ArrayList<>();
+
+        for(SimpleNode sn : childrenToArray(node))
+            cpt.add(visit(sn, data));
+
+        return cpt;
     }
 
     @Override
     public Object visit(ASTMAP_ELEMENT_KEY node, Object data) {
-        return null;
+        return visit(node.jjtGetChild(0), data);
     }
 
     @Override
     public Object visit(ASTMAP_ELEMENT_VALUE node, Object data) {
-        return null;
+        return visit(node.jjtGetChild(0), data);
     }
 
     @Override

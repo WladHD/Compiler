@@ -61,8 +61,12 @@ public class ComplexParserType {
     }
 
     public boolean isEqual(Object o) {
-        if (o instanceof ParserTypes pt && !hasComplexParserTypes())
+        if (o instanceof ParserTypes pt && !hasComplexParserTypes()) {
             return pt == getBasicType();
+        }
+
+        if(getBasicType() == ParserTypes.SET || getBasicType() == ParserTypes.MAP || isArray)
+            return ComplexParserTypeIdentifier.acceptArrayValue(this, o);
 
         if (!this.getClass().isInstance(o))
             return false;
@@ -73,6 +77,9 @@ public class ComplexParserType {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(basicType.getParserType());
+
+        if (isArray)
+            sb.append("[]");
 
         if (complexParserTypes != null) {
             sb.append("<");
@@ -93,6 +100,9 @@ public class ComplexParserType {
     public String toStringJava(boolean displayPrimitive) {
         StringBuilder sb = new StringBuilder();
         sb.append(displayPrimitive ? basicType.getParserType() : basicType.getJavaType());
+
+        if (isArray)
+            sb.append("[]");
 
         if (complexParserTypes != null) {
             sb.append("<");

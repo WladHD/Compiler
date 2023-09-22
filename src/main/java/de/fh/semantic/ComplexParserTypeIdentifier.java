@@ -1,7 +1,13 @@
 package de.fh.semantic;
 
+import de.fh.semantic.err.ExpectedTypeMissmatchSemanticException;
+import de.fh.semantic.err.IllegalOperationSemanticException;
+
 import javax.swing.text.html.parser.Parser;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class ComplexParserTypeIdentifier {
 
@@ -34,15 +40,64 @@ public class ComplexParserTypeIdentifier {
 
             boolean containsType = Arrays.stream(tmm.anything).anyMatch(parserTypes -> parserTypes.equals(second.getBasicType()));
 
-            if(!containsType)
+            if (!containsType)
                 continue;
 
             return required;
         }
 
+        throw new IllegalOperationSemanticException(a, b, operator);
+    }
 
+    private static boolean acceptArrayValueSet(ComplexParserType declared, Object arrayOrEmptyArray) {
+        if (!declared.hasComplexParserTypes() && declared.getComplexParserTypes().size() != 1)
+            return false;
 
-        return null;
+        if (arrayOrEmptyArray instanceof ArrayList<?> arr) {
+            for (Object o : arr) {
+                if (o instanceof ComplexParserType cpt && !declared.getComplexParserTypes().get(0).isEqual(cpt))
+                    return false;
+
+                if (o instanceof ArrayList<?> arr2 && !acceptArrayValue(declared.getComplexParserTypes().get(0), arr2))
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean acceptArrayValueMap(ComplexParserType declared, Object arrayOrEmptyArray) {
+        if (!declared.hasComplexParserTypes() && declared.getComplexParserTypes().size() != 2)
+            return false;
+
+        ComplexParserType declaredTypeKey = declared.getComplexParserTypes().get(0);
+        ComplexParserType declaredTypeValue = declared.getComplexParserTypes().get(1);
+
+        if (arrayOrEmptyArray instanceof ArrayList<?> arr) {
+            for (Object o : arr) {
+                if(o instanceof ArrayList<?> pair) {
+                    if (!declaredTypeKey.isEqual(pair.get(0))) {
+                        return false;
+                    }
+
+                    return declaredTypeValue.isEqual(pair.get(1));
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public static boolean acceptArrayValue(ComplexParserType declared, Object arrayOrEmptyArray) {
+        if (arrayOrEmptyArray instanceof ComplexParserType cpt && cpt.isEqual(ParserTypes.EMPTY_ARRAY_CONTAINER))
+            return true;
+
+        if (declared.getBasicType() == ParserTypes.SET)
+            return acceptArrayValueSet(declared, arrayOrEmptyArray);
+        else if (declared.getBasicType() == ParserTypes.MAP)
+            return acceptArrayValueMap(declared, arrayOrEmptyArray);
+
+        return false;
     }
 
     public static class TypeMaps {
