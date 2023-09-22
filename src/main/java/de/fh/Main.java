@@ -4,9 +4,12 @@ import de.fh.javacc.generated.ParseException;
 import de.fh.javacc.generated.SimpleNode;
 import de.fh.lexparser.LexParser;
 import de.fh.semantic.SemanticAnalyzer;
+import de.fh.utils.CustomFormatter;
 
 import java.awt.*;
 import java.lang.reflect.ParameterizedType;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -15,8 +18,17 @@ public class Main {
     public static Logger logger;
 
     public static void main(String[] args) throws ParseException {
-        logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+        CustomFormatter cs = new CustomFormatter();
+        ConsoleHandler consoleHandler = new ConsoleHandler();
+        consoleHandler.setFormatter(cs);
+        logger = Logger.getLogger(Main.class.getName());
         logger.setLevel(Level.ALL);
+
+        for (Handler iHandler : logger.getParent().getHandlers()) {
+            logger.getParent().removeHandler(iHandler);
+        }
+
+        logger.addHandler(consoleHandler);
 
         Compiler<SimpleNode> compiler = new Compiler<>(
                 new LexParser(),
@@ -39,7 +51,7 @@ public class Main {
         }
 
 
-        boolean[] s = { true, true, true, true};
+        boolean[] s = {true, true, true, true};
 
         int[] arr = {1, 2, 3, 4};
         int x = arr[arr[2] = 1] = 34;

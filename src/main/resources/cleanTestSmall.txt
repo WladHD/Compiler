@@ -1,7 +1,7 @@
 // Map<String, String> test2 = [System.readString() : "sdf"];
 
 Set<int[]> hello = [{ 1, 2, 3 }];
-
+int plsWork = 1 + 5 * 3;
 
 void testing(int i) {
     System.println(i);

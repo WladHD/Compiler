@@ -9,6 +9,7 @@ import de.fh.semantic.closure.IClosure;
 import de.fh.semantic.err.*;
 import de.fh.utils.GodlyTestParserVisitor;
 
+import java.text.MessageFormat;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -203,7 +204,8 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
             if (!hasReturn)
                 throw new NoReturnSemanticException();
         }
-        Main.logger.info("Method: Put: " + identifier + " with return type: " + type);
+
+        Main.logger.info(MessageFormat.format("[Closure] Added method declaration {0} with return type {1}.", identifier, type));
 
         // Ist extra so, damit kein neuer Closure beim Block angelegt wird
         visitAll(block, ic);
@@ -246,7 +248,6 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
         }
 
         cast(data).addVariableDeclaration(identifier, type, false);
-        Main.logger.info("Put: " + identifier + " with type: " + type);
 
         if (init != null)
             visit(init, data);
@@ -415,8 +416,6 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
                     currentClosure = cast(retrievedTypeClosure.getValue());
                     currentType = retrievedTypeClosure.getKey();
                     currentValue = ((ASTLITERAL_IDENTIFIER) ms.jjtGetChild(0)).jjtGetValue();
-
-                    System.out.println("Current type: " + currentType);
                 }
             } else if (current instanceof ASTOPERATOR_15_METHOD_CALL mc) {
                 ArrayList<ComplexParserType> givenParams = new ArrayList<>();
@@ -424,13 +423,9 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
                 for (SimpleNode sn : childrenToArray(mc))
                     givenParams.addAll((Collection<? extends ComplexParserType>) visit(sn, cast(data)));
 
-                System.out.println(givenParams);
-
                 if (currentValue instanceof String ident) {
                     AbstractMap.SimpleEntry<ComplexParserType, IClosure<String, ComplexParserType, Object>> retrievedTypeClosure = currentClosure.getMethodTypeAndClosure(ident, false);
                     currentType = retrievedTypeClosure.getKey();
-
-                    System.out.println("Current type: " + currentType);
 
                     if (givenParams.size() != retrievedTypeClosure.getValue().getMethodParams().size())
                         throw new MethodParameterMismatchSemanticException(ident, new ArrayList<>(retrievedTypeClosure.getValue().getMethodParams().values()), givenParams);
@@ -459,6 +454,9 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
                 }
             }
         }
+
+        Main.logger.info(MessageFormat.format("[Operation 15] Call to {0} resulted in type: {1}", ((ASTLITERAL_IDENTIFIER) node.jjtGetChild(0)).jjtGetValue(), currentType));
+
 
         return currentType;
     }

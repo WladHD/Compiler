@@ -1,9 +1,11 @@
 package de.fh.semantic.closure;
 
+import de.fh.Main;
 import de.fh.semantic.err.MethodDeclaredSemanticException;
 import de.fh.semantic.err.VariableDeclaredSemanticException;
 import de.fh.semantic.err.VariableNotDeclaredSemanticException;
 
+import java.text.MessageFormat;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,7 +35,8 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
             throw new VariableDeclaredSemanticException(varName.toString());
         }
 
-        System.out.println("PUT " + varName + " with " + varType);
+        Main.logger.info(MessageFormat.format("[Closure] Added variable declaration {0} with type {1}. Param: {2}", varName, varType, isParam));
+
         getVariableTypeMap().put(varName, varType);
 
         if(isParam) {
@@ -45,6 +48,8 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
     default void addVariableInitialisation(VarMethodNames varName, VarValue varValue) {
         if (!hasVariable(varName, false))
             throw new VariableNotDeclaredSemanticException(varName.toString());
+
+        Main.logger.info(MessageFormat.format("[Closure] Added variable initialisation {0} with value {1}.", varName, varValue));
 
         getVariableValueMap().put(varName, varValue);
     }
