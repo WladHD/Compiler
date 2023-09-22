@@ -21,7 +21,9 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
 
     boolean addBoundVariable(VarMethodNames var, VarMethodType type);
 
-    boolean addBoundVariableValue(VarMethodNames var, VarValue value);
+    boolean setBoundVariableValue(VarMethodNames var);
+
+    boolean setBoundVariableValue(String var);
 
     void addBoundVariableValueWithoutCheck(String var, Boolean o);
 
@@ -32,15 +34,20 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
 
     IClosure<VarMethodNames, VarMethodType, VarValue> getParent();
 
-    boolean methodExists(String methodName);
+    boolean getMethodThisClosure(String methodName);
 
-    boolean variableExists(String varName);
+    boolean getVariableThisClosure(String varName);
 
-    boolean variableExistsAnywhere(String varName);
+    boolean getVariableAnywhere(String varName);
 
-    AbstractMap.SimpleEntry<Boolean, String> getVariableTypeAnywhere(String varName);
+
+    String getVariableTypeAnywhere(String varName);
 
     boolean parameterExists(String methodName, String paramName);
+
+    boolean getVariableValueAnywhere(String varName);
+
+    boolean setVariableValueAnywhere(String varName);
 
     String getParameterType(String methodName, String paramName);
 

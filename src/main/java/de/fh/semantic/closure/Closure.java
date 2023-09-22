@@ -126,13 +126,13 @@ public class Closure implements IClosure<String, String, Boolean> {
 
 
     @Override
-    public boolean addBoundVariableValue(String var, Boolean o) {
+    public boolean setBoundVariableValue(String var) {
 
         boolean itWorked = true;
         if (variableTypeMap.containsKey(var)) {
             // Variable doesn't exist in the current closure, add its value
             if(!variableValueMap.containsKey(var)){
-                variableValueMap.put(var, o);
+                variableValueMap.put(var, true);
             } else {
 
                 itWorked = false;
@@ -184,15 +184,15 @@ public class Closure implements IClosure<String, String, Boolean> {
         return parent;
     }
     @Override
-    public boolean methodExists(String methodName) {
+    public boolean getMethodThisClosure(String methodName) {
         return methodReturnTypeMap.containsKey(methodName);
     }
     @Override
-    public boolean variableExists(String varName) {
+    public boolean getVariableThisClosure(String varName) {
         return variableTypeMap.containsKey(varName);
     }
     @Override
-    public boolean variableExistsAnywhere(String varName) {
+    public boolean getVariableAnywhere(String varName) {
         // Check if the variable exists in the current closure
         if (variableTypeMap.containsKey(varName)) {
             return true;
@@ -200,14 +200,14 @@ public class Closure implements IClosure<String, String, Boolean> {
 
         // If the variable is not found in the current closure, check parent closures
         if (parent != null) {
-            if (parent.variableExistsAnywhere(varName)) {
+            if (parent.getVariableAnywhere(varName)) {
                 return true;
             }
         }
 
         // If the variable is not found in parent closures, check children closures
         for (IClosure<String, String, Boolean> childClosure : methodClosureMap.values()) {
-            if (childClosure.variableExistsAnywhere(varName)) {
+            if (childClosure.getVariableAnywhere(varName)) {
                 return true;
             }
         }
@@ -216,25 +216,26 @@ public class Closure implements IClosure<String, String, Boolean> {
         return false;
     }
     @Override
-    public AbstractMap.SimpleEntry<Boolean, String> getVariableTypeAnywhere(String varName) {
+    public String getVariableTypeAnywhere(String varName) {
         // Check if the variable exists in the current closure
         if (variableTypeMap.containsKey(varName)) {
-            return new AbstractMap.SimpleEntry<>(true, variableTypeMap.get(varName));
+            return variableTypeMap.get(varName);
         }
 
         // If the variable is not found in the current closure, check in parent closures recursively
         if (parent != null) {
-            AbstractMap.SimpleEntry<Boolean, String> parentResult = parent.getVariableTypeAnywhere(varName);
+            String parentResult = parent.getVariableTypeAnywhere(varName);
 
             // If the variable is found in a parent closure, return the result
-            if (parentResult.getKey()) {
+            if (parentResult != null) {
                 return parentResult;
             }
         }
 
-        // If the variable is not found in any closure, return false and null type
-        return new AbstractMap.SimpleEntry<>(false, null);
+        // If the variable is not found in any closure, return null
+        return null;
     }
+
 
 
     @Override
@@ -246,6 +247,38 @@ public class Closure implements IClosure<String, String, Boolean> {
             return parameters.containsKey(paramName);
         }
         return false; // Method or parameter not found
+    }
+    @Override
+    public boolean getVariableValueAnywhere(String varName) {
+        // Check if the variable exists in the current closure
+        if (variableValueMap.containsKey(varName)) {
+            return true;
+        }
+
+        // If the variable is not found in the current closure, check parent closures
+        if (parent != null && parent.getVariableValueAnywhere(varName)) {
+            return true;
+        }
+
+        // If the variable is not found in any closure, return false
+        return false;
+    }
+    @Override
+    public boolean setVariableValueAnywhere(String varName) {
+        // Check if the variable exists in the current closure
+        if (variableTypeMap.containsKey(varName)) {
+            // Variable found in the current closure, update its value
+            variableValueMap.put(varName, true);
+            return true;
+        }
+
+        // If the variable is not found in the current closure, check parent closures
+        if (parent != null && parent.setVariableValueAnywhere(varName)) {
+            return true;
+        }
+
+        // If the variable is not found in any closure, return false
+        return false;
     }
 
     @Override

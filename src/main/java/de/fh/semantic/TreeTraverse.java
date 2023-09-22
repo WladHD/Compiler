@@ -42,38 +42,53 @@ public class TreeTraverse implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTGET_VAR_METHOD node, Object data) {
-        return null;
+        return node.jjtGetValue();
     }
 
     @Override
     public Object visit(ASTGET_METHOD_PARAMS node, Object data) {
-        return null;
+        if (node.jjtGetNumChildren()>0){
+            Object returnValue = this.visit((SimpleNode) node.jjtGetChild(0),data);
+            if(returnValue.toString().isEmpty()){
+                return "";
+            }else {
+                return returnValue.toString();
+            }
+        }else {
+            return "";
+        }
     }
 
     @Override
     public Object visit(ASTPARAM node, Object data) {
-        return null;
+        if (node.jjtGetNumChildren()>0){
+            boolean paramsOk = checkParams(node,data);
+            if (paramsOk){
+                return "";
+            }else {
+                return "The inserted Parameters are wrong";
+            }
+        } else {
+            return "PARAM didn't have a child";
+        }
+
     }
 
     @Override
     public Object visit(ASTSTATEMENT node, Object data) {
         Object name = this.visit((SimpleNode) node.jjtGetChild(0), data);
-        Closure thisClosure = this.currentClosure;
 
-        if (data != null) {
-            thisClosure = (Closure) currentClosure.getChildClosureForMethod(data.toString());
-        }
         String type = "";
-        if (thisClosure.variableExists(name.toString()) || thisClosure.methodExists(name.toString())) {
+        if (currentClosure.getVariableThisClosure(name.toString()) || currentClosure.getMethodThisClosure(name.toString())) {
 
 
             if (node.jjtGetChild(0).jjtGetNumChildren() > 0) {
 
-                if (thisClosure.variableExists(name.toString())) {
-                    type = thisClosure.getVariableTypeMap().get(name.toString());
+                if (currentClosure.getVariableThisClosure(name.toString())) {
+                    type = currentClosure.getVariableTypeMap().get(name.toString());
 
-                } else if (thisClosure.methodExists(name.toString())) {
-                    type = thisClosure.getMethodReturnTypeMap().get(name.toString());
+                } else if (currentClosure.getMethodThisClosure(name.toString())) {
+                    type = currentClosure.getMethodReturnTypeMap().get(name.toString());
 
                 }
 
@@ -84,24 +99,40 @@ public class TreeTraverse implements GodlyTestParserVisitor {
         }
         if (data != null && type.isEmpty()) {
 
-            if (thisClosure.parameterExists(data.toString(), name.toString())) {
+            if (currentClosure.parameterExists(data.toString(), name.toString())) {
                 if (node.jjtGetChild(0).jjtGetNumChildren() > 0) {
-                    type = thisClosure.getParameterType(data.toString(), name.toString());
+                    type = currentClosure.getParameterType(data.toString(), name.toString());
                 } else {
                     return "Statement child had no Children";
                 }
             }
         }
-        if (thisClosure.getParent() != null && type.isEmpty()) {
-            if (thisClosure.getParent().variableExists(name.toString())){
+        if (currentClosure.getParent() != null && type.isEmpty()) {
+            Set<String> validValues = new HashSet<>(Arrays.asList("Path", "Files", "System", "Map", "Set"));
+            if (currentClosure.getParent().getVariableThisClosure(name.toString())){
                 if (node.jjtGetChild(0).jjtGetNumChildren() > 0) {
-                    type = thisClosure.getParent().getVariableTypeMap().get(name.toString());
+                    type = currentClosure.getParent().getVariableTypeMap().get(name.toString());
                 } else {
                     return "Statement child had no Children";
                 }
 
-            } else if (name.toString().equals("BLOCK_FINISCHED")){
-                name = "";
+            }  else if (validValues.contains(name.toString())) {
+                // System is node.jjtGetChild(0) and i need its child
+                Object getSystemOperator = this.visit((SimpleNode) node.jjtGetChild(0).jjtGetChild(0), data);
+
+                if(getSystemOperator.toString().equals(".")){
+                    // calling Function that is to be executed after "System."
+
+                     // define all System. Operations
+                    boolean isOk = checkCalls((SimpleNode) node.jjtGetChild(0).jjtGetChild(0).jjtGetChild(0), name.toString());
+                    if(isOk){
+                        name = "";
+                    } else {
+                        return "The call of " + name + " didn't work. Wrong Input";
+                    }
+                }
+
+
             } else {
                 return this.visit((SimpleNode) node.jjtGetChild(0), data);
             }
@@ -113,11 +144,11 @@ public class TreeTraverse implements GodlyTestParserVisitor {
             Object returnValue = this.visit((SimpleNode) node.jjtGetChild(0).jjtGetChild(0), type);
             if (returnValue.toString().equals("")) {
 
-                boolean itWorked = thisClosure.updateVariableValue(name.toString(), true);
+                boolean itWorked = currentClosure.updateVariableValue(name.toString(), true);
                 if (data != null){
-                    if (thisClosure.parameterExists(data.toString(), name.toString()) && !itWorked) {
+                    if (currentClosure.parameterExists(data.toString(), name.toString()) && !itWorked) {
 
-                        thisClosure.addBoundVariableValueWithoutCheck(name.toString(), true);
+                        currentClosure.addBoundVariableValueWithoutCheck(name.toString(), true);
                         itWorked = true;
                     }
                 }
@@ -145,12 +176,7 @@ public class TreeTraverse implements GodlyTestParserVisitor {
     public Object visit(ASTDECL node, Object data) {
         boolean itWorked = true;
         String errorMessage = "";
-        Closure thisClosure = this.currentClosure;
 
-        if (data != null) {
-            thisClosure = (Closure) currentClosure.getChildClosureForMethod(data.toString());
-
-        }
         Object type = this.visit((SimpleNode) node.jjtGetChild(0), null);
 
         Object name = this.visit((SimpleNode) node.jjtGetChild(1), null);
@@ -159,7 +185,7 @@ public class TreeTraverse implements GodlyTestParserVisitor {
 
         if (concludeMeth.toString().equals("METHDECL")){
 
-            itWorked = thisClosure.addBoundMethod(name.toString(), type.toString(), thisClosure.createNewClosure());
+            itWorked = this.currentClosure.addBoundMethod(name.toString(), type.toString(), this.currentClosure.createNewClosure());
             //currentClosure.getChildClosureForMethod(name.toString()).getVariableTypeMap();
             if(!itWorked){
                 return "The Methode already exists";
@@ -172,29 +198,59 @@ public class TreeTraverse implements GodlyTestParserVisitor {
 
         } else if(concludeMeth.toString().equals("CONCLUDED_VAR_DEC")){
 
-            itWorked = thisClosure.addBoundVariable(name.toString(), type.toString());
+            itWorked = this.currentClosure.addBoundVariable(name.toString(), type.toString());
             // open tree for var declare if value exists
 
             if(!itWorked){
                 return "The Variable already exists";
             }
             if (concludeMeth.jjtGetNumChildren() == 1){
-                // access VARIABLE_ASSIGNMENT_PRIO_1
-                Object value = this.visit((SimpleNode) concludeMeth.jjtGetChild(0), type);
-                if (value.toString().equals("")){
 
+                if(type.toString().equals("Map")){
 
-                    itWorked = thisClosure.addBoundVariableValue(name.toString(), true);
-
+                    String type1 = this.visit((SimpleNode) node.jjtGetChild(0).jjtGetChild(0).jjtGetChild(0), null).toString();
+                    String type2 = this.visit((SimpleNode) node.jjtGetChild(0).jjtGetChild(0).jjtGetChild(1), null).toString();
+                    itWorked = checkMap((SimpleNode) concludeMeth.jjtGetChild(0).jjtGetChild(0) ,type1,type2);
                     if (!itWorked){
-
-                        return "The variable "+ name.toString()+ " already has a value";
-
+                        return "Map could not be declared";
                     }
+                } else if (type.toString().equals("Set")) {
+                    type = this.visit((SimpleNode) node.jjtGetChild(0).jjtGetChild(0).jjtGetChild(0), null).toString();
+
+                    Object value = this.visit((SimpleNode) concludeMeth.jjtGetChild(0), type);
+                    if (value.toString().equals("")) {
 
 
-                }else {
-                    return value.toString();
+                        itWorked = this.currentClosure.setBoundVariableValue(name.toString());
+
+                        if (!itWorked) {
+
+                            return "The variable " + name.toString() + " already has a value";
+
+                        }
+
+
+                    } else {
+                        return value.toString();
+                    }
+                } else {
+                    // access VARIABLE_ASSIGNMENT_PRIO_1
+                    Object value = this.visit((SimpleNode) concludeMeth.jjtGetChild(0), type);
+                    if (value.toString().equals("")) {
+
+
+                        itWorked = this.currentClosure.setBoundVariableValue(name.toString());
+
+                        if (!itWorked) {
+
+                            return "The variable " + name.toString() + " already has a value";
+
+                        }
+
+
+                    } else {
+                        return value.toString();
+                    }
                 }
             }
 
@@ -219,7 +275,13 @@ public class TreeTraverse implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTATOM_PATH node, Object data) {
-        return null;
+        Object returnValue = this.visit((SimpleNode) node.jjtGetChild(0),data);
+        if(returnValue.toString().isEmpty()){
+            return "";
+        } else {
+            return returnValue.toString();
+        }
+
     }
 
     @Override
@@ -250,7 +312,7 @@ public class TreeTraverse implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTPARAM_PAIR node, Object data) {
-        if (currentClosure.methodExists(data.toString())){
+        if (currentClosure.getMethodThisClosure(data.toString())){
             Object type = this.visit((SimpleNode) node.jjtGetChild(0), null);
             Object name = this.visit((SimpleNode) node.jjtGetChild(1), null);
             HashMap <String, String> methodParameters = new HashMap<>();
@@ -273,20 +335,36 @@ public class TreeTraverse implements GodlyTestParserVisitor {
     }
 
     @Override
+    public Object visit(ASTTYPE_ARRAY node, Object data) {
+        return null;
+    }
+
+    @Override
     public Object visit(ASTVAR_METHOD_NAME node, Object data) {
         return node.jjtGetValue();
     }
 
     @Override
     public Object visit(ASTBLOCK node, Object data) {
+        // overwrite current closure and save the old current closure as long as the block is edited
+        Closure thisClosure = this.currentClosure;
+        Closure saveClosure = this.currentClosure;
+        if (data != null) {
+            thisClosure = (Closure) currentClosure.getChildClosureForMethod(data.toString());
+
+        }
+        this.currentClosure = thisClosure;
+
         Object returnValue = null;
         for(int children = 0; children< node.jjtGetNumChildren(); children++){
             returnValue = this.visit((SimpleNode) node.jjtGetChild(children), data.toString());
             if (!returnValue.toString().equals("")){
+                this.currentClosure = saveClosure;
                 return returnValue.toString();
             }
         }
-        return "BLOCK_FINISCHED";
+        this.currentClosure = saveClosure;
+        return "";
     }
 
     @Override
@@ -341,7 +419,7 @@ public class TreeTraverse implements GodlyTestParserVisitor {
                         return "Condition was not a boolean";
                     }
                 }
-            } else if (thisClosure.variableExists(returnValue.toString())) {
+            } else if (thisClosure.getVariableThisClosure(returnValue.toString())) {
                 type = (thisClosure.getVariableTypeMap().get(returnValue.toString()));
 
             } else if (returnValue.toString().equals("")) {
@@ -355,8 +433,7 @@ public class TreeTraverse implements GodlyTestParserVisitor {
     }
 
     @Override
-    public Object visit(ASTFor node, Object data) {
-
+    public Object visit(ASTFOR node, Object data) {
         String name = "for";
         boolean itWorked = false;
         int iteration = 0;
@@ -365,23 +442,47 @@ public class TreeTraverse implements GodlyTestParserVisitor {
             iteration++;
             itWorked = currentClosure.addBoundMethod(name + iteration, "void", currentClosure.createNewClosure());
         }
+        Closure thisClosure = (Closure) currentClosure.getChildClosureForMethod(name+iteration);
+        Closure saveClosure = this.currentClosure;
 
-        for (int foriteration = 0; foriteration<3; foriteration++){
+        this.currentClosure = thisClosure;
+
+        for (int foriteration = 0; foriteration<node.jjtGetNumChildren()-1; foriteration++){
             Object returnValue = this.visit((SimpleNode) node.jjtGetChild(foriteration),name+iteration);
 
             if (!returnValue.toString().isEmpty()){
                 return returnValue.toString();
             }
         }
-
+        this.currentClosure = saveClosure;
 
 
         return "";
     }
 
     @Override
-    public Object visit(ASTFOREACH node, Object data) {
-        return null;
+    public Object visit(ASTFOR_BODY node, Object data) {
+        return this.visit((SimpleNode) node.jjtGetChild(0), data);
+    }
+
+    @Override
+    public Object visit(ASTFOR_BODY_NORMAL node, Object data) {
+        for (int children = 0; children<node.jjtGetNumChildren();children++){
+            Object result = this.visit((SimpleNode) node.jjtGetChild(children), data);
+            if(!result.toString().isEmpty()){
+                return result.toString();
+            }
+        }
+        return "";
+    }
+
+    @Override
+    public Object visit(ASTFOR_BODY_EACH node, Object data) {
+        Object returnValue = this.visit((SimpleNode) node.jjtGetChild(0),data);
+        if(!returnValue.toString().isEmpty()){
+            return returnValue.toString();
+        }
+        return "";
     }
 
     @Override
@@ -419,46 +520,72 @@ public class TreeTraverse implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTFORINIT node, Object data) {
-        Closure thisClosure = this.currentClosure;
-
-        if (data != null) {
-            thisClosure = (Closure) currentClosure.getChildClosureForMethod(data.toString());
-        }
         Object type = "";
         Object name = "";
         Object returnValue = "";
-        // if == 2 then its a decl in the for loop otherwise a statment
-
+        boolean itWorked;
+        // if == 2 then it's a decl in the for loop otherwise a statement
         if(node.jjtGetNumChildren()==3){
             type = this.visit((SimpleNode) node.jjtGetChild(0), data);
             name = this.visit((SimpleNode) node.jjtGetChild(1), data);
-            if(thisClosure.variableExists(name.toString())) {
-                return "Variable is already defined";
-            }
-            thisClosure.addBoundVariable(name.toString(), type.toString());
-            thisClosure.addBoundVariableValue(name.toString(), true);
 
             if (name.toString().isEmpty() || type.toString().isEmpty()){
-                return "Variable doesnt exist";
+                return "FORINIT Variable doesnt exist";
+            }
+
+            if(currentClosure.getVariableThisClosure(name.toString())) {
+                return "FORINIT Variable is already defined: " + name;
+            }
+
+            itWorked = currentClosure.addBoundVariable(name.toString(), type.toString());
+            if (!itWorked){
+                return "FORINIT Variable is already declared";
+            }
+            itWorked =currentClosure.setBoundVariableValue(name.toString());
+
+            if (!itWorked){
+                return "FORINIT Variable value couldn't be set";
             }
 
             returnValue = this.visit((SimpleNode) node.jjtGetChild(node.jjtGetNumChildren()-1), type);
+
+        } else if (node.jjtGetNumChildren()==2) {
+
+            type = this.visit((SimpleNode) node.jjtGetChild(0), data);
+            name = this.visit((SimpleNode) node.jjtGetChild(1), data);
+
+            if (name.toString().isEmpty() || type.toString().isEmpty()){
+                return "FORINIT Variable doesnt exist";
+            }
+
+            if(currentClosure.getVariableThisClosure(name.toString())) {
+                return "FORINIT Variable is already defined: " + name;
+            }
+
+            itWorked = currentClosure.addBoundVariable(name.toString(), type.toString());
+            if (!itWorked){
+                return "FORINIT Variable is already declared";
+
+            }
         } else if (node.jjtGetNumChildren()==1) {
             name = this.visit((SimpleNode) node.jjtGetChild(0), data);
 
-            if(thisClosure.variableExistsAnywhere(name.toString())) {
-                type = thisClosure.getVariableTypeAnywhere(name.toString()).getValue();
-                thisClosure.addBoundVariable(name.toString(), type.toString());
-                thisClosure.addBoundVariableValue(name.toString(), true);
-
+            if(currentClosure.getVariableAnywhere(name.toString())) {
+                type = currentClosure.getVariableTypeAnywhere(name.toString());
+                itWorked = currentClosure.setVariableValueAnywhere(name.toString());
+                if(!itWorked){
+                    return "FORINIT was unable to set the variable value anywhere";
+                }
             }
 
 
             if (name.toString().isEmpty() || type.toString().isEmpty()){
-                return "Variable doesnt exist";
+                return "FORINIT Variable doesnt exist";
             }
 
             returnValue = this.visit((SimpleNode) node.jjtGetChild(node.jjtGetNumChildren()-1).jjtGetChild(0), type);
+        } else {
+            return "FORINIT Unknown number of children: " + node.jjtGetNumChildren();
         }
 
 
@@ -472,79 +599,99 @@ public class TreeTraverse implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTFORCOND node, Object data) {
-        String type = "";
-        Set<String> validValues = new HashSet<>(Arrays.asList("int", "boolean"));
-        Closure thisClosure = this.currentClosure;
-        if (data != null) {
-            thisClosure = (Closure) currentClosure.getChildClosureForMethod(data.toString());
+        int y;
+        for (y = 0; y < 21; y++){
+
         }
-        boolean isBool = false;
         if (isBoolStatement(node, data)){
             return "";
         } else {
-            return "The for loop requires a condition";
+            return "FORCOND Requires a Condition";
         }
 
     }
 
     @Override
     public Object visit(ASTFOROPER node, Object data) {
-        Closure thisClosure = this.currentClosure;
-        Closure saveClosure = this.currentClosure;
-        if (data!=null){
-            thisClosure = (Closure) currentClosure.getChildClosureForMethod(data.toString());
 
-        }
-        this.currentClosure=thisClosure;
         Object returnValue = this.visit((SimpleNode) node.jjtGetChild(0),"int");
+        if(currentClosure.getVariableThisClosure(returnValue.toString())) {
 
-        if(thisClosure.variableExists(returnValue.toString())) {
-            returnValue = thisClosure.getVariableTypeMap().get(returnValue.toString());
+            returnValue = currentClosure.getVariableTypeMap().get(returnValue.toString());
 
             returnValue = this.visit((SimpleNode) node.jjtGetChild(0).jjtGetChild(0),returnValue);
-            this.currentClosure = saveClosure;
-            if (returnValue.toString().isEmpty()){
+
+            boolean itWorks = varGetsIncrement(node);
+            if (returnValue.toString().isEmpty() && itWorks){
                 return "";
-            }else {
+            } else if (returnValue.toString().isEmpty() && !itWorks) {
+                return "FOROPER The Variable in the for loop never changes";
+            } else {
                 return returnValue.toString();
             }
 
         } else if (returnValue.toString().isEmpty()){
             if (((SimpleNode) node.jjtGetChild(0)).toString().equals("OPERATION_PRIO_13") || ((SimpleNode) node.jjtGetChild(0)).toString().equals("OPERATION_PRIO_14")){
-                // get child of prio13/14 because the child needs to be tha variable
+                // get child of prio13/14 because the child needs to be the variable
                 returnValue = this.visit((SimpleNode) node.jjtGetChild(0).jjtGetChild(0),"int");
-                if(thisClosure.variableExists(returnValue.toString())) {
+                if(currentClosure.getVariableAnywhere(returnValue.toString())) {
                     return "";
 
                 } else {
-                    return "Fro-loop OROPER variable doesnt exist";
+                    return "FOROPER variable doesnt exist: " + returnValue.toString();
                 }
             } else {
-                return "Unknown Fro-loop OROPER";
+                return "FOROPER Unknown";
             }
         } else {
-            return "Unknown Token in OROPER";
+            if (returnValue.toString().isEmpty()){
+                return "FOROPER Unknown Token ";
+            } else {
+                return returnValue.toString();
+            }
+
         }
     }
 
     @Override
     public Object visit(ASTATOM_ARRAY node, Object data) {
-        return null;
+        for (int children = 0; children<node.jjtGetNumChildren();children++){
+            Object returnValue  = this.visit((SimpleNode) node.jjtGetChild(children),data);
+            if (!returnValue.toString().equals(data.toString())){
+                return "ATOM_ARRAY wrong data type inside of array";
+            }
+        }
+        return "";
     }
 
     @Override
     public Object visit(ASTATOM_SET node, Object data) {
-        return null;
+        for (int children = 0; children<node.jjtGetNumChildren(); children++){
+            Object returnValue = this.visit((SimpleNode) node.jjtGetChild(children),data);
+            if (!data.toString().equals(returnValue.toString())){
+                return "ATOM_SET you tried to assign " + returnValue.toString() + " to "+ data.toString();
+            }
+
+        }
+        return "";
     }
 
     @Override
     public Object visit(ASTATOM_MAP node, Object data) {
-        return null;
+        return "Map";
     }
 
     @Override
     public Object visit(ASTATOM_PATHELEMENT node, Object data) {
-        return null;
+        if (node.jjtGetValue().toString().isEmpty()){
+            return "ATOM_PATHELEMENT is Empty";
+        }
+        if (node.jjtGetNumChildren()>0){
+             return this.visit((SimpleNode) node.jjtGetChild(0),data);
+        }
+
+        return "";
+
     }
 
     @Override
@@ -554,22 +701,22 @@ public class TreeTraverse implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTMAP_KEY node, Object data) {
-        return null;
+        return this.visit((SimpleNode) node.jjtGetChild(0), data);
     }
 
     @Override
     public Object visit(ASTMAP_VALUE node, Object data) {
-        return null;
+        return this.visit((SimpleNode) node.jjtGetChild(0), data);
     }
 
     @Override
     public Object visit(ASTARRAY_ELEMENT node, Object data) {
-        return null;
+        return this.visit((SimpleNode) node.jjtGetChild(0), data);
     }
 
     @Override
     public Object visit(ASTSET_ELEMENT node, Object data) {
-        return null;
+        return this.visit((SimpleNode) node.jjtGetChild(0),data);
     }
 
     @Override
@@ -580,14 +727,10 @@ public class TreeTraverse implements GodlyTestParserVisitor {
         for(int children = 0; children < node.jjtGetNumChildren(); children++){
             returnValue = this.visit((SimpleNode) node.jjtGetChild(children), data);
 
-            if(currentClosure.variableExists(returnValue.toString())){
+            if(currentClosure.getVariableThisClosure(returnValue.toString())){
                 //  Object value = this.visit((SimpleNode) node.jjtGetChild(0).jjtGetChild(0), data);
                 returnValue = currentClosure.getVariableTypeMap().get(returnValue.toString());
-                /*Object value = this.visit((SimpleNode) node.jjtGetChild(1), data);
-                if (value.toString().equals("")) {
 
-                    return returnValue.toString();
-                }*/
             }
             if (!returnValue.toString().equals("") && !validValues.contains(returnValue.toString())){
                 return returnValue.toString();
@@ -608,7 +751,7 @@ public class TreeTraverse implements GodlyTestParserVisitor {
 
             Object returnValue = this.visit((SimpleNode) node.jjtGetChild(0), data);
 
-            if (currentClosure.variableExists(returnValue.toString())) {
+            if (currentClosure.getVariableThisClosure(returnValue.toString())) {
                 returnValue = (currentClosure.getVariableTypeMap().get(returnValue.toString()));
             }
 
@@ -635,7 +778,7 @@ public class TreeTraverse implements GodlyTestParserVisitor {
 
         if (validValues.contains(data.toString())) {
             Object returnValue = this.visit((SimpleNode) node.jjtGetChild(0), data);
-            if (currentClosure.variableExists(returnValue.toString())) {
+            if (currentClosure.getVariableThisClosure(returnValue.toString())) {
                 returnValue = (currentClosure.getVariableTypeMap().get(returnValue.toString()));
             }
             if (data.toString().equals(returnValue.toString()) || returnValue.equals("")) {
@@ -659,7 +802,7 @@ public class TreeTraverse implements GodlyTestParserVisitor {
         if (validValues.contains(data.toString())) {
             Object returnValue = this.visit((SimpleNode) node.jjtGetChild(0), data);
 
-            if (currentClosure.variableExists(returnValue.toString())) {
+            if (currentClosure.getVariableThisClosure(returnValue.toString())) {
                 returnValue = (currentClosure.getVariableTypeMap().get(returnValue.toString()));
             }
             if (data.toString().equals(returnValue.toString()) || returnValue.equals("")) {
@@ -681,7 +824,7 @@ public class TreeTraverse implements GodlyTestParserVisitor {
 
         if (validValues.contains(data.toString())) {
             Object returnValue = this.visit((SimpleNode) node.jjtGetChild(0), data);
-            if (currentClosure.variableExists(returnValue.toString())) {
+            if (currentClosure.getVariableThisClosure(returnValue.toString())) {
                 returnValue = (currentClosure.getVariableTypeMap().get(returnValue.toString()));
             }
             if (data.toString().equals(returnValue.toString()) || returnValue.equals("")) {
@@ -703,7 +846,7 @@ public class TreeTraverse implements GodlyTestParserVisitor {
 
         if (validValues.contains(data.toString())) {
             Object returnValue = this.visit((SimpleNode) node.jjtGetChild(0), data);
-            if (currentClosure.variableExists(returnValue.toString())) {
+            if (currentClosure.getVariableThisClosure(returnValue.toString())) {
                 returnValue = (currentClosure.getVariableTypeMap().get(returnValue.toString()));
             }
             if (data.toString().equals(returnValue.toString()) || returnValue.equals("")) {
@@ -725,8 +868,8 @@ public class TreeTraverse implements GodlyTestParserVisitor {
 
         if (validValues.contains(data.toString())) {
             Object returnValue = this.visit((SimpleNode) node.jjtGetChild(0), data);
-            if (currentClosure.variableExists(returnValue.toString())) {
-                returnValue = (currentClosure.getVariableTypeMap().get(returnValue.toString()));
+            if (currentClosure.getVariableAnywhere(returnValue.toString())) {
+                returnValue = (currentClosure.getVariableTypeAnywhere(returnValue.toString()));
             }
             if (data.toString().equals(returnValue.toString()) || returnValue.equals("")) {
                 return "";
@@ -772,23 +915,23 @@ public class TreeTraverse implements GodlyTestParserVisitor {
         if (node.toString().equals("OPERATION_PRIO_9")){
             return true;
         }
-        Closure thisClosure = this.currentClosure;
-        if (data!=null){
-            thisClosure = (Closure) currentClosure.getChildClosureForMethod(data.toString());
-        }
         String returnValue = "";
         for (int children = 0; children<node.jjtGetNumChildren(); children++){
             if(!node.jjtGetChild(children).toString().equals("OPERATION_PRIO_4_AND_3")){
                 returnValue = this.visit((SimpleNode) node.jjtGetChild(children), "int").toString();
-                if(thisClosure.variableExists(returnValue.toString())) {
-                    returnValue = thisClosure.getVariableTypeAnywhere(returnValue.toString()).getValue();
-
-                }else if (!returnValue.equals("int") && !returnValue.equals("")){
-                    return false;
+                if(!returnValue.isEmpty()) {
+                    if (currentClosure.getVariableAnywhere(returnValue.toString())) {
+                        returnValue = currentClosure.getVariableTypeAnywhere(returnValue.toString());
+                        if (!returnValue.toString().equals("int") && !returnValue.toString().equals("boolean")) {
+                            return false;
+                        }
+                    } else if (!returnValue.equals("int")) {
+                        return false;
+                    }
                 }
             } else {
                 String result = this.visit((SimpleNode) node.jjtGetChild(children), "boolean").toString();
-                if (!result.equals("")){
+                if (!result.isEmpty()){
                     return  false;
                 }
             }
@@ -804,4 +947,145 @@ public class TreeTraverse implements GodlyTestParserVisitor {
         return isBool;
     }
 
+    private boolean varGetsIncrement(SimpleNode node){
+        boolean itsTrue = false;
+
+        if (node.toString().equals("OPERATION_PRIO_11")||node.toString().equals("OPERATION_PRIO_12")|| node.toString().equals("OPERATION_PRIO_13")|| node.toString().equals("OPERATION_PRIO_14")){
+            return true;
+        } else {
+            if (node.toString().equals("VARIABLE_ASSIGNMENT_PRIO_1")&& !node.jjtGetValue().toString().equals("=")){
+                return true;
+            }
+        }
+        for(int children = 0; children<node.jjtGetNumChildren();children++){
+            itsTrue = varGetsIncrement((SimpleNode) node.jjtGetChild(children));
+
+        }
+
+        return itsTrue;
+    }
+
+    // Closure must be correctly set before calling
+    // Param check for System needs to be done
+    private boolean checkParams(SimpleNode node , Object data){
+        boolean paramsOk = true;
+        // check how many children Params has
+        if(node.jjtGetNumChildren() == 1){
+            // if it has only one child and no grandchildren
+            if(node.jjtGetChild(0).jjtGetNumChildren()==0){
+                // if no grandchildren than check if it is operator if not than true
+                return !node.jjtGetChild(0).toString().contains("OPERATION");
+            } else {
+
+            }
+        } else if (node.jjtGetNumChildren() > 1) {
+            
+        }
+        for (int children = 0; children< node.jjtGetNumChildren(); children++){
+            Object returnValue = this.visit((SimpleNode) node.jjtGetChild(children),data);
+        }
+        char a = 'a';
+        System.out.println(a>5);
+        return paramsOk;
+    }
+    // checks if a called object like "String." gets called with something valid
+    // node is REQUESTER_VAR_METHOD after the "."
+    // data contains the data type of the Object getting called (Path, Files, System, Map, Set)
+    private boolean checkCalls(SimpleNode node, Object data){
+
+        Object Value = this.visit(node,data);
+        if (data.toString().equals("Path")){
+
+            if (Value.toString().equals("ask")){
+                return true;
+            } else if (Value.toString().equals("update")) {
+                return true;
+            } else if (Value.toString().equals("remove")) {
+                return true;
+            } else if (Value.toString().equals("copyTo")) {
+                return true;
+            } else if (Value.toString().equals("moveTo")) {
+                return true;
+            } else if (Value.toString().equals("toString")) {
+                return true;
+            } else if (Value.toString().equals("files")) {
+                return true;
+            } else {
+                return false;
+            }
+
+        } else if (data.toString().equals("Files")) {
+
+            if (Value.toString().equals("remove")){
+                return true;
+            } else if (Value.toString().equals("rename")) {
+                return true;
+            } else if (Value.toString().equals("moveTo")) {
+                return true;
+            } else if (Value.toString().equals("getContent")) {
+                return true;
+            } else if (Value.toString().equals("toString")) {
+                return true;
+            } else {
+                return false;
+            }
+
+        } else if (data.toString().equals("System")) {
+
+            if (Value.toString().equals("OutputStream")){
+                return true;
+            } else if (Value.toString().equals("InputStream")) {
+                return true;
+            } else if (Value.toString().equals("print")) {
+                return true;
+            } else if (Value.toString().equals("println")) {
+                return true;
+            } else if (Value.toString().equals("readString")) {
+                return true;
+            } else {
+                return false;
+            }
+
+        } else if (data.toString().equals("Map")) {
+
+            if (Value.toString().equals("containsKey")){
+                return true;
+            } else if (Value.toString().equals("get")) {
+                return true;
+            } else if (Value.toString().equals("toString")) {
+                return true;
+            } else {
+                return false;
+            }
+
+        } else if (data.toString().equals("Set")) {
+
+            if (Value.toString().equals("addAllContents")){
+                return true;
+            } else if (Value.toString().equals("contains")) {
+                return true;
+            } else if (Value.toString().equals("diff")) {
+                return true;
+            } else if (Value.toString().equals("inter")) {
+                return true;
+            } else if (Value.toString().equals("toString")) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+
+    }
+
+    private boolean checkMap(SimpleNode node, String type1, String type2){
+        for (int children = 0; children < node.jjtGetNumChildren(); children++){
+            if (!(this.visit((SimpleNode) node.jjtGetChild(0).jjtGetChild(0), type1)).toString().equals(type1) && !(this.visit((SimpleNode) node.jjtGetChild(0).jjtGetChild(1), type2)).toString().equals(type2)){
+                return false;
+            }
+
+        }
+        return true;
+    }
 }
