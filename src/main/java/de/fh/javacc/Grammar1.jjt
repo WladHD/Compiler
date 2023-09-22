@@ -371,16 +371,16 @@ void op_prio_15_method_param() #OPERATOR_15_METHOD_CALL_PARAM :
     op_prio_3()
 }
 
-void op_prio_15_variable() #OPERATOR_15_METHOD_CALL :
+void op_prio_15_variable() #OPERATOR_15_MEMBER_SELECTOR :
 {}
 {
-    <DOT> #OPERATOR_15_VARIABLE_CALL identifier()
+    <DOT> identifier()
 }
 
-void op_prio_15_array_selector() #OPERATOR_15_METHOD_CALL :
+void op_prio_15_array_selector() #OPERATOR_15_ARRAY_INDEX_CALL :
 {}
 {
-    <BRACKET_SQUARE_LEFT> #OPERATOR_15_ARRAY_INDEX_CALL(true) op_prio_3() <BRACKET_SQUARE_RIGHT>
+    <BRACKET_SQUARE_LEFT> op_prio_3() <BRACKET_SQUARE_RIGHT>
 }
 
 // TODO concat with identifier() ?

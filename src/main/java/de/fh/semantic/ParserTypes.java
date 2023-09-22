@@ -4,7 +4,10 @@ public enum ParserTypes {
     INT("int", "Integer", true),
     BOOLEAN("boolean", "Boolean", true),
     CHAR("char", "Char", true),
+    OBJECT("Object", false),
     EMPTY_ARRAY_CONTAINER("EMPTY_ARRAY_CONTAINER", false),
+
+    VOID("void"),
 
     NATIVE_ARRAY("NATIVE_ARRAY", false),
     SET_ARRAY("SET_ARRAY", false),

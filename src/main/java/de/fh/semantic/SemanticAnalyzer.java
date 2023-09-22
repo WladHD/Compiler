@@ -11,6 +11,9 @@ public class SemanticAnalyzer implements ISemanticAnalyzer<SimpleNode> {
     public void doSemanticCheck(SimpleNode rootNode) throws SemanticException {
         SemanticTreeVisitor stv = new SemanticTreeVisitor(new Closure<>(null));
 
+        stv.setupRootClosure();
+
+
         /*
         CHECK:
             Variable redeclaration

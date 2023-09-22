@@ -5,6 +5,7 @@ import de.fh.semantic.err.VariableDeclaredSemanticException;
 import de.fh.semantic.err.VariableNotDeclaredSemanticException;
 
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
@@ -15,7 +16,7 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
 
     HashMap<VarMethodNames, VarMethodType> getMethodReturnTypeMap();
 
-    HashMap<VarMethodNames, VarMethodType> getMethodParamMap();
+    HashMap<Integer, VarMethodType> getMethodParams();
 
     HashMap<VarMethodNames, IClosure<VarMethodNames, VarMethodType, VarValue>> getMethodClosureMap();
 
@@ -32,11 +33,13 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
             throw new VariableDeclaredSemanticException(varName.toString());
         }
 
-        if (isParam)
-            getMethodParamMap().put(varName, varType);
-
-
+        System.out.println("PUT " + varName + " with " + varType);
         getVariableTypeMap().put(varName, varType);
+
+        if(isParam) {
+            getMethodParams().put(getMethodParams().size(), varType);
+            addVariableInitialisation(varName, null);
+        }
     }
 
     default void addVariableInitialisation(VarMethodNames varName, VarValue varValue) {
@@ -59,20 +62,16 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
     default boolean hasVariable(VarMethodNames varName, boolean checkOnlyBoundVariables) {
         boolean local = getVariableTypeMap().containsKey(varName);
 
-        if (checkOnlyBoundVariables || getParent() == null)
+        if (local || checkOnlyBoundVariables || getParent() == null)
             return local;
 
         return getParent().hasVariable(varName, false);
     }
 
-    default boolean isVariableParam(VarMethodNames varName) {
-        return getMethodParamMap().containsKey(varName);
-    }
-
     default boolean hasMethod(VarMethodNames varName, boolean checkOnlyBoundMethods) {
         boolean local = getMethodReturnTypeMap().containsKey(varName);
 
-        if (checkOnlyBoundMethods || getParent() == null)
+        if (local || checkOnlyBoundMethods || getParent() == null)
             return local;
 
         return getParent().hasMethod(varName, false);

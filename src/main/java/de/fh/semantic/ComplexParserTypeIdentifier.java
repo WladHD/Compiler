@@ -21,7 +21,7 @@ public class ComplexParserTypeIdentifier {
             }, new String[]{"+", "-", "*", "/", "%"})
     };
 
-    public static ComplexParserType inferDatatype(ComplexParserType a, ComplexParserType b, String operator) {
+    public static ComplexParserType inferDatatypeFromOperation(ComplexParserType a, ComplexParserType b, String operator) {
         for (TypeMaps tmm : tm) {
             // check if operator match
             if (!Arrays.asList(tmm.allowedOperators).contains(operator))
@@ -62,9 +62,11 @@ public class ComplexParserTypeIdentifier {
                 if (o instanceof ArrayList<?> arr2 && !acceptArrayValue(declared.getComplexParserTypes().get(0), arr2))
                     return false;
             }
+
+            return true;
         }
 
-        return true;
+        return arrayOrEmptyArray instanceof ComplexParserType cpt && cpt.toString().equals(declared.toString());
     }
 
     private static boolean acceptArrayValueNativeArray(ComplexParserType declared, Object arrayOrEmptyArray) {
@@ -73,12 +75,15 @@ public class ComplexParserTypeIdentifier {
             clonedDeclared.setArray(false);
 
             for (Object o : arr) {
-                if (!clonedDeclared.isEqual(o))
+                if (!clonedDeclared.isEqual(o)) {
                     return false;
+                }
             }
+
+            return true;
         }
 
-        return true;
+        return arrayOrEmptyArray instanceof ComplexParserType cpt && cpt.toString().equals(declared.toString());
     }
 
     private static boolean acceptArrayValueMap(ComplexParserType declared, Object arrayOrEmptyArray) {
@@ -98,9 +103,11 @@ public class ComplexParserTypeIdentifier {
                     return declaredTypeValue.isEqual(pair.get(1));
                 }
             }
+
+            return true;
         }
 
-        return true;
+        return arrayOrEmptyArray instanceof ComplexParserType cpt && cpt.toString().equals(declared.toString());
     }
 
     public static boolean acceptArrayValue(ComplexParserType declared, Object arrayOrEmptyArray) {

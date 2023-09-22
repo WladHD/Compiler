@@ -1,1 +1,12 @@
-Set<boolean> s = [ true, true, true, true, "sdf" == "sdf"];
+// Map<String, String> test2 = [System.readString() : "sdf"];
+
+Set<int[]> hello = [{ 1, 2, 3 }];
+
+
+void testing(int i) {
+    System.println(i);
+}
+
+void main() {
+    testing(hello[1][1]);
+}

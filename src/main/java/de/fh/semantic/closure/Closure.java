@@ -7,7 +7,7 @@ public class Closure<VarMethodNames, VarMethodType, VarValue> implements IClosur
     private final HashMap<VarMethodNames, VarMethodType> hashMapVariableType;
     private final HashMap<VarMethodNames, VarValue> hashMapVariableValue;
 
-    private final HashMap<VarMethodNames, VarMethodType> hashMapMethodParam;
+    private final HashMap<Integer, VarMethodType> hashMapMethodParam;
 
     private final HashMap<VarMethodNames, VarMethodType> hashMapMethodType;
 
@@ -41,7 +41,7 @@ public class Closure<VarMethodNames, VarMethodType, VarValue> implements IClosur
     }
 
     @Override
-    public HashMap<VarMethodNames, VarMethodType> getMethodParamMap() {
+    public HashMap<Integer, VarMethodType> getMethodParams() {
         return hashMapMethodParam;
     }
 
@@ -59,7 +59,7 @@ public class Closure<VarMethodNames, VarMethodType, VarValue> implements IClosur
     public AbstractMap.SimpleEntry<VarMethodType, VarValue> getVariableTypeAndValue(VarMethodNames varName, boolean checkOnlyBoundVariables) {
         boolean local = getVariableTypeMap().containsKey(varName);
 
-        if (checkOnlyBoundVariables || getParent() == null) {
+        if (local || checkOnlyBoundVariables || getParent() == null) {
             if(!local)
                 return null;
 
@@ -73,7 +73,7 @@ public class Closure<VarMethodNames, VarMethodType, VarValue> implements IClosur
     public AbstractMap.SimpleEntry<VarMethodType, IClosure<VarMethodNames, VarMethodType, VarValue>> getMethodTypeAndClosure(VarMethodNames methodName, boolean checkOnlyBoundMethods) {
         boolean local = getMethodReturnTypeMap().containsKey(methodName);
 
-        if (checkOnlyBoundMethods || getParent() == null) {
+        if (local || checkOnlyBoundMethods || getParent() == null) {
             if(!local)
                 return null;
 

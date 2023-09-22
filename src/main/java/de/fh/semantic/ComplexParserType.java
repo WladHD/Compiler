@@ -61,6 +61,10 @@ public class ComplexParserType implements Cloneable {
     }
 
     public boolean isEqual(Object o) {
+        // OBJECT ACCEPTS ALL
+        if(getBasicType() == ParserTypes.OBJECT && o != null)
+            return true;
+
         if (o instanceof ParserTypes pt && !hasComplexParserTypes()) {
             return pt == getBasicType();
         }
