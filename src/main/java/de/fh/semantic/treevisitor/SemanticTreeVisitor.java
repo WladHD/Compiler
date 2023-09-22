@@ -77,11 +77,13 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
         return null;
     }
 
+    // TODO check if return type is matching declared method
     @Override
     public Object visit(ASTST_RETURN node, Object data) {
         return null;
     }
 
+    // TODO check if condition is boolean
     @Override
     public Object visit(ASTST_IF node, Object data) {
         return null;
@@ -107,6 +109,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
         return null;
     }
 
+    // TODO check if condition is boolean
     @Override
     public Object visit(ASTST_WHILE node, Object data) {
         return null;
@@ -122,6 +125,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
         return null;
     }
 
+    // TODO check if condition is boolean ... and the others
     @Override
     public Object visit(ASTST_FOR node, Object data) {
         return null;
@@ -282,6 +286,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
         return null;
     }
 
+    // TODO check for correct assignment in case of others than =
     @Override
     public Object visit(ASTOP_PRIO_1 node, Object data) {
         if (node.jjtGetNumChildren() == 1)
@@ -293,7 +298,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTOP_PRIO_3 node, Object data) {
-        return null;
+        return inferOperatorFromTwoArguments(node, data);
     }
 
     @Override
@@ -313,7 +318,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTOP_PRIO_6 node, Object data) {
-        return null;
+        return inferOperatorFromTwoArguments(node, data);
     }
 
     @Override
@@ -333,7 +338,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTOP_PRIO_9 node, Object data) {
-        return null;
+        return inferOperatorFromTwoArguments(node, data);
     }
 
     @Override
@@ -369,14 +374,16 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTOP_PRIO_12 node, Object data) {
-        return null;
+        return inferOperatorFromTwoArguments(node, data);
     }
 
+    // TODO check for right types
     @Override
     public Object visit(ASTOP_PRIO_13 node, Object data) {
         return null;
     }
 
+    // TODO check for right types
     @Override
     public Object visit(ASTOPERATOR_13 node, Object data) {
         return null;
@@ -433,6 +440,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
                             throw new MethodParameterMismatchSemanticException(ident, new ArrayList<>(retrievedTypeClosure.getValue().getMethodParams().values()), givenParams);
                 }
             } else if (current instanceof ASTOPERATOR_15_ARRAY_INDEX_CALL ai) {
+                // TODO check if index is int with set and array and the key datatype when map
                 if (currentType == null) {
                     AbstractMap.SimpleEntry<ComplexParserType, Object> retrievedTypeClosure = cast(currentClosure).getVariableTypeAndValue((String) currentValue, false);
                     currentType = retrievedTypeClosure.getKey();
