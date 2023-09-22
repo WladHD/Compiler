@@ -50,12 +50,6 @@ public class Main {
             output = args.length > 1 ? args[1] : null;
         }
 
-
-        boolean[] s = {true, true, true, true};
-
-        int[] arr = {1, 2, 3, 4};
-        int x = arr[arr[2] = 1] = 34;
-
         compiler.executePipelineFromResource(source, output);
     }
 }

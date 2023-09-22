@@ -27,10 +27,30 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
     }
 
     private IClosure<String, ComplexParserType, Object> cast(Object b) {
-        if (!rootClosure.getClass().isInstance(b))
-            throw new InternClosureCastingSemanticException();
+        if (!rootClosure.getClass().isInstance(b)) throw new InternClosureCastingSemanticException();
 
         return (IClosure<String, ComplexParserType, Object>) b;
+    }
+
+    public boolean isNodeStatement(SimpleNode node) {
+        if (node instanceof ASTOP_PRIO_15 p15) {
+            return p15.jjtGetChild(p15.jjtGetNumChildren() - 1) instanceof ASTOPERATOR_15_METHOD_CALL;
+        }
+
+        if (node instanceof ASTOP_PRIO_14 p14) {
+            return ((SimpleNode) p14.jjtGetChild(1)).jjtGetValue().equals("++") || ((SimpleNode) p14.jjtGetChild(1)).jjtGetValue().equals("--");
+        }
+
+        if (node instanceof ASTOP_PRIO_13 p13) {
+            return ((SimpleNode) p13.jjtGetChild(0)).jjtGetValue().equals("++") || ((SimpleNode) p13.jjtGetChild(0)).jjtGetValue().equals("--");
+        }
+
+        return node instanceof ASTVAR_DECLARATION || node instanceof ASTVAR_INIT;
+    }
+
+    public void checkIfNodeIsStatement(SimpleNode node, String stmtName) {
+        if (!isNodeStatement(node))
+            throw new StatementExpectedSemanticException(stmtName);
     }
 
     public void setupRootClosure() {
@@ -57,11 +77,9 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
                 SimpleNode n = (SimpleNode) root.jjtGetChild(i);
                 Object val = visit(n, closure);
 
-                if (val == null)
-                    continue;
+                if (val == null) continue;
 
-                if (!first && separator != null)
-                    sb.append(separator);
+                if (!first && separator != null) sb.append(separator);
 
                 sb.append(val);
 
@@ -74,101 +92,190 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTPROGRAM node, Object data) {
-        visitAll(node, data);
+        for (SimpleNode sn : childrenToArray(node)) {
+            if (!(sn instanceof ASTBLOCK || sn instanceof ASTVAR_DECLARATION || sn instanceof ASTVAR_INIT || sn instanceof ASTMETHOD_DECLARATION))
+                throw new IllegalClassContentSemanticException();
+
+            visit(sn, data);
+        }
+
         return null;
     }
 
-    // TODO check if return type is matching declared method
     @Override
     public Object visit(ASTST_RETURN node, Object data) {
-        return null;
+
+        SimpleNode parent = (SimpleNode) node.jjtGetParent();
+
+        ArrayList<SimpleNode> snArr = childrenToArray(parent);
+
+        for (int i = 0; i < snArr.size(); i++)
+            if (snArr.get(i) instanceof ASTST_RETURN)
+                if (i + 1 != snArr.size())
+                    throw new UnreachableCodeSemanticException();
+
+
+        ComplexParserType cpt = node.jjtGetNumChildren() == 0 ? new ComplexParserType(ParserTypes.VOID) : (ComplexParserType) visit(node.jjtGetChild(0), data);
+
+        while (!(parent instanceof ASTMETHOD_DECLARATION)) {
+            if (parent.jjtGetParent() != null)
+                parent = (SimpleNode) parent.jjtGetParent();
+            else break;
+        }
+
+        if(parent instanceof ASTMETHOD_DECLARATION meth) {
+            ComplexParserType meth_cpt = (ComplexParserType) visit(meth.jjtGetChild(0), data);
+
+            if(!meth_cpt.isEqual(cpt))
+                throw new ReturnTypeMismatchSemanticException((String) ((SimpleNode) meth.jjtGetChild(1)).jjtGetValue(), meth_cpt, cpt);
+        } else
+            throw new UnknownSemanticException(null);
+
+        return cpt;
     }
 
-    // TODO check if condition is boolean
     @Override
     public Object visit(ASTST_IF node, Object data) {
+        visitChildren(node, data);
         return null;
     }
 
     @Override
     public Object visit(ASTST_IF_COND node, Object data) {
+        checkForBooleanType(node, data);
         return null;
     }
 
     @Override
     public Object visit(ASTST_IF_EXPR node, Object data) {
+        checkForVarDeclarationInExpression(node, "if");
         return null;
     }
 
     @Override
     public Object visit(ASTST_ELSE_IF node, Object data) {
+        visitChildren(node, data);
         return null;
     }
 
     @Override
     public Object visit(ASTST_ELSE_EXPR node, Object data) {
+        checkForVarDeclarationInExpression(node, "if");
         return null;
     }
 
-    // TODO check if condition is boolean
+    public void checkForVarDeclarationInExpression(SimpleNode node, String name) {
+        if (node.jjtGetChild(0) instanceof ASTVAR_DECLARATION)
+            throw new VariableDeclarationNotAllowedSemanticException(((SimpleNode) node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0)).jjtGetValue().toString(), name);
+    }
+
+    public void checkForBooleanType(SimpleNode node, Object data) {
+        ComplexParserType cpt = (ComplexParserType) visit(node.jjtGetChild(0), data);
+
+        if (!cpt.isEqual(ParserTypes.BOOLEAN))
+            throw new ExpectedTypeMissmatchSemanticException(new ComplexParserType(ParserTypes.BOOLEAN), cpt);
+    }
+
     @Override
     public Object visit(ASTST_WHILE node, Object data) {
+        visitChildren(node, data);
         return null;
     }
 
     @Override
     public Object visit(ASTST_WHILE_COND node, Object data) {
+        checkForBooleanType(node, data);
         return null;
     }
 
     @Override
     public Object visit(ASTST_WHILE_EXPR node, Object data) {
+        checkForVarDeclarationInExpression(node, "while");
         return null;
     }
 
-    // TODO check if condition is boolean ... and the others
     @Override
     public Object visit(ASTST_FOR node, Object data) {
+        IClosure<String, ComplexParserType, Object> iClosure = cast(data).createNewChildClosure();
+        visitChildren(node, iClosure);
         return null;
     }
 
     @Override
     public Object visit(ASTST_FOR_EXPR node, Object data) {
+        checkForVarDeclarationInExpression(node, "for");
+        visitChildren(node, data);
         return null;
     }
 
     @Override
     public Object visit(ASTST_FOR_EACH_BODY node, Object data) {
+        ASTST_FOR_EACH_BODY_DECL decl = (ASTST_FOR_EACH_BODY_DECL) node.jjtGetChild(0);
+        ASTST_FOR_EACH_BODY_ARR init = (ASTST_FOR_EACH_BODY_ARR) node.jjtGetChild(1);
+
+        ComplexParserType currentType = degradeArrayMapSet((ComplexParserType) visit(init, data), true);
+        ComplexParserType definedType = (ComplexParserType) visit(decl, data);
+
+        cast(data).addVariableDeclaration((String) ((SimpleNode) decl.jjtGetChild(1)).jjtGetValue(), definedType, false);
+
+        if (!currentType.isEqual(definedType))
+            throw new ExpectedTypeMissmatchSemanticException(currentType, definedType);
+
         return null;
+    }
+
+    public ComplexParserType degradeArrayMapSet(ComplexParserType currentType, boolean mapCaseReturnKey) {
+        if (currentType.isArray()) {
+            currentType = currentType.clone();
+            currentType.setArray(false);
+        } else if (currentType.getBasicType() == ParserTypes.SET) {
+            currentType = currentType.getComplexParserTypes().get(0);
+        } else if (currentType.getBasicType() == ParserTypes.MAP) {
+            currentType = currentType.getComplexParserTypes().get(mapCaseReturnKey ? 0 : 1);
+        }
+
+        return currentType;
     }
 
     @Override
     public Object visit(ASTST_FOR_EACH_BODY_DECL node, Object data) {
-        return null;
+        return visit(node.jjtGetChild(0), data);
     }
 
     @Override
     public Object visit(ASTST_FOR_EACH_BODY_ARR node, Object data) {
-        return null;
+        return visit(node.jjtGetChild(0), data);
     }
 
     @Override
     public Object visit(ASTST_FOR_NORMAL_BODY node, Object data) {
+        visitChildren(node, data);
         return null;
     }
 
     @Override
     public Object visit(ASTST_FOR_NORMAL_BODY_DECL node, Object data) {
+        if (node.jjtGetNumChildren() != 0)
+            checkIfNodeIsStatement((SimpleNode) node.jjtGetChild(0), "if (erstes Argument)");
+
+        visitChildren(node, data);
         return null;
     }
 
     @Override
     public Object visit(ASTST_FOR_NORMAL_BODY_COND node, Object data) {
+        if (node.jjtGetNumChildren() != 0)
+            checkForBooleanType(node, data);
+
         return null;
     }
 
     @Override
     public Object visit(ASTST_FOR_NORMAL_BODY_INC node, Object data) {
+        if (node.jjtGetNumChildren() != 0)
+            checkIfNodeIsStatement((SimpleNode) node.jjtGetChild(0), "if (drittes Argument)");
+
+        visitChildren(node, data);
         return null;
     }
 
@@ -191,30 +298,25 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
             boolean hasReturn = false;
             ArrayList<SimpleNode> snArr = childrenToArray(block);
 
-            for (int i = 0; i < snArr.size(); i++)
-                if (snArr.get(i) instanceof ASTST_RETURN) {
+            for (SimpleNode simpleNode : snArr)
+                if (simpleNode instanceof ASTST_RETURN) {
                     hasReturn = true;
-
-                    if (i + 1 != snArr.size()) {
-                        throw new UnreachableCodeSemanticException();
-                    }
                     break;
                 }
 
-            if (!hasReturn)
-                throw new NoReturnSemanticException();
+            if (!hasReturn) throw new NoReturnSemanticException();
         }
 
         Main.logger.info(MessageFormat.format("[Closure] Added method declaration {0} with return type {1}.", identifier, type));
 
         // Ist extra so, damit kein neuer Closure beim Block angelegt wird
-        visitAll(block, ic);
+        visitChildren(block, ic);
         return null;
     }
 
     @Override
     public Object visit(ASTMETHOD_PARAMETERS node, Object data) {
-        visitAll(node, data);
+        visitChildren(node, data);
         return null;
     }
 
@@ -230,7 +332,6 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
         return null;
     }
 
-    // TODO initialisation
     @Override
     public Object visit(ASTVAR_DECLARATION node, Object data) {
         ASTTYPE at = (ASTTYPE) node.jjtGetChild(0);
@@ -249,8 +350,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
         cast(data).addVariableDeclaration(identifier, type, false);
 
-        if (init != null)
-            visit(init, data);
+        if (init != null) visit(init, data);
 
         return null;
     }
@@ -262,10 +362,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
         String identifier = (String) ident.jjtGetValue();
 
-        if (!cast(data).hasVariable(identifier, false))
-            throw new VariableNotDeclaredSemanticException(identifier);
-
-        // TODO check operation return type
+        if (!cast(data).hasVariable(identifier, false)) throw new VariableNotDeclaredSemanticException(identifier);
 
         Object typeReturnType = visit(operation, data);
         ComplexParserType expectedType = cast(data).getVariableTypeAndValue(identifier, false).getKey();
@@ -282,7 +379,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
         IClosure<String, ComplexParserType, Object> ic = cast(data).createNewChildClosure();
 
-        visitAll(node, ic);
+        visitChildren(node, ic);
 
         return null;
     }
@@ -290,8 +387,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
     // TODO check for correct assignment in case of others than =
     @Override
     public Object visit(ASTOP_PRIO_1 node, Object data) {
-        if (node.jjtGetNumChildren() == 1)
-            return visit(node.jjtGetChild(0), data);
+        if (node.jjtGetNumChildren() == 1) return visit(node.jjtGetChild(0), data);
 
         // TODO is it even possible?
         return null;
@@ -378,13 +474,15 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
         return inferOperatorFromTwoArguments(node, data);
     }
 
-    // TODO check for right types
+    // TODO check for only variable increment y++ ... disallow 5++
     @Override
     public Object visit(ASTOP_PRIO_13 node, Object data) {
-        return null;
+        return ComplexParserTypeIdentifier.inferDatatypeFromUnaryOperation(
+                (ComplexParserType) visit(node.jjtGetChild(1), data),
+                (String) ((SimpleNode) node.jjtGetChild(0)).jjtGetValue(),
+                node);
     }
 
-    // TODO check for right types
     @Override
     public Object visit(ASTOPERATOR_13 node, Object data) {
         return null;
@@ -392,7 +490,10 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTOP_PRIO_14 node, Object data) {
-        return null;
+        return ComplexParserTypeIdentifier.inferDatatypeFromUnaryOperation(
+                (ComplexParserType) visit(node.jjtGetChild(0), data),
+                (String) ((SimpleNode) node.jjtGetChild(1)).jjtGetValue(),
+                node);
     }
 
     @Override
@@ -425,6 +526,8 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
                 if (currentValue instanceof String ident) {
                     AbstractMap.SimpleEntry<ComplexParserType, IClosure<String, ComplexParserType, Object>> retrievedTypeClosure = currentClosure.getMethodTypeAndClosure(ident, false);
+                    if (retrievedTypeClosure == null)
+                        throw new MethodNotDeclaredSemanticException(ident);
                     currentType = retrievedTypeClosure.getKey();
 
                     if (givenParams.size() != retrievedTypeClosure.getValue().getMethodParams().size())
@@ -435,7 +538,6 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
                             throw new MethodParameterMismatchSemanticException(ident, new ArrayList<>(retrievedTypeClosure.getValue().getMethodParams().values()), givenParams);
                 }
             } else if (current instanceof ASTOPERATOR_15_ARRAY_INDEX_CALL ai) {
-                // TODO check if index is int with set and array and the key datatype when map
                 if (currentType == null) {
                     AbstractMap.SimpleEntry<ComplexParserType, Object> retrievedTypeClosure = cast(currentClosure).getVariableTypeAndValue((String) currentValue, false);
                     currentType = retrievedTypeClosure.getKey();
@@ -444,20 +546,19 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
                 if (!currentType.isArray() && currentType.getBasicType() != ParserTypes.MAP && currentType.getBasicType() != ParserTypes.SET)
                     throw new NotArrayExceptionSemanticException(currentValue, currentType);
 
-                if(currentType.isArray()) {
-                    currentType = currentType.clone();
-                    currentType.setArray(false);
-                } else if (currentType.getBasicType() == ParserTypes.SET) {
-                    currentType = currentType.getComplexParserTypes().get(0);
-                } else if (currentType.getBasicType() == ParserTypes.MAP) {
-                    currentType = currentType.getComplexParserTypes().get(1);
-                }
+                ComplexParserType arraySelectorComplexType = (ComplexParserType) visit(ai.jjtGetChild(0), cast(data));
+
+                if ((currentType.isArray() || currentType.getBasicType() == ParserTypes.SET) && !arraySelectorComplexType.isEqual(ParserTypes.INT) || currentType.getBasicType() == ParserTypes.MAP && !arraySelectorComplexType.isEqual(currentType.getComplexParserTypes().get(0)))
+                    throw new ExpectedTypeMissmatchSemanticException(
+                            currentType.getBasicType() == ParserTypes.MAP ? currentType.getComplexParserTypes().get(0) : new ComplexParserType(ParserTypes.INT),
+                            arraySelectorComplexType);
+
+
+                currentType = degradeArrayMapSet(currentType, false);
             }
         }
 
         Main.logger.info(MessageFormat.format("[Operation 15] Call to {0} resulted in type: {1}", ((ASTLITERAL_IDENTIFIER) node.jjtGetChild(0)).jjtGetValue(), currentType));
-
-
         return currentType;
     }
 
@@ -524,8 +625,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTARRAY_CONTAINER_NATIVE node, Object data) {
-        if (node.jjtGetNumChildren() == 0)
-            return new ComplexParserType(ParserTypes.EMPTY_ARRAY_CONTAINER);
+        if (node.jjtGetNumChildren() == 0) return new ComplexParserType(ParserTypes.EMPTY_ARRAY_CONTAINER);
 
         ArrayList<Object> cpt = new ArrayList<>();
 
@@ -537,8 +637,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTARRAY_CONTAINER node, Object data) {
-        if (node.jjtGetNumChildren() == 0)
-            return new ComplexParserType(ParserTypes.EMPTY_ARRAY_CONTAINER);
+        if (node.jjtGetNumChildren() == 0) return new ComplexParserType(ParserTypes.EMPTY_ARRAY_CONTAINER);
 
         ArrayList<Object> cpt = new ArrayList<>();
 

@@ -1,5 +1,6 @@
 package de.fh.semantic;
 
+import de.fh.javacc.generated.SimpleNode;
 import de.fh.semantic.err.IllegalOperationSemanticException;
 
 import java.util.ArrayList;
@@ -7,7 +8,7 @@ import java.util.Arrays;
 
 public class ComplexParserTypeIdentifier {
 
-    static TypeMaps[] tm = new TypeMaps[]{
+    static TypeMaps[] exp_op_exp = new TypeMaps[]{
             new TypeMaps(ParserTypes.STRING, ParserTypes.STRING, ParserTypes.values(), new String[]{"+"}),
             new TypeMaps(ParserTypes.SET, ParserTypes.SET, new ParserTypes[]{
                     ParserTypes.SET
@@ -16,13 +17,43 @@ public class ComplexParserTypeIdentifier {
             new TypeMaps(ParserTypes.BOOLEAN, ParserTypes.BOOLEAN, new ParserTypes[]{ParserTypes.BOOLEAN}, new String[]{
                     "||", "&&"
             }),
+            new TypeMaps(ParserTypes.BOOLEAN, null, new ParserTypes[]{ParserTypes.INT, ParserTypes.CHAR}, new String[]{
+                    ">", "<", ">=", "<="
+            }),
             new TypeMaps(ParserTypes.INT, null, new ParserTypes[]{
                     ParserTypes.INT, ParserTypes.CHAR
             }, new String[]{"+", "-", "*", "/", "%"})
     };
 
+    static TypeMaps[] exp_pre_post = new TypeMaps[]{
+            new TypeMaps(ParserTypes.INT, null, new ParserTypes[]{ParserTypes.INT}, new String[]{"++", "-- "}, true),
+            new TypeMaps(ParserTypes.INT, null, new ParserTypes[]{ParserTypes.INT}, new String[]{"+", "-"}),
+            new TypeMaps(ParserTypes.BOOLEAN, null, new ParserTypes[]{ParserTypes.BOOLEAN}, new String[]{"!"})
+    };
+
+    public static ComplexParserType inferDatatypeFromUnaryOperation(ComplexParserType a, String operator, SimpleNode child) {
+        for (TypeMaps tmm : exp_pre_post) {
+            // check if operator match
+            if (!Arrays.asList(tmm.allowedOperators).contains(operator))
+                continue;
+
+            boolean containsType = Arrays.stream(tmm.anything).anyMatch(parserTypes -> parserTypes.equals(a.getBasicType()));
+
+            if (!containsType)
+                continue;
+
+            // TODO check if SimpleNode can be incremented
+            // if(tmm.requiresSameType && !(child instanceof ASTLITERAL_IDENTIFIER))
+            //    continue;
+
+            return a;
+        }
+
+        throw new IllegalOperationSemanticException(null, a, operator);
+    }
+
     public static ComplexParserType inferDatatypeFromOperation(ComplexParserType a, ComplexParserType b, String operator) {
-        for (TypeMaps tmm : tm) {
+        for (TypeMaps tmm : exp_op_exp) {
             // check if operator match
             if (!Arrays.asList(tmm.allowedOperators).contains(operator))
                 continue;

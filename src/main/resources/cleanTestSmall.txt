@@ -1,12 +1,29 @@
 // Map<String, String> test2 = [System.readString() : "sdf"];
 
-Set<int[]> hello = [{ 1, 2, 3 }];
-int plsWork = 1 + 5 * 3;
+Set<String> set1 = [ "sdf", "dsf", "sdf" ];
+Map<String, Path> map1 = [];
+int y = -213;
+int x = ++(5 - 2) + ++y;
 
-void testing(int i) {
-    System.println(i);
+void println(String s) {
+
+}
+
+int testing() {
+    return 3 + 4;
 }
 
 void main() {
-    testing(hello[1][1]);
+    System.println(map1[System.readString()]);
+
+    for(int i = 0; i < 0; i++) {
+        println(set1[i]);
+        return;
+    }
+
+    for(int i = 0; i < 0; i++) {
+        println(set1[i]);
+    }
+
+    return;
 }
