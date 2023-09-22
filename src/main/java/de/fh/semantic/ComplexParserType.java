@@ -2,7 +2,7 @@ package de.fh.semantic;
 
 import java.util.ArrayList;
 
-public class ComplexParserType {
+public class ComplexParserType implements Cloneable {
     private ParserTypes basicType;
 
     private ArrayList<ComplexParserType> complexParserTypes;
@@ -78,9 +78,6 @@ public class ComplexParserType {
         StringBuilder sb = new StringBuilder();
         sb.append(basicType.getParserType());
 
-        if (isArray)
-            sb.append("[]");
-
         if (complexParserTypes != null) {
             sb.append("<");
 
@@ -94,15 +91,15 @@ public class ComplexParserType {
             sb.append(">");
         }
 
+        if (isArray)
+            sb.append("[]");
+
         return sb.toString();
     }
 
     public String toStringJava(boolean displayPrimitive) {
         StringBuilder sb = new StringBuilder();
         sb.append(displayPrimitive ? basicType.getParserType() : basicType.getJavaType());
-
-        if (isArray)
-            sb.append("[]");
 
         if (complexParserTypes != null) {
             sb.append("<");
@@ -117,6 +114,22 @@ public class ComplexParserType {
             sb.append(">");
         }
 
+        if (isArray)
+            sb.append("[]");
+
         return sb.toString();
+    }
+
+    @Override
+    public ComplexParserType clone() {
+        ComplexParserType clone = new ComplexParserType(getBasicType());
+
+        if(complexParserTypes != null)
+            for(int i = 0; i < complexParserTypes.size(); i++)
+                clone.addComplexType(complexParserTypes.get(i).clone());
+
+        clone.isArray = isArray;
+
+        return clone;
     }
 }

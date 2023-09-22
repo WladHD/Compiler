@@ -1,13 +1,9 @@
 package de.fh.semantic;
 
-import de.fh.semantic.err.ExpectedTypeMissmatchSemanticException;
 import de.fh.semantic.err.IllegalOperationSemanticException;
 
-import javax.swing.text.html.parser.Parser;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Objects;
 
 public class ComplexParserTypeIdentifier {
 
@@ -16,7 +12,7 @@ public class ComplexParserTypeIdentifier {
             new TypeMaps(ParserTypes.SET, ParserTypes.SET, new ParserTypes[]{
                     ParserTypes.SET
             }, new String[]{"+", "-", "^"}),
-            new TypeMaps(ParserTypes.BOOLEAN, null, ParserTypes.values(), new String[]{"==", "!="}),
+            new TypeMaps(ParserTypes.BOOLEAN, null, ParserTypes.values(), new String[]{"==", "!="}, true),
             new TypeMaps(ParserTypes.BOOLEAN, ParserTypes.BOOLEAN, new ParserTypes[]{ParserTypes.BOOLEAN}, new String[]{
                     "||", "&&"
             }),
@@ -43,6 +39,11 @@ public class ComplexParserTypeIdentifier {
             if (!containsType)
                 continue;
 
+            if (tmm.requiresSameType && !required.isEqual(second))
+                continue;
+
+            required.setBasicType(tmm.result);
+
             return required;
         }
 
@@ -66,6 +67,20 @@ public class ComplexParserTypeIdentifier {
         return true;
     }
 
+    private static boolean acceptArrayValueNativeArray(ComplexParserType declared, Object arrayOrEmptyArray) {
+        if (arrayOrEmptyArray instanceof ArrayList<?> arr) {
+            ComplexParserType clonedDeclared = declared.clone();
+            clonedDeclared.setArray(false);
+
+            for (Object o : arr) {
+                if (!clonedDeclared.isEqual(o))
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
     private static boolean acceptArrayValueMap(ComplexParserType declared, Object arrayOrEmptyArray) {
         if (!declared.hasComplexParserTypes() && declared.getComplexParserTypes().size() != 2)
             return false;
@@ -75,7 +90,7 @@ public class ComplexParserTypeIdentifier {
 
         if (arrayOrEmptyArray instanceof ArrayList<?> arr) {
             for (Object o : arr) {
-                if(o instanceof ArrayList<?> pair) {
+                if (o instanceof ArrayList<?> pair) {
                     if (!declaredTypeKey.isEqual(pair.get(0))) {
                         return false;
                     }
@@ -92,7 +107,9 @@ public class ComplexParserTypeIdentifier {
         if (arrayOrEmptyArray instanceof ComplexParserType cpt && cpt.isEqual(ParserTypes.EMPTY_ARRAY_CONTAINER))
             return true;
 
-        if (declared.getBasicType() == ParserTypes.SET)
+        if (declared.isArray())
+            return acceptArrayValueNativeArray(declared, arrayOrEmptyArray);
+        else if (declared.getBasicType() == ParserTypes.SET)
             return acceptArrayValueSet(declared, arrayOrEmptyArray);
         else if (declared.getBasicType() == ParserTypes.MAP)
             return acceptArrayValueMap(declared, arrayOrEmptyArray);
@@ -106,11 +123,18 @@ public class ComplexParserTypeIdentifier {
         ParserTypes[] anything;
         String[] allowedOperators;
 
+        boolean requiresSameType;
+
         public TypeMaps(ParserTypes result, ParserTypes requires, ParserTypes[] anything, String[] operators) {
+            this(result, requires, anything, operators, false);
+        }
+
+        public TypeMaps(ParserTypes result, ParserTypes requires, ParserTypes[] anything, String[] operators, boolean requiresSameType) {
             this.result = result;
             this.requires = requires;
             this.anything = anything;
             this.allowedOperators = operators;
+            this.requiresSameType = requiresSameType;
         }
     }
 

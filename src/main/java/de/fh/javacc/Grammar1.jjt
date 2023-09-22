@@ -392,13 +392,6 @@ void pure_identifier() #LITERAL_IDENTIFIER :
     t = <LITERAL_IDENTIFIER> {jjtThis.value = t.image;}
 }
 
-void type_specifier_specifier() :
-{}
-{
-    type_array_brackets() |
-    type_gl_brackets()
-}
-
 void type_array_brackets() #TYPE_ARRAY :
 {}
 {
@@ -416,7 +409,7 @@ void type_specifier() #TYPE :
     Token t;
 }
 {
-    t = <TYPE_SPECIFIERS> {jjtThis.value = t.image;} [type_specifier_specifier()]
+    t = <TYPE_SPECIFIERS> {jjtThis.value = t.image;} [type_gl_brackets()] [type_array_brackets()]
 }
 
 void type_specifier_void() #TYPE :

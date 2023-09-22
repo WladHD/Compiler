@@ -5,6 +5,8 @@ import de.fh.javacc.generated.SimpleNode;
 import de.fh.lexparser.LexParser;
 import de.fh.semantic.SemanticAnalyzer;
 
+import java.awt.*;
+import java.lang.reflect.ParameterizedType;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,8 +25,6 @@ public class Main {
                 true
         );
 
-        String y = "sdf" + 1;
-
         if (standalone && args.length == 0) {
             System.out.println("<Pfad zu Source Datei> [Optional: Pfad zu Output Datei]");
             return;
@@ -37,6 +37,9 @@ public class Main {
             source = args[0];
             output = args.length > 1 ? args[1] : null;
         }
+
+
+        boolean[] s = { true, true, true, true};
 
         int[] arr = {1, 2, 3, 4};
         int x = arr[arr[2] = 1] = 34;

@@ -17,7 +17,6 @@ public enum ParserTypes {
 
     private final String parserType;
     private final String javaType;
-
     private final boolean isReachable;
 
     ParserTypes(String s) {

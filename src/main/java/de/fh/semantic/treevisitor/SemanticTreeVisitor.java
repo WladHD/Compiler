@@ -307,7 +307,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTOP_PRIO_8 node, Object data) {
-        return null;
+        return inferOperatorFromTwoArguments(node, data);
     }
 
     @Override
@@ -478,7 +478,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
         ArrayList<Object> cpt = new ArrayList<>();
 
-        for(SimpleNode sn : childrenToArray(node))
+        for (SimpleNode sn : childrenToArray(node))
             cpt.add(visit(sn, data));
 
         return cpt;

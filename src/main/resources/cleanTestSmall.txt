@@ -1,1 +1,1 @@
-Set<boolean> s = [true, true, true, true, "sdf" == "sdfsdf"];
+Set<boolean> s = [ true, true, true, true, "sdf" == "sdf"];
