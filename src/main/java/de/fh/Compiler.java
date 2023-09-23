@@ -70,7 +70,7 @@ public class Compiler<T extends Node> implements ICompiler<T> {
         System.out.println("Starte semantische Analyse und Fehlerprüfung ... ");
 
         if (getSemanticAnalyzer() != null) {
-            getSemanticAnalyzer().doSemanticCheck(rootNode);
+            getSemanticAnalyzer().doSemanticCheck(rootNode, getTranslator());
         }
 
         System.out.println("Erfolgreich");
@@ -78,14 +78,9 @@ public class Compiler<T extends Node> implements ICompiler<T> {
 
         if (getTranslator() != null) {
             System.out.println("Starte Übersetzung zu Java Source Code ... ");
-            String javaCodeSource = getTranslator().getJavaCode(rootNode);
+            String javaCodeSource = getTranslator().getJavaCode();
             System.out.println(javaCodeSource);
             System.out.println("Erfolgreich");
-
-            /* System.out.println("Starte Übersetzung zu Java Byte Code ... ");
-            byte[] javaCodeCompiler = getTranslator().getJavaByteCode(javaCodeSource);
-            System.out.println("Erfolgreich");
-            // TODO SAVE BYTECODE ... maybe source as well?*/
 
             if (outputPath != null) {
                 System.out.println("Speichere generierten Java Source Code ... ");

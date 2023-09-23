@@ -4,8 +4,10 @@ import de.fh.javacc.generated.Node;
 
 public interface ITranslator<T extends Node> {
 
-    String getJavaCode(T rootNode);
+    String getJavaCode();
 
-    byte[] getJavaByteCode(String javaCode);
+    StringBuilder getStringBuilder();
+
+    void add(Object s);
 
 }

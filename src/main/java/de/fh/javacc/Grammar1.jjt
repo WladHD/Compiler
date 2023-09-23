@@ -100,13 +100,13 @@ void class_contents() :
 void expression() :
 {}
 {
-    LOOKAHEAD([var_declaration()] ";")
-    [var_declaration()] ";"     |
+    LOOKAHEAD([var_declaration()]  <SEMICOLON>)
+    [var_declaration()] <SEMICOLON> #SEMICOLON     |
     block()                     |
     bl_for()                    |
     bl_while()                  |
     bl_if()                     |
-    bl_return() ";"
+    bl_return()  <SEMICOLON> #SEMICOLON
 }
 
 void bl_return() #ST_RETURN :
@@ -164,7 +164,7 @@ void method_declaration() #METHOD_DECLARATION :
 void method_param_declaration() #METHOD_PARAMETERS :
 {}
 {
-    <BRACKET_ROUND_LEFT> ((type_specifier() identifier()) #METHOD_PARAM)*  <BRACKET_ROUND_RIGHT>
+    <BRACKET_ROUND_LEFT> ((type_specifier() identifier()) #METHOD_PARAM(true) (<COMMA> (type_specifier() identifier()) #METHOD_PARAM)*)?  <BRACKET_ROUND_RIGHT>
 }
 
 void var_declaration() :
@@ -409,7 +409,7 @@ void type_specifier() #TYPE :
     Token t;
 }
 {
-    t = <TYPE_SPECIFIERS> {jjtThis.value = t.image;} [type_gl_brackets()] [type_array_brackets()]
+    t = <TYPE_SPECIFIERS> {jjtThis.value = t.image;} [(type_gl_brackets() | type_array_brackets())]
 }
 
 void type_specifier_void() #TYPE :

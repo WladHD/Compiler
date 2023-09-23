@@ -4,10 +4,10 @@ import de.fh.javacc.generated.ParseException;
 import de.fh.javacc.generated.SimpleNode;
 import de.fh.lexparser.LexParser;
 import de.fh.semantic.SemanticAnalyzer;
+import de.fh.translator.Translator;
 import de.fh.utils.CustomFormatter;
 
-import java.awt.*;
-import java.lang.reflect.ParameterizedType;
+import java.util.List;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -33,7 +33,7 @@ public class Main {
         Compiler<SimpleNode> compiler = new Compiler<>(
                 new LexParser(),
                 new SemanticAnalyzer(),
-                null,
+                new Translator(),
                 true
         );
 
@@ -43,7 +43,7 @@ public class Main {
         }
 
         String source = "cleanTestSmall.txt";
-        String output = "./src/test/java/TranslatorTemplate.java";
+        String output = false ? "./src/test/java/TranslatorTemplate.java" : null;
 
         if (args.length > 0) {
             source = args[0];

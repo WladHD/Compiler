@@ -1,12 +1,16 @@
 // Map<String, String> test2 = [System.readString() : "sdf"];
 
 Set<String> set1 = [ "sdf", "dsf", "sdf" ];
-Map<String, Path> map1 = [];
+Map<String, Set<String>> map1 = ["dsf": ["hey", "whadup"]];
+Set<String> set2 = [ "sdf", "dsf", "sdf" ];
+Map<String, Path> map2 = ["dsf": .\hello .txt];
+Set<Set<String>> set3 = [["hello"]];
+int[] integers = {1,2,3,4};
 int y = -213;
 int x = ++(5 - 2) + ++y;
 
-void println(String s) {
-
+void println(String s, int i) {
+    System.println(set1 + map1["dsf"] + "hello");
 }
 
 int testing() {
@@ -17,12 +21,24 @@ void main() {
     System.println(map1[System.readString()]);
 
     for(int i = 0; i < 0; i++) {
-        println(set1[i]);
+        println(set1[i], 2);
         return;
     }
 
-    for(int i = 0; i < 0; i++) {
-        println(set1[i]);
+    for(int i : integers) {
+        println(i + "", 2);
+    }
+
+    if(testing() > 3) {
+        return;
+    } else if(4 < 4) {
+        return;
+    } else {
+        return;
+    }
+
+    while(true) {
+        return;
     }
 
     return;
