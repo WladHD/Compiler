@@ -1,7 +1,9 @@
 package de.fh.translator;
 
-import de.fh.javacc.generated.*;
-import de.fh.semantic.ComplexParserType;
+import de.fh.javacc.generated.SimpleNode;
+import de.fh.utils.ClassLoaderReader;
+
+import java.text.MessageFormat;
 
 public class Translator implements ITranslator<SimpleNode> {
 
@@ -13,7 +15,15 @@ public class Translator implements ITranslator<SimpleNode> {
 
     @Override
     public String getJavaCode() {
-        return sb.toString();
+        String generatedCode = sb.toString();
+        String templateResourceName = "TranslatorTemplate.java";
+
+        String template = ClassLoaderReader.getResourceFileAsString(templateResourceName);
+
+        if(template == null)
+            throw new RuntimeException(MessageFormat.format("Konnte TranslatorTemplate.java nicht aus {0} laden.", templateResourceName));
+
+        return template.replace("/* PLACEHOLDER */", generatedCode);
     }
 
     @Override

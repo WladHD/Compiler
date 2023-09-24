@@ -473,8 +473,14 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
         Object typeReturnType = visit(operation, data);
         ComplexParserType expectedType = cast(data).getVariableTypeAndValue(identifier, false).getKey();
 
-        if (!expectedType.isEqual(typeReturnType)) {
-            throw new ExpectedTypeMissmatchSemanticException(expectedType, typeReturnType);
+        if(typeReturnType instanceof ComplexParserType cpt)
+            ComplexParserTypeIdentifier.inferDatatypeFromOperation(expectedType, cpt, operation.jjtGetValue().toString());
+        else if(!operation.jjtGetValue().equals("=") && (expectedType.isArray() || expectedType.getBasicType() == ParserTypes.SET || expectedType.getBasicType() == ParserTypes.MAP)) {
+            if (!expectedType.isEqual(typeReturnType)) {
+                throw new ExpectedTypeMissmatchSemanticException(expectedType, typeReturnType);
+            }
+
+            throw new IllegalOperationSemanticException(expectedType, expectedType, operation.jjtGetValue().toString());
         }
 
         return expectedType;
@@ -599,9 +605,13 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
     // TODO check for only variable increment y++ ... disallow 5++
     @Override
     public Object visit(ASTOP_PRIO_13 node, Object data) {
+        String operator = (String) ((SimpleNode) node.jjtGetChild(0)).jjtGetValue();
+        translate(operator);
+        ComplexParserType cpt = (ComplexParserType) visit(node.jjtGetChild(1), data);
+
         return ComplexParserTypeIdentifier.inferDatatypeFromUnaryOperation(
-                (ComplexParserType) visit(node.jjtGetChild(1), data),
-                (String) ((SimpleNode) node.jjtGetChild(0)).jjtGetValue(),
+                cpt,
+                operator,
                 node);
     }
 
@@ -612,9 +622,14 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
     @Override
     public Object visit(ASTOP_PRIO_14 node, Object data) {
+        ComplexParserType cpt = (ComplexParserType) visit(node.jjtGetChild(0), data);
+        String operator = (String) ((SimpleNode) node.jjtGetChild(1)).jjtGetValue();
+
+        translate(operator);
+
         return ComplexParserTypeIdentifier.inferDatatypeFromUnaryOperation(
-                (ComplexParserType) visit(node.jjtGetChild(0), data),
-                (String) ((SimpleNode) node.jjtGetChild(1)).jjtGetValue(),
+                cpt,
+                operator,
                 node);
     }
 

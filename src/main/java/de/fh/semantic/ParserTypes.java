@@ -9,6 +9,8 @@ public enum ParserTypes {
 
     VOID("void"),
 
+    SAME_TYPE("SAME_TYPE", false),
+
     NATIVE_ARRAY("NATIVE_ARRAY", false),
     SET_ARRAY("SET_ARRAY", false),
     MAP_ARRAY("MAP_ARRAY", false),

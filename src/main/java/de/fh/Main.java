@@ -43,7 +43,7 @@ public class Main {
         }
 
         String source = "cleanTestSmall.txt";
-        String output = false ? "./src/test/java/TranslatorTemplate.java" : null;
+        String output = true ? "./src/test/java/TranslatorTemplate.java" : null;
 
         if (args.length > 0) {
             source = args[0];

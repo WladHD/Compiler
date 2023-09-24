@@ -13,7 +13,7 @@ public class ComplexParserTypeIdentifier {
             new TypeMaps(ParserTypes.SET, ParserTypes.SET, new ParserTypes[]{
                     ParserTypes.SET
             }, new String[]{"+", "-", "^"}),
-            new TypeMaps(ParserTypes.BOOLEAN, null, ParserTypes.values(), new String[]{"==", "!="}, true),
+            new TypeMaps(ParserTypes.BOOLEAN, null, ParserTypes.values(), new String[]{"==", "!="}, true, false),
             new TypeMaps(ParserTypes.BOOLEAN, ParserTypes.BOOLEAN, new ParserTypes[]{ParserTypes.BOOLEAN}, new String[]{
                     "||", "&&"
             }),
@@ -22,11 +22,22 @@ public class ComplexParserTypeIdentifier {
             }),
             new TypeMaps(ParserTypes.INT, null, new ParserTypes[]{
                     ParserTypes.INT, ParserTypes.CHAR
-            }, new String[]{"+", "-", "*", "/", "%"})
+            }, new String[]{"+", "-", "*", "/", "%"}),
+
+            new TypeMaps(ParserTypes.INT, ParserTypes.INT, new ParserTypes[]{ParserTypes.INT, ParserTypes.CHAR}, new String[]{
+                    "+=", "-=", "*=", "/=", "%="
+            }, false, true),
+            new TypeMaps(ParserTypes.CHAR, ParserTypes.CHAR, new ParserTypes[]{ParserTypes.INT, ParserTypes.CHAR}, new String[]{
+                    "+=", "-=", "*=", "/=", "%="
+            }, false, true),
+            new TypeMaps(ParserTypes.STRING, ParserTypes.STRING, ParserTypes.values(), new String[]{
+                    "+="
+            }, false, true),
+            new TypeMaps(ParserTypes.SAME_TYPE, null, ParserTypes.values(), new String[]{"="}, true, false)
     };
 
     static TypeMaps[] exp_pre_post = new TypeMaps[]{
-            new TypeMaps(ParserTypes.INT, null, new ParserTypes[]{ParserTypes.INT}, new String[]{"++", "-- "}, true),
+            new TypeMaps(ParserTypes.INT, null, new ParserTypes[]{ParserTypes.INT}, new String[]{"++", "--"}, true, false),
             new TypeMaps(ParserTypes.INT, null, new ParserTypes[]{ParserTypes.INT}, new String[]{"+", "-"}),
             new TypeMaps(ParserTypes.BOOLEAN, null, new ParserTypes[]{ParserTypes.BOOLEAN}, new String[]{"!"})
     };
@@ -62,6 +73,9 @@ public class ComplexParserTypeIdentifier {
             if (tmm.requires != null && a.getBasicType() != tmm.requires && b.getBasicType() != tmm.requires)
                 continue;
 
+            if (tmm.requiredTypeMustBeLeftSide && a.getBasicType() != tmm.requires)
+                continue;
+
             ComplexParserType required = a.getBasicType() == tmm.requires ? a : b;
             ComplexParserType second = a.getBasicType() == tmm.requires ? b : a;
 
@@ -72,6 +86,9 @@ public class ComplexParserTypeIdentifier {
 
             if (tmm.requiresSameType && !required.isEqual(second))
                 continue;
+
+            if (required.isEqual(ParserTypes.SAME_TYPE))
+                return required;
 
             required.setBasicType(tmm.result);
 
@@ -162,17 +179,19 @@ public class ComplexParserTypeIdentifier {
         String[] allowedOperators;
 
         boolean requiresSameType;
+        boolean requiredTypeMustBeLeftSide;
 
         public TypeMaps(ParserTypes result, ParserTypes requires, ParserTypes[] anything, String[] operators) {
-            this(result, requires, anything, operators, false);
+            this(result, requires, anything, operators, false, false);
         }
 
-        public TypeMaps(ParserTypes result, ParserTypes requires, ParserTypes[] anything, String[] operators, boolean requiresSameType) {
+        public TypeMaps(ParserTypes result, ParserTypes requires, ParserTypes[] anything, String[] operators, boolean requiresSameType, boolean requiredTypeMustBeLeftSide) {
             this.result = result;
             this.requires = requires;
             this.anything = anything;
             this.allowedOperators = operators;
             this.requiresSameType = requiresSameType;
+            this.requiredTypeMustBeLeftSide = requiredTypeMustBeLeftSide;
         }
     }
 

@@ -32,7 +32,11 @@ public class TranslatorTemplate {
         /* PLACEHOLDER */
     }
 
-    public static class Set<T> {
+    interface OperatorOverload<T> {
+        T overload(String operator, T o);
+    }
+
+    public static class Set<T> implements Iterable<T>, OperatorOverload<Set<T>> {
         final ArrayList<T> contents;
 
         public Set() {
@@ -89,6 +93,30 @@ public class TranslatorTemplate {
         public String toString() {
             return Arrays.toString(contents.toArray());
         }
+
+        @Override
+        public Iterator<T> iterator() {
+            return contents.iterator();
+        }
+
+        @Override
+        public Set<T> overload(String operator, Set<T> o) {
+            switch (operator) {
+                case "+" -> {
+                    return op_add(o);
+                }
+                case "-" -> {
+                    return op_diff(o);
+                }
+                case "^" -> {
+                    return op_inter(o);
+                }
+            }
+
+            throw new RuntimeException(
+                    MessageFormat.format("Operator {0} konnte für das Objekt {1} nicht überladen werden.", operator, this)
+            );
+        }
     }
 
     public static class System {
@@ -112,7 +140,7 @@ public class TranslatorTemplate {
         }
     }
 
-    public static class Map<TA, TB> {
+    public static class Map<TA, TB> implements Iterable<TA> {
 
         private final HashMap<TA, TB> hashMap;
 
@@ -145,6 +173,11 @@ public class TranslatorTemplate {
             sb.append("}");
 
             return sb.toString();
+        }
+
+        @Override
+        public Iterator<TA> iterator() {
+            return hashMap.keySet().iterator();
         }
     }
 
