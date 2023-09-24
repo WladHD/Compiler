@@ -4,7 +4,7 @@ void main() {
     Set<int> collecting = [];
 
     for(int i = 0; i < 5; i++) {
-        Set<int> temp = [i, i + 1];
+        Set<int> temp = [i, i + 1, false];
         collecting = collecting + temp;
     }
 

@@ -31,7 +31,6 @@ public class SemanticAnalyzer implements ISemanticAnalyzer<SimpleNode> {
 
         IClosure<String, ComplexParserType, Object> iClosure = stv.getRootClosure().getMethodTypeAndClosure("main", true).getValue();
 
-        System.out.println(iClosure);
         if(iClosure.getMethodParams().size() != 0)
             throw new MainMethodWithArgsSemanticException(stv.getRootClosure(), iClosure.getMethodParams().size());
     }

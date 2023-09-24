@@ -84,8 +84,8 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
     }
 
     private IClosure<String, ComplexParserType, Object> cast(Object b) {
-        // if (!rootClosure.getClass().isInstance(b)) throw new InternClosureCastingSemanticException();
-        System.out.println(b);
+        if (!rootClosure.getClass().isInstance(b)) throw new InternClosureCastingSemanticException();
+
         return (IClosure<String, ComplexParserType, Object>) b;
     }
 
