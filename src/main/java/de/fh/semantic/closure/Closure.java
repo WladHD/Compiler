@@ -1,5 +1,8 @@
 package de.fh.semantic.closure;
 
+import de.fh.semantic.err.MethodNotDeclaredSemanticException;
+import de.fh.semantic.err.VariableNotDeclaredSemanticException;
+
 import java.util.AbstractMap;
 import java.util.HashMap;
 
@@ -61,7 +64,7 @@ public class Closure<VarMethodNames, VarMethodType, VarValue> implements IClosur
 
         if (local || checkOnlyBoundVariables || getParent() == null) {
             if(!local)
-                return null;
+                throw new VariableNotDeclaredSemanticException(varName.toString());
 
             return new AbstractMap.SimpleEntry<>(getVariableTypeMap().get(varName), getVariableValueMap().getOrDefault(varName, null));
         }
@@ -75,7 +78,7 @@ public class Closure<VarMethodNames, VarMethodType, VarValue> implements IClosur
 
         if (local || checkOnlyBoundMethods || getParent() == null) {
             if(!local)
-                return null;
+                throw new MethodNotDeclaredSemanticException(methodName.toString());
 
             return new AbstractMap.SimpleEntry<>(getMethodReturnTypeMap().get(methodName), getMethodClosureMap().get(methodName));
         }

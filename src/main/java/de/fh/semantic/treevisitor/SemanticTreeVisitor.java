@@ -79,9 +79,13 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
         return rootClosure;
     }
 
-    private IClosure<String, ComplexParserType, Object> cast(Object b) {
-        if (!rootClosure.getClass().isInstance(b)) throw new InternClosureCastingSemanticException();
+    public IClosure<String, ComplexParserType, Object> retrieveClassClosure(String type) {
+        return (IClosure<String, ComplexParserType, Object>) (getRootClosure().getParent() == null ? getRootClosure() : getRootClosure().getParent()).getVariableTypeAndValue(type, true).getValue();
+    }
 
+    private IClosure<String, ComplexParserType, Object> cast(Object b) {
+        // if (!rootClosure.getClass().isInstance(b)) throw new InternClosureCastingSemanticException();
+        System.out.println(b);
         return (IClosure<String, ComplexParserType, Object>) b;
     }
 
@@ -107,17 +111,83 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
     }
 
     public void setupRootClosure() {
-        IClosure<String, ComplexParserType, Object> systemClosure = getRootClosure().createNewChildClosure();
-        getRootClosure().addVariableDeclaration("System", new ComplexParserType(ParserTypes.OBJECT), false);
-        getRootClosure().addVariableInitialisation("System", systemClosure);
+        // STRING [Meth: length() int, charAt(int) char]
+        Object cl_string = addRootClosureClass("String");
+        addRootClosureMethod(cast(cl_string), "length", new ComplexParserType(ParserTypes.INT));
+        addRootClosureMethodParameter(
+                addRootClosureMethod(cast(cl_string), "charAt", new ComplexParserType(ParserTypes.CHAR)),
+                new ComplexParserType(ParserTypes.INT));
 
-        systemClosure.addMethod("readString", new ComplexParserType(ParserTypes.STRING));
 
-        IClosure<String, ComplexParserType, Object> printlnClosure = systemClosure.addMethod("println", new ComplexParserType(ParserTypes.STRING));
-        printlnClosure.addVariableDeclaration("ignored", new ComplexParserType(ParserTypes.OBJECT), true);
+        Object cl_map = addRootClosureClass("Map");
+        addRootClosureMethodParameter(addRootClosureMethod(cast(cl_map), "containsKey", new ComplexParserType(ParserTypes.BOOLEAN)),
+                new ComplexParserType(ParserTypes.CLASS_OBJECT));
+
+        // SET
+        Object cl_set = addRootClosureClass("Set");
+        addRootClosureMethodParameter(addRootClosureMethod(cast(cl_set), "contains", new ComplexParserType(ParserTypes.BOOLEAN)),
+                new ComplexParserType(ParserTypes.CLASS_OBJECT));
+
+        Object cl_system = addRootClosureClass("System");
+        addRootClosureMethod(cast(cl_system), "readString", new ComplexParserType(ParserTypes.STRING));
+        Object cl_system_println = addRootClosureMethod(cast(cl_system), "println", new ComplexParserType(ParserTypes.VOID));
+
+        addRootClosureMethodParameter(cast(cl_system_println), new ComplexParserType(ParserTypes.CLASS_OBJECT));
+
+
+
+        // PATHS
+        Object cl_path = addRootClosureClass("Path");
+        addRootClosureMethod(cast(cl_path), "toString", new ComplexParserType(ParserTypes.STRING));
+        addRootClosureVariable(cast(cl_path), "name", new ComplexParserType(ParserTypes.STRING).setArray(true));
+        addRootClosureMethod(cast(cl_path), "remove", new ComplexParserType(ParserTypes.VOID));
+        addRootClosureMethodParameter(addRootClosureMethod(cast(cl_path), "copyTo", new ComplexParserType(ParserTypes.VOID)),
+                new ComplexParserType(ParserTypes.PATH));
+        addRootClosureMethodParameter(addRootClosureMethod(cast(cl_path), "moveTo", new ComplexParserType(ParserTypes.VOID)),
+                new ComplexParserType(ParserTypes.PATH));
+
+        // FILES
+        Object cl_files = addRootClosureClass("Files");
+        addRootClosureVariable(cast(cl_files), "type", new ComplexParserType(ParserTypes.STRING));
+        addRootClosureVariable(cast(cl_files), "name", new ComplexParserType(ParserTypes.STRING));
+        addRootClosureVariable(cast(cl_files), "path", new ComplexParserType(ParserTypes.PATH));
+        addRootClosureMethodParameter(addRootClosureMethod(cast(cl_files), "rename", new ComplexParserType(ParserTypes.VOID)),
+                new ComplexParserType(ParserTypes.STRING));
+        addRootClosureMethodParameter(addRootClosureMethod(cast(cl_files), "moveTo", new ComplexParserType(ParserTypes.VOID)),
+                new ComplexParserType(ParserTypes.STRING));
+
+        // PATH
+        addRootClosureVariable(cast(cl_path), "files", new ComplexParserType(ParserTypes.FILES).setArray(true));
+
 
         // ALLOW NAMING OF SYSTEM ETC.
         rootClosure = getRootClosure().createNewChildClosure();
+    }
+
+    IClosure<String, ComplexParserType, Object> addRootClosureClass(String name) {
+        IClosure<String, ComplexParserType, Object> systemClosure = getRootClosure().createNewChildClosure();
+        getRootClosure().addVariableDeclaration(name, new ComplexParserType(ParserTypes.CLASS_OBJECT), false);
+        getRootClosure().addVariableInitialisation(name, systemClosure);
+
+        return systemClosure;
+    }
+
+    IClosure<String, ComplexParserType, Object> addRootClosureMethod(IClosure<String, ComplexParserType, Object> classClosure, String name, ComplexParserType type) {
+        return classClosure.addMethod(name, type);
+    }
+
+    IClosure<String, ComplexParserType, Object> addRootClosureVariable(IClosure<String, ComplexParserType, Object> methodClosure, String name, ComplexParserType type) {
+        methodClosure.addVariableDeclaration(name, type, false);
+        methodClosure.addVariableInitialisation(name, retrieveClassClosure(type.getBasicType().toString()));
+
+        return methodClosure;
+    }
+
+    IClosure<String, ComplexParserType, Object> addRootClosureMethodParameter(IClosure<String, ComplexParserType, Object> methodClosure, ComplexParserType... type) {
+        for (int i = 0; i < type.length; i++)
+            methodClosure.addVariableDeclaration("ignored" + i, type[i], true);
+
+        return methodClosure;
     }
 
     // TODO delete?
@@ -470,12 +540,13 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
         if (!cast(data).hasVariable(identifier, false)) throw new VariableNotDeclaredSemanticException(identifier);
 
-        Object typeReturnType = visit(operation, data);
         ComplexParserType expectedType = cast(data).getVariableTypeAndValue(identifier, false).getKey();
+        cast(data).addVariableInitialisation(identifier, retrieveClassClosure(expectedType.getBasicType().toString()));
+        Object typeReturnType = visit(operation, data);
 
-        if(typeReturnType instanceof ComplexParserType cpt)
+        if (typeReturnType instanceof ComplexParserType cpt)
             ComplexParserTypeIdentifier.inferDatatypeFromOperation(expectedType, cpt, operation.jjtGetValue().toString());
-        else if(!operation.jjtGetValue().equals("=") && (expectedType.isArray() || expectedType.getBasicType() == ParserTypes.SET || expectedType.getBasicType() == ParserTypes.MAP)) {
+        else if (!operation.jjtGetValue().equals("=") && (expectedType.isArray() || expectedType.getBasicType() == ParserTypes.SET || expectedType.getBasicType() == ParserTypes.MAP)) {
             if (!expectedType.isEqual(typeReturnType)) {
                 throw new ExpectedTypeMissmatchSemanticException(expectedType, typeReturnType);
             }
@@ -641,49 +712,67 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
     @Override
     public Object visit(ASTOP_PRIO_15 node, Object data) {
         ASTLITERAL_IDENTIFIER start = (ASTLITERAL_IDENTIFIER) node.jjtGetChild(0);
-        Object currentValue = start.jjtGetValue();
-        translate(currentValue);
-        ComplexParserType currentType = null;
+        String currentIdentifier = (String) start.jjtGetValue();
         IClosure<String, ComplexParserType, Object> currentClosure = cast(data);
+        ComplexParserType currentType = null;
 
         for (int i = 1; i < node.jjtGetNumChildren(); i++) {
             SimpleNode current = (SimpleNode) node.jjtGetChild(i);
+            SimpleNode next = i + 1 < node.jjtGetNumChildren() ? (SimpleNode) node.jjtGetChild(i + 1) : null;
+            boolean isNextMethodCall = next instanceof ASTOPERATOR_15_METHOD_CALL;
+
+            if (i == 1 && !(current instanceof ASTOPERATOR_15_METHOD_CALL)) {
+                currentType = (ComplexParserType) visit(start, currentClosure);
+                currentClosure = cast(currentClosure.getVariableTypeAndValue(currentIdentifier, false).getValue());
+            }
 
             if (current instanceof ASTOPERATOR_15_MEMBER_SELECTOR ms) {
-                if (currentValue instanceof String ident) {
-                    AbstractMap.SimpleEntry<ComplexParserType, Object> retrievedTypeClosure = cast(currentClosure).getVariableTypeAndValue(ident, false);
-                    currentClosure = cast(retrievedTypeClosure.getValue());
-                    currentType = retrievedTypeClosure.getKey();
-                    currentValue = ((ASTLITERAL_IDENTIFIER) ms.jjtGetChild(0)).jjtGetValue();
-                    translate("." + currentValue);
+                translate(".");
+                ASTLITERAL_IDENTIFIER ident = (ASTLITERAL_IDENTIFIER) ms.jjtGetChild(0);
+                currentIdentifier = (String) ident.jjtGetValue();
+
+                if (isNextMethodCall) {
+                    continue;
                 }
-            } else if (current instanceof ASTOPERATOR_15_METHOD_CALL mc) {
+
+                currentType = (ComplexParserType) visit(ident, currentClosure);
+                currentClosure = cast(currentClosure.getVariableTypeAndValue(currentIdentifier, false).getValue());
+            }
+
+            if (current instanceof ASTOPERATOR_15_METHOD_CALL mc) {
+                if (isNextMethodCall)
+                    throw new UnknownSemanticException("Es liegen zwei Methodenaufrufe aufeinander vor.");
+
+                translate(currentIdentifier);
                 ArrayList<ComplexParserType> givenParams = new ArrayList<>();
                 translate("(");
 
-                for (SimpleNode sn : childrenToArray(mc))
+                for (SimpleNode sn : childrenToArray(mc)) {
                     givenParams.addAll((Collection<? extends ComplexParserType>) visit(sn, cast(data)));
-
-                if (currentValue instanceof String ident) {
-                    AbstractMap.SimpleEntry<ComplexParserType, IClosure<String, ComplexParserType, Object>> retrievedTypeClosure = currentClosure.getMethodTypeAndClosure(ident, false);
-                    if (retrievedTypeClosure == null)
-                        throw new MethodNotDeclaredSemanticException(ident);
-                    currentType = retrievedTypeClosure.getKey();
-
-                    if (givenParams.size() != retrievedTypeClosure.getValue().getMethodParams().size())
-                        throw new MethodParameterMismatchSemanticException(ident, new ArrayList<>(retrievedTypeClosure.getValue().getMethodParams().values()), givenParams);
-
-                    for (int j = 0; j < retrievedTypeClosure.getValue().getMethodParams().size(); j++)
-                        if (!retrievedTypeClosure.getValue().getMethodParams().get(j).isEqual(givenParams.get(j)))
-                            throw new MethodParameterMismatchSemanticException(ident, new ArrayList<>(retrievedTypeClosure.getValue().getMethodParams().values()), givenParams);
-
-                    translate(")");
                 }
-            } else if (current instanceof ASTOPERATOR_15_ARRAY_INDEX_CALL ai) {
-                if (currentType == null) {
-                    AbstractMap.SimpleEntry<ComplexParserType, Object> retrievedTypeClosure = cast(currentClosure).getVariableTypeAndValue((String) currentValue, false);
-                    currentType = retrievedTypeClosure.getKey();
-                }
+
+
+                AbstractMap.SimpleEntry<ComplexParserType, IClosure<String, ComplexParserType, Object>> retrievedTypeClosure = currentClosure.getMethodTypeAndClosure(currentIdentifier, false);
+                if (retrievedTypeClosure == null)
+                    throw new MethodNotDeclaredSemanticException(currentIdentifier);
+
+                currentType = retrievedTypeClosure.getKey();
+                currentClosure = retrievedTypeClosure.getValue();
+
+                if (givenParams.size() != retrievedTypeClosure.getValue().getMethodParams().size())
+                    throw new MethodParameterMismatchSemanticException(currentIdentifier, new ArrayList<>(retrievedTypeClosure.getValue().getMethodParams().values()), givenParams);
+
+                for (int j = 0; j < retrievedTypeClosure.getValue().getMethodParams().size(); j++)
+                    if (!retrievedTypeClosure.getValue().getMethodParams().get(j).isEqual(givenParams.get(j)))
+                        throw new MethodParameterMismatchSemanticException(currentIdentifier, new ArrayList<>(retrievedTypeClosure.getValue().getMethodParams().values()), givenParams);
+
+                translate(")");
+            }
+
+            if (current instanceof ASTOPERATOR_15_ARRAY_INDEX_CALL ai) {
+                if (currentType == null)
+                    throw new UnknownSemanticException(null);
+
                 String closing;
 
                 if ((currentType.getBasicType() == ParserTypes.MAP || currentType.getBasicType() == ParserTypes.SET) && !currentType.isArray()) {
@@ -695,7 +784,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
                 }
 
                 if (!currentType.isArray() && currentType.getBasicType() != ParserTypes.MAP && currentType.getBasicType() != ParserTypes.SET)
-                    throw new NotArrayExceptionSemanticException(currentValue, currentType);
+                    throw new NotArrayExceptionSemanticException(currentIdentifier, currentType);
 
                 ComplexParserType arraySelectorComplexType = (ComplexParserType) visit(ai.jjtGetChild(0), cast(data));
 
@@ -706,6 +795,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
 
                 currentType = degradeArrayMapSet(currentType, false);
+                currentClosure = retrieveClassClosure(currentType.getBasicType().toString());
                 translate(closing);
             }
         }

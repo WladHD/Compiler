@@ -1,0 +1,6 @@
+void main() {
+    Path p = ./;
+    Map<String, Set<String>> map1 = ["hello":["sir?"]];
+    Set<String> set2 = ["sdf"];
+    System.println(p.name[1].length());
+}

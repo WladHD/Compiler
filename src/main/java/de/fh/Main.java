@@ -42,7 +42,7 @@ public class Main {
             return;
         }
 
-        String source = "cleanTestSmall.txt";
+        String source = "cleanTestAll.txt";
         String output = true ? "./src/test/java/TranslatorTemplate.java" : null;
 
         if (args.length > 0) {

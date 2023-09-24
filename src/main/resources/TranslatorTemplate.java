@@ -61,6 +61,10 @@ public class TranslatorTemplate {
             return newSet;
         }
 
+        public T get(int i) {
+            return contents.get(i);
+        }
+
         private Set<T> op_diff(Set<T> s2) {
             Set<T> newSet = op_add(s2);
 

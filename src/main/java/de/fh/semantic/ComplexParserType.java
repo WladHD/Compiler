@@ -30,8 +30,9 @@ public class ComplexParserType implements Cloneable {
         return isArray;
     }
 
-    public void setArray(boolean isArray) {
+    public ComplexParserType setArray(boolean isArray) {
         this.isArray = isArray;
+        return this;
     }
 
     public ParserTypes getBasicType() {
@@ -62,7 +63,7 @@ public class ComplexParserType implements Cloneable {
 
     public boolean isEqual(Object o) {
         // OBJECT ACCEPTS ALL
-        if(getBasicType() == ParserTypes.OBJECT && o != null)
+        if(getBasicType() == ParserTypes.CLASS_OBJECT && o != null)
             return true;
 
         if (o instanceof ParserTypes pt && !hasComplexParserTypes()) {
