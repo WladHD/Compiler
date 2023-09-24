@@ -1,16 +1,34 @@
 package de.fh.semantic.closure;
 
 import de.fh.Main;
+import de.fh.semantic.ComplexParserType;
 import de.fh.semantic.err.MethodDeclaredSemanticException;
 import de.fh.semantic.err.VariableDeclaredSemanticException;
 import de.fh.semantic.err.VariableNotDeclaredSemanticException;
 
 import java.text.MessageFormat;
 import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
+
+    String getClosureName();
+
+    void setClosureName(String name);
+
+    default String getRecursiveClosureName() {
+        String current = getClosureName();
+
+        if (getParent() != null) {
+            String retrieved = getParent().getRecursiveClosureName();
+
+            if (retrieved != null)
+                current = retrieved + "." + current;
+        }
+
+
+        return current;
+    }
 
     HashMap<VarMethodNames, VarMethodType> getVariableTypeMap();
 
@@ -28,18 +46,18 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
 
     AbstractMap.SimpleEntry<VarMethodType, IClosure<VarMethodNames, VarMethodType, VarValue>> getMethodTypeAndClosure(VarMethodNames methodName, boolean checkOnlyBoundMethods);
 
-    IClosure<VarMethodNames, VarMethodType, VarValue> createNewChildClosure();
+    IClosure<VarMethodNames, VarMethodType, VarValue> createNewChildClosure(String name);
 
     default void addVariableDeclaration(VarMethodNames varName, VarMethodType varType, boolean isParam) {
         if (hasVariable(varName, true)) {
-            throw new VariableDeclaredSemanticException(varName.toString());
+            throw new VariableDeclaredSemanticException((IClosure<String, ComplexParserType, Object>) this, varName.toString());
         }
 
         Main.logger.info(MessageFormat.format("[Closure] Added variable declaration {0} with type {1}. Param: {2}", varName, varType, isParam));
 
         getVariableTypeMap().put(varName, varType);
 
-        if(isParam) {
+        if (isParam) {
             getMethodParams().put(getMethodParams().size(), varType);
             addVariableInitialisation(varName, null);
         }
@@ -47,7 +65,7 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
 
     default void addVariableInitialisation(VarMethodNames varName, VarValue varValue) {
         if (!hasVariable(varName, false))
-            throw new VariableNotDeclaredSemanticException(varName.toString());
+            throw new VariableNotDeclaredSemanticException((IClosure<String, ComplexParserType, Object>) this, varName.toString());
 
         Main.logger.info(MessageFormat.format("[Closure] Added variable initialisation {0} with value {1}.", varName, varValue));
 
@@ -56,9 +74,9 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
 
     default IClosure<VarMethodNames, VarMethodType, VarValue> addMethod(VarMethodNames methodName, VarMethodType methodType) {
         if (hasMethod(methodName, false))
-            throw new MethodDeclaredSemanticException(methodName.toString());
+            throw new MethodDeclaredSemanticException((IClosure<String, ComplexParserType, Object>) this, methodName.toString());
 
-        getMethodClosureMap().put(methodName, createNewChildClosure());
+        getMethodClosureMap().put(methodName, createNewChildClosure(methodName + "()"));
         getMethodReturnTypeMap().put(methodName, methodType);
 
         return getMethodClosureMap().get(methodName);
@@ -82,5 +100,7 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
         return getParent().hasMethod(varName, false);
     }
 
+    AbstractMap.SimpleEntry<VarMethodType,VarValue> getVariableTypeAndValue(VarMethodNames varName, boolean b, IClosure<VarMethodNames, VarMethodType, VarValue> startingClosure);
 
+    AbstractMap.SimpleEntry<VarMethodType, IClosure<VarMethodNames,VarMethodType,VarValue>> getMethodTypeAndClosure(VarMethodNames methodName, boolean b, IClosure<VarMethodNames, VarMethodType, VarValue> startingClosure);
 }

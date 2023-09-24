@@ -1,0 +1,56 @@
+void main() {
+    String str1 = "abc";
+    String str2 = "def";
+    str2 += str1;
+    str2+=3;
+    str2+='a';
+    str2.length();
+    str2.charAt(0);
+    str2+= true;
+    String str3 = System.readString();
+
+    String [] str4 = ["Baum", "Zweiter Baum"];
+    String str5 = str4[0];
+
+    int int1;
+    char ch1;
+    boolean bool;
+
+    Path myPath1 = D:\Arbeit\testing\test1\test;
+    Path myPath2 = D:\Arbeit\testing 187\test1\test;
+    Path p = ./hello . txt;
+    String[] pName = p.name;
+    myPath1.remove();
+    Path myPath3;
+    myPath1.copyTo(myPath3);
+    Path newS = D:\Arbeit\testing\test1\test.txt;
+
+    System.println(newS);
+    System.println("");
+    System.println("Bitte geben Sie den Pfad ein:");
+
+
+
+
+    Map<String, Set<String>> map1 = ["hello":["sir?"]];
+    Map<String, String> myMap1 = [ "key1": "value1"];
+    Map<String, String> myMap2 = [ "key2": "value2"];
+    myMap1.containsKey("value1");
+    myMap1.containsKey("value2");
+
+
+
+    Set<int> set1 = {1,2,3,4};
+    set1.contains(2);
+    set1.contains(7);
+    set1.contains("7");
+    Set<int> set2 = {1,2,3,4};
+    Set<int> set3 = {1,2,3,4};
+    Set<String> set4 = {"1","2","3","4"};
+    Set<char> set5 = {1,2,3,4};
+    Set<boolean> set6 = {1,2,3,4};
+    Set<boolean> set7 = set6 + set5;
+    Set<int> set8 = set2 - set2;
+
+
+}

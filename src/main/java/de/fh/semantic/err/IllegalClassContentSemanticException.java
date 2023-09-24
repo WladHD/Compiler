@@ -1,7 +1,10 @@
 package de.fh.semantic.err;
 
+import de.fh.semantic.ComplexParserType;
+import de.fh.semantic.closure.IClosure;
+
 public class IllegalClassContentSemanticException extends SemanticException {
-    public IllegalClassContentSemanticException() {
-        super(-1, "Eine Klasse darf nur Variablendeklarationen, Initialisationen, Blöcke und Methoden enthalten.");
+    public IllegalClassContentSemanticException(IClosure<String, ComplexParserType, Object> iClosure) {
+        super(iClosure, "Eine Klasse darf nur Variablendeklarationen, Initialisationen, Blöcke und Methoden enthalten.");
     }
 }

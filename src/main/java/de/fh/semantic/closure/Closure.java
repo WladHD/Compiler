@@ -1,5 +1,6 @@
 package de.fh.semantic.closure;
 
+import de.fh.semantic.ComplexParserType;
 import de.fh.semantic.err.MethodNotDeclaredSemanticException;
 import de.fh.semantic.err.VariableNotDeclaredSemanticException;
 
@@ -11,6 +12,8 @@ public class Closure<VarMethodNames, VarMethodType, VarValue> implements IClosur
     private final HashMap<VarMethodNames, VarValue> hashMapVariableValue;
 
     private final HashMap<Integer, VarMethodType> hashMapMethodParam;
+
+    private String closureName;
 
     private final HashMap<VarMethodNames, VarMethodType> hashMapMethodType;
 
@@ -26,6 +29,16 @@ public class Closure<VarMethodNames, VarMethodType, VarValue> implements IClosur
         hashMapMethodType = new HashMap<>();
         hashMapMethodParam = new HashMap<>();
         hashMapMethodClosure = new HashMap<>();
+    }
+
+    @Override
+    public String getClosureName() {
+        return closureName;
+    }
+
+    @Override
+    public void setClosureName(String name) {
+        closureName = name;
     }
 
     @Override
@@ -60,34 +73,47 @@ public class Closure<VarMethodNames, VarMethodType, VarValue> implements IClosur
 
     @Override
     public AbstractMap.SimpleEntry<VarMethodType, VarValue> getVariableTypeAndValue(VarMethodNames varName, boolean checkOnlyBoundVariables) {
+        return getVariableTypeAndValue(varName, checkOnlyBoundVariables, this);
+    }
+
+    @Override
+    public AbstractMap.SimpleEntry<VarMethodType, VarValue> getVariableTypeAndValue(VarMethodNames varName, boolean checkOnlyBoundVariables, IClosure<VarMethodNames, VarMethodType, VarValue> startingClosure) {
         boolean local = getVariableTypeMap().containsKey(varName);
 
         if (local || checkOnlyBoundVariables || getParent() == null) {
             if(!local)
-                throw new VariableNotDeclaredSemanticException(varName.toString());
+                throw new VariableNotDeclaredSemanticException((IClosure<String, ComplexParserType, Object>) startingClosure, varName.toString());
 
             return new AbstractMap.SimpleEntry<>(getVariableTypeMap().get(varName), getVariableValueMap().getOrDefault(varName, null));
         }
 
-        return getParent().getVariableTypeAndValue(varName, false);
+        return getParent().getVariableTypeAndValue(varName, false, startingClosure);
     }
 
     @Override
     public AbstractMap.SimpleEntry<VarMethodType, IClosure<VarMethodNames, VarMethodType, VarValue>> getMethodTypeAndClosure(VarMethodNames methodName, boolean checkOnlyBoundMethods) {
+        return getMethodTypeAndClosure(methodName, checkOnlyBoundMethods, this);
+    }
+
+    @Override
+    public AbstractMap.SimpleEntry<VarMethodType, IClosure<VarMethodNames, VarMethodType, VarValue>> getMethodTypeAndClosure(VarMethodNames methodName, boolean checkOnlyBoundMethods, IClosure<VarMethodNames, VarMethodType, VarValue> startingClosure) {
         boolean local = getMethodReturnTypeMap().containsKey(methodName);
 
         if (local || checkOnlyBoundMethods || getParent() == null) {
             if(!local)
-                throw new MethodNotDeclaredSemanticException(methodName.toString());
+                throw new MethodNotDeclaredSemanticException((IClosure<String, ComplexParserType, Object>) startingClosure, methodName.toString());
 
             return new AbstractMap.SimpleEntry<>(getMethodReturnTypeMap().get(methodName), getMethodClosureMap().get(methodName));
         }
 
-        return getParent().getMethodTypeAndClosure(methodName, false);
+        return getParent().getMethodTypeAndClosure(methodName, false, startingClosure);
     }
 
     @Override
-    public IClosure<VarMethodNames, VarMethodType, VarValue> createNewChildClosure() {
-        return new Closure<>(this);
+    public IClosure<VarMethodNames, VarMethodType, VarValue> createNewChildClosure(String name) {
+        Closure<VarMethodNames, VarMethodType, VarValue> c = new Closure<>(this);
+        c.setClosureName(name);
+
+        return c;
     }
 }

@@ -1,6 +1,7 @@
 package de.fh.semantic;
 
 import de.fh.javacc.generated.SimpleNode;
+import de.fh.semantic.closure.IClosure;
 import de.fh.semantic.err.IllegalOperationSemanticException;
 
 import java.util.ArrayList;
@@ -42,7 +43,7 @@ public class ComplexParserTypeIdentifier {
             new TypeMaps(ParserTypes.BOOLEAN, null, new ParserTypes[]{ParserTypes.BOOLEAN}, new String[]{"!"})
     };
 
-    public static ComplexParserType inferDatatypeFromUnaryOperation(ComplexParserType a, String operator, SimpleNode child) {
+    public static ComplexParserType inferDatatypeFromUnaryOperation(IClosure<String, ComplexParserType, Object> closure, ComplexParserType a, String operator, SimpleNode child) {
         for (TypeMaps tmm : exp_pre_post) {
             // check if operator match
             if (!Arrays.asList(tmm.allowedOperators).contains(operator))
@@ -60,11 +61,20 @@ public class ComplexParserTypeIdentifier {
             return a;
         }
 
-        throw new IllegalOperationSemanticException(null, a, operator);
+        throw new IllegalOperationSemanticException(closure, null, a, operator);
     }
 
-    public static ComplexParserType inferDatatypeFromOperation(ComplexParserType a, ComplexParserType b, String operator) {
+    public static ComplexParserType inferDatatypeFromOperation(IClosure<String, ComplexParserType, Object> closure, ComplexParserType a, ComplexParserType b, String operator) {
         for (TypeMaps tmm : exp_op_exp) {
+            // SPECIAL CASE
+
+            if(Arrays.asList(tmm.allowedOperators).contains("=") && tmm.result == ParserTypes.SAME_TYPE) {
+                if(b.getBasicType() == ParserTypes.EMPTY_ARRAY_CONTAINER &&
+                        (a.getBasicType() == ParserTypes.SET || a.getBasicType() == ParserTypes.MAP || a.isArray())) {
+                    return a;
+                }
+            }
+
             // check if operator match
             if (!Arrays.asList(tmm.allowedOperators).contains(operator))
                 continue;
@@ -90,12 +100,16 @@ public class ComplexParserTypeIdentifier {
             if (required.isEqual(ParserTypes.SAME_TYPE))
                 return required;
 
+            if(required.getBasicType() == ParserTypes.SET)
+                if(!required.toString().equals(second.toString()))
+                    continue;
+
             required.setBasicType(tmm.result);
 
             return required;
         }
 
-        throw new IllegalOperationSemanticException(a, b, operator);
+        throw new IllegalOperationSemanticException(closure, a, b, operator);
     }
 
     private static boolean acceptArrayValueSet(ComplexParserType declared, Object arrayOrEmptyArray) {

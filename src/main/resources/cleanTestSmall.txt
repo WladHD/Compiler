@@ -1,6 +1,11 @@
-Map<String, Set<String>> map1 = ["hello":["sir?"]];
-Set<String> set2 = ["sdf"];
+Set<int> set2 = {1,2,3,4};
+Set<int> set3 = {1,2,3,4};
+set2 = set3;
+set2 = set2 + set3;
 
 void main() {
-    System.println(set2 + map1["hello"]);
+    Set<int> set2 = {1,2,3,4};
+    Set<int> set3 = {1,2,3,4};
+    set2 = set3;
+    set2 = set2 + set3;
 }

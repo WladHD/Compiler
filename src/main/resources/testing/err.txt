@@ -1,0 +1,125 @@
+Das hat in nem random intervall einen unterschiedlichen output entweder endet es mit min. 10 Closure calls oder mit
+Caused by: de.fh.semantic.err.VariableNotDeclaredSemanticException: [VariableNotDeclaredSemanticException] Variable int wurde noch nicht deklariert, um einen Wert zuweisen zu können.
+(Jede int, char oder boolean declaration mit irgend einer Zuweisung hat mir error gegeben deswegen sind die alle hier)
+
+int int2 = 1+2;
+int int4 = 1;
+int int5;
+int5 = 0;
+int int6 = -5;
+int int7 = 5*6;
+int int8 = 8%7;
+int int9 = 8/7;
+(Bin mir nicht mal sicher ob das gehen soll)
+int int10 = 8^7;
+int int11 = 5+7-2*8/7;
+int int12 = 5+7-2*8/7%2;
+int int12 = -5+7-2*8/7%2;
+int x = [1, 2, 3 + 3, 4];
+int[] asd = [1, 2, 3, 4];
+int sd = asd[2];
+for(int i = 0; 0< 10; i++) {
+}
+
+char ch1 = 'a';
+char ch2;
+ch2 = '2';
+char ch3 = 'a' + 2;
+char ch4 = 'a' - 2;
+char ch5 = 'a' + 'b'';
+char ch6 = 'a' - 'b';
+char ch7 = 'A' + 'b';
+char ch8 = 'a' +  'B';
+char ch9 = 'a' -  'B';
+char ch10 = 'A' - 'b';
+char ch11 = 'A' - 'b' + 'c';
+char ch12 = 4;
+char char1 = 3+4*5;
+
+
+
+boolean bool;
+bool = true;
+boolean bool1 = true;
+boolean bool2 = false;
+boolean bool3;
+bool3 = false;
+boolean bool4 = true && false;
+boolean bool5 = true && true;
+boolean bool6 = false && false;
+boolean bool7 = true || true;
+boolean bool8 = true || false;
+boolean bool9 = false || false;
+boolean bool10 = !false;
+boolean bool11 = !true;
+boolean bool12 = !true && !false;
+boolean bool13 = !true && !true;
+boolean bool14 = !false && !false;
+boolean bool15 = !true || !true;
+boolean bool16 = !true || !false;
+boolean bool17 = !false || !false;
+boolean bool17 = true || !false && true;
+boolean bool17 = true || false && !true;
+
+
+String str2 = "def";
+str2.charAt(0)++;
+
+Map<String, String> myMap1 = [ "key1": "value1"];
+Map<String, String> myMap2 = [ "key2": "value2"];
+(gehen alle 3 nicht der + soll ja glaub ich gehen die anderen bin ich mir nicht sicher ich vermute aber nicht)
+myMap1 = myMap1 + myMap2;
+myMap1 = myMap1 - myMap2;
+myMap1 = myMap1 ^ myMap2;
+myMap1 += myMap2;
+System.println(myMap1[1]);
+
+(ist aus der Projekt datei als Beispiel)
+int anzahl(String neu) {
+    for (File f:p.files){
+        f.name = neu + f.name;
+    }
+}
+
+
+(weis nicht ob er das können darf es funktioniert aber)
+Set<int> set1 = {1,2,3,4};
+set1.contains("7");
+Set<String> set2 = {1,2,3,4};
+Set<char> set2 = {1,2,3,4};
+Set<boolean> set2 = {1,2,3,4};
+Set<char> set4 = {1,2,3,4};
+Set<boolean> set5 = {1,2,3,4};
+Set<boolean> set6 = set5 + set4;
+
+(das funktioniert)
+Set<char> set5 = {1,2,3,4};
+Set<boolean> set6 = {1,2,3,4};
+Set<boolean> set7 = set6 + set5;
+(das nicht)
+Set<boolean> set7 = set5 + set6;
+
+(geht nicht)
+Set<int> set2 = {1,2,3,4};
+Set<int> set3 = {1,2,3,4};
+set2 = set3;
+set2 = set2 + set3;
+
+(das geht)
+Set<int> set8 = set2 - set2;
+(das nicht)
+Set<int> set9 = set2 + set2;
+Set<int> set10 = set2 ^ set2;
+Set<int> set11 = set2 - set3;
+Set<int> set12 = set2 + set3;
+Set<int> set13 = set2 ^ set3;
+
+
+Path myPath1 = D:\Arbeit\testing\test1\test;
+for (Files f : myPath1.files) {
+        System.println(f.getContent());
+}
+myPath1.remove("");
+myPath1.rename("D:\Arbeit\testing 187\test1\test");
+
+Files f = myPath1.files[0].getContent();

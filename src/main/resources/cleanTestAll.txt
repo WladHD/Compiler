@@ -1,6 +1,12 @@
 void main() {
-    Path p = ./;
-    Map<String, Set<String>> map1 = ["hello":["sir?"]];
-    Set<String> set2 = ["sdf"];
-    System.println(p.name[1].length());
+    int[] hello = {};
+    Map<int, int> test = [];
+    Set<int> collecting = [];
+
+    for(int i = 0; i < 5; i++) {
+        Set<int> temp = [i, i + 1];
+        collecting = collecting + temp;
+    }
+
+    System.println(collecting);
 }

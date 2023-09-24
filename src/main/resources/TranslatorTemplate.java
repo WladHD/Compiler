@@ -50,7 +50,7 @@ public class TranslatorTemplate {
             contents.addAll(pContents);
         }
 
-        public boolean contains(T element) {
+        public boolean contains(Object element) {
             return contents.contains(element);
         }
 
@@ -155,7 +155,7 @@ public class TranslatorTemplate {
             return this;
         }
 
-        public boolean containsKey(TA key) {
+        public boolean containsKey(Object key) {
             return hashMap.containsKey(key);
         }
 
