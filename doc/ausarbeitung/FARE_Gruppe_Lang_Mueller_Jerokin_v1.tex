@@ -312,7 +312,7 @@
 	Der Compiler wird in Java geschrieben und benutzt die Bibliotheken JavaCC und die JavaCC-interne JJTree.
 	Somit wird die Lexikalische Analyse und die Syntaxanalyse durch die definierte Grammatik durchgeführt.
 	Um dies kurz auszuführen wird mit JavaCC geprüft, ob ein gegebener Quellcode zur definierten Sprache und Grammatik zugehört (Lexikalische Analyse).
-	Durch erweiterte Annotation der Grammatik wird folgend der AST durch JJTree generiert (Syntaxanalyse).
+	Durch erweiterte Annotation der Grammatik wird folgend der AST (Abstract Syntax Tree) durch JJTree generiert (Syntaxanalyse).
 	Falls keine lexikalischen Fehler vorliegen, wird der AST zur semantischen Analyse und Fehlerbehandlung übergeben, wo auf semantische Korrektheit geprüft wird.
 	Parallel wird der AST zu Java Source Code übersetzt und abschließend nach Ablauf der semantischen Analyse compiliert.
 	
@@ -607,7 +607,7 @@ PROGRAM = null
 \newpage
 \section{Semantik}
 Nach der Erzeugung des AST wird dieser der semantischen Prüfung übergeben.
-Hierbei wird gleichzeitig auch die Fehlerbehandlung abgedeckt.
+Hierbei wird gleichzeitig auch die Fehlerbehandlung (und die Codeerzeugung in Kapitel \ref{sec:übersetzung}) abgedeckt.
 Um den Umfang der semantischen Analyse zu beschreiben, lassen sich hierfür die definierten Exceptions anbringen.
 
 \begin{longtable}{|c|c|}
@@ -617,52 +617,152 @@ Um den Umfang der semantischen Analyse zu beschreiben, lassen sich hierfür die d
 	1 & ExpectedTypeMissmatchSemanticException \\
 	2 & IllegalClassContentSemanticException \\
 	3 & IllegalOperationSemanticException \\
-	4 & InternClosureCastingSemanticException \\
-	5 & InternClosureSemanticException \\
-	6 & MainMethodWithArgsSemanticException \\
-	7 & MethodDeclaredSemanticException \\
-	8 & MethodNotDeclaredSemanticException \\
-	9 & MethodParameterMismatchSemanticException \\
-	10 & NoMainMethodSemanticException \\
-	11 & NoReturnSemanticException \\
-	12 & NotArrayExceptionSemanticException \\
-	13 & ReturnTypeMismatchSemanticException \\
-	14 & SemanticException \\
-	15 & StatementExpectedSemanticException \\
-	16 & UnknownSemanticException \\
-	17 & UnreachableCodeSemanticException \\
-	18 & VariableDeclarationNotAllowedSemanticException \\
-	19 & VariableDeclaredSemanticException \\
-	20 & VariableNotDeclaredSemanticException \\
-	21 & VariableNotInitializedSemanticException \\
-	22 & WrongArrayDefinitionSemanticException  \\ \midrule
+	4 & MainMethodWithArgsSemanticException \\
+	5 & MethodDeclaredSemanticException \\
+	6 & MethodNotDeclaredSemanticException \\
+	7 & MethodParameterMismatchSemanticException \\
+	8 & NoMainMethodSemanticException \\
+	9 & NoReturnSemanticException \\
+	10 & NotArrayExceptionSemanticException \\
+	11 & ReturnTypeMismatchSemanticException \\
+	12 & StatementExpectedSemanticException \\
+	13 & UnreachableCodeSemanticException \\
+	14 & VariableDeclarationNotAllowedSemanticException \\
+	15 & VariableDeclaredSemanticException \\
+	16 & VariableNotDeclaredSemanticException \\
+	17 & VariableNotInitializedSemanticException \\
+	18 & WrongArrayDefinitionSemanticException  \\ \midrule
 	
 	\caption{Alle für die semantische Analyse definierten Exceptions}
 	\label{table:semanticCheck}
 \end{longtable}
 
 \noindent
-Folgend werden in Listings Beispiele für fehlerhaften Code gezeigt, welcher in ein Exceptions in Tabelle \ref{table:semanticCheck} resultieren.
-\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer ExpectedTypeMissmatchSemanticException}, label=lst:errCode]
+Folgend werden in Listings \ref{lst:errCode1} bis \ref{lst:errCode18} Beispiele für fehlerhaften Code gezeigt, welche in Exceptions in Tabelle \ref{table:semanticCheck} resultieren.
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer ExpectedTypeMissmatchSemanticException}, label=lst:errCode1]
 // ExpectedTypeMissmatchSemanticException
-void main() { // BSP 1
+void main() {
 	for(;34;) {} // EXCEPTION -> Condition != Boolean
-	
 	Set<int> mySet = [1, 2, 3];
 	for(String val : mySet) {} // String != int
-	
 	Set<boolean> myBoolSet = [true];
 	myBoolSet = myBoolSet + mySet; // Set<int> != Set<boolean>
-	int x = true; // int != boolean
-}
-\end{lstlisting}
-
-\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer IllegalClassContentSemanticException}, label=lst:errCode]
-
+	int x = true; /* int != boolean */ }
 \end{lstlisting}
 
 \newpage
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer IllegalClassContentSemanticException}, label=lst:errCode2]
+for (;;) {} // EXCEPTION -> Außerhalb einer Methode
+void main() {}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer IllegalOperationSemanticException}, label=lst:errCode3]
+void main() {
+	int x = true + 1; // EXCEPTION -> boolean + int
+	String x1 = "hello" + 1; // KEINE EXCEPTION -> String + _ = String
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer MainMethodWithArgsSemanticException}, label=lst:errCode4]
+void main(int x) {} // EXCEPTION -> Main Methode darf keine Args haben
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer MethodDeclaredSemanticException}, label=lst:errCode5]
+void main() {}
+void main() {} // EXCEPTION -> Methode bereits deklariert
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer MethodNotDeclaredSemanticException}, label=lst:errCode6]
+void main() {
+	m404(); // EXCEPTION -> Methode noch nicht deklarierts
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer MethodParameterMismatchSemanticException}, label=lst:errCode7]
+void main() {
+	main(5, true); // EXCEPTION -> Parameter stimmen nicht überein
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer NoMainMethodSemanticException}, label=lst:errCode8]
+int x = 5; <EOF> // EXCEPTION -> Keine Main Methode definiert
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer NoReturnSemanticException}, label=lst:errCode9]
+int calc() { int x = 5; } // EXCEPTION -> Kein Return Statement
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer NotArrayExceptionSemanticException}, label=lst:errCode10]
+void main() {
+	int x = 5;
+	int y = x[1]; // EXCEPTION -> Arrayzugriff obwohl keine Array
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer ReturnTypeMismatchSemanticException}, label=lst:errCode11]
+void main() {}
+int calc() {
+	return true; // EXCEPTION -> int erwartet, aber boolean bekommen
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer StatementExpectedSemanticException}, label=lst:errCode12]
+void main() {
+	for(5;;) {} // EXCEPTION -> 5 ist kein Statement
+	for(;;6) {} // EXCEPTION -> 6 ist kein Statement
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer UnreachableCodeSemanticException}, label=lst:errCode13]
+void main() {
+	return;
+	int x = 5; // EXCEPTION -> Nicht erreichbar
+}
+\end{lstlisting}
+
+
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer VariableDeclarationNotAllowedSemanticException}, label=lst:errCode14]
+void main() {
+	for(;;) int x = 5; // EXCEPTION -> Nicht erlaubt
+	while(true) int x = 5; // EXCEPTION -> Nicht erlaubt
+	if(true) int x = 5; // EXCEPTION -> Nicht erlaubt
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer VariableDeclaredSemanticException}, label=lst:errCode15]
+void main() {
+	int x = 5;
+	boolean x = false; // EXCEPTION -> Bereits deklariert
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer VariableDeclaredSemanticException}, label=lst:errCode16]
+void print(int i) {}
+void main() {
+	print(x); // EXCEPTION -> x nicht deklariert
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer VariableNotInitializedSemanticException}, label=lst:errCode17]
+	void print(int i) {}
+	void main() {
+		int x;
+		print(x); // EXCEPTION -> x nicht initialisiert
+	}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer WrongArrayDefinitionSemanticException}, label=lst:errCode18]
+void main() {
+	Set<int> = {1,2,3}; // EXCEPTION -> [] für Set
+	int[] = [1,2,3]; // EXCEPTION -> {} für Arrays
+	Map<int[], Set<int>> ms = [{1,2,3}: [3,4,5]] // KEINE EXCEPTION
+}
+\end{lstlisting}
+
+
+\newpage
 \section{Übersetzung}
+\label{sec:übersetzung}
 Die Übersetzung ist der letzte Schritt in Tabelle \ref{table:bereiche} und ist dafür verantwortlich, den erhaltenen AST zu Java Source Code zu übersetzen.
 Dieser wird im Anschluss compiliert und zu einer ausführbaren jar-Datei verpackt.
 Der Java Source Code wird hierbei während der semantischen Analyse erzeugt, um auf die kontextabhängigen Closures zuzugreifen.
@@ -683,7 +783,7 @@ Der in Listing \ref{lst:bsplCodeTranslatorFinal} generierte Java Source Code wir
 
 \newpage
 \section{Anleitung zur Ausführung}
-In diesem Kapitel wird beschrieben, wie das kompilierte Programm verwendet werden kann sowie wie aus dem Source Code das Programm selbst erstellt werden kann.
+In diesem Kapitel wird beschrieben, wie das kompilierte Programm verwendet werden kann sowie die selbstständige Erstellung aus dem Source Code.
 
 \paragraph{Verwendung des kompilierten Programms} \mbox{} \\
 Das Programm \textit{FARECompiler.jar} akzeptiert zwei Parameter und kann wie folgt aufgerufen werden:

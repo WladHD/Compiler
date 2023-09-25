@@ -1,3 +1,6 @@
 void main() {
-    Path p = /home.txt;
+	// Set<int> = {1,2,3}; // EXCEPTION -> [] für Set
+	// int[] = [1,2,3]; // EXCEPTION -> {} für Arrays
+	Map<int[], Set<int>> ms = [{1,2,3}: [3,4,5]]; // KEINE EXCEPTION
+	int[] x = {1,2,3};
 }

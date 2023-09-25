@@ -893,13 +893,25 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
     @Override
     public Object visit(ASTARRAY_CONTAINER_NATIVE node, Object data) {
         SimpleNode parent = (SimpleNode) node.jjtGetParent();
+        ArrayList<Integer> traverseTypeSpecifiers = new ArrayList<>();
 
         while (!(parent instanceof ASTVAR_INIT)) {
+            if (parent instanceof ASTMAP_ELEMENT_VALUE)
+                traverseTypeSpecifiers.add(1);
+
+            if (parent instanceof ASTMAP_ELEMENT_KEY || parent instanceof ASTARRAY_ELEMENT)
+                traverseTypeSpecifiers.add(0);
+
             parent = (SimpleNode) parent.jjtGetParent();
         }
 
         ASTLITERAL_IDENTIFIER init_ident = (ASTLITERAL_IDENTIFIER) parent.jjtGetChild(0);
         ComplexParserType arrayHolderType = cast(data).getVariableTypeAndValue(init_ident.jjtGetValue().toString(), false).getKey();
+
+        for (int i = traverseTypeSpecifiers.size() - 1; i >= 0; i--) {
+            arrayHolderType = arrayHolderType.clone();
+            arrayHolderType = arrayHolderType.getComplexParserTypes().get(traverseTypeSpecifiers.get(i));
+        }
 
         if (!arrayHolderType.isArray())
             throw new WrongArrayDefinitionSemanticException(
@@ -908,7 +920,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
                             "Das Objekt {0} ist vom Datentyp {1} und ist keine Array. Eine Array wird mit '{'...'}' definiert, wobei Set und Map mit [...] definiert werden."
                             , init_ident.jjtGetValue(), arrayHolderType.toString()));
 
-        translate("new " + arrayHolderType.toStringJava(true) + " {", false);
+        translate("new " + arrayHolderType.toStringJava(traverseTypeSpecifiers.isEmpty()) + " {", false);
 
         if (node.jjtGetNumChildren() == 0) {
             translate("}", false);

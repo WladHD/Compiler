@@ -1,0 +1,484 @@
+options {
+    VISITOR = true;
+    MULTI = true;
+    IGNORE_CASE = false;
+    NODE_DEFAULT_VOID = true;
+}
+
+PARSER_BEGIN(TestParser)
+package de.fh.javacc.generated;
+import java.util.ArrayList;
+
+public class TestParser {
+    public static SimpleNode parse(java.io.InputStream is) throws ParseException {
+        return new TestParser(is).program();
+    }
+}
+PARSER_END(TestParser)
+
+TOKEN : {
+    // TYPES
+    <TYPE_SPECIFIERS: "Map" | "int" | "char" | "String" | "boolean" | "Files" | "Path" | "Set" > |
+    <TYPE_SPECIFIERS_VOID: "void"> |
+
+    // SEPARATORS
+    <BRACKET_SQUARE_LEFT: "[">          | // PRIO 15
+    <BRACKET_SQUARE_RIGHT: "]">         | // PRIO 15
+    <BRACKET_ROUND_LEFT: "(">           | // PRIO 15
+    <BRACKET_ROUND_RIGHT: ")">          | // PRIO 15
+    <BRACKET_CURLY_LEFT: "{">           |
+    <BRACKET_CURLY_RIGHT: "}">          |
+    <DOT: ".">                          | // PRIO 15
+    <PATH_SLASH_SEPARATOR: "\\">        | // AND OP_MUL
+    <SEMICOLON: ";">                    |
+    <COLON: ":">                        |
+    <COMMA: ",">                        |
+
+    // OPERATION
+    <OP_ASSIGNMENT: "="| "+=" |"-=" |"*="| "/=" | "%=">     | // PRIO 1
+    <OP_LOGICAL_OR: "||">               | // PRIO 3
+    <OP_LOGICAL_AND: "&&">              | // PRIO 4
+    <OP_BITWISE_EXCLUSIVE_OR: "^">      | // PRIO 6
+    <OP_RELATIONAL_EQUALS: "==" | "!="> | // PRIO 8
+    <OP_LESS_THAN: "<">                 | // PRIO 9
+    <OP_GREATER_THAN: ">">              | // PRIO 9
+    <OP_RELATIONAL_COMPARE: "<=" | ">=">    | // PRIO 9
+    <OP_SUM: "+" | "-">                 | // PRIO 11
+    <OP_DIV: "/">                       | // PRIO 12
+    <OP_MUL: "*" | "%">           | // PRIO 12
+    <OP_INCREMENT: "++" | "--">         | // PRIO 13 (pre) AND 14 (post)
+    <OP_PRE: "!">                       | // PRIO 13
+    // PRIO 15 Round Brackets, Array Subscript, Member Selection
+
+    // STATEMENTS
+    <ST_IF: "if">           |
+    <ST_ELSE: "else">       |
+    <ST_WHILE: "while">     |
+    <ST_FOR: "for">         |
+    <ST_RETURN: "return">   |
+
+    // LITERAL
+    <LITERAL_BOOLEAN: "true" | "false">             |
+    <LITERAL_IDENTIFIER: ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])*> |
+    <LITERAL_STRING: "\""(~["\"","\n"])*"\"">       |
+    <LITERAL_CHAR: "'" (~["'","\n"]) "'">           |
+    <LITERAL_INTEGER: (["0"-"9"])+>                 |
+    <LITERAL_PATH: (<DOT> | ".." | (["A"-"Z"] <COLON>))? ((<PATH_SLASH_SEPARATOR> | <OP_DIV>) | (((<PATH_SLASH_SEPARATOR> | <OP_DIV>) (["A"-"Z", ".", "a"-"z", "_", "0" - "9"])+ ((["A"-"Z", ".", "a"-"z", " ", "_", "0" - "9"])* (["A"-"Z", ".", "a"-"z", "_", "0" - "9"])+))+) (<PATH_SLASH_SEPARATOR> | <OP_DIV>)?) >
+}
+
+
+SKIP : {
+    " "                     |
+    "\t"                    |
+    "\n"                    |
+    "\r"                    |
+    <COMMENT_SINGLE_LINE: "//" (~["\n"])*>     |
+    <COMMENT_MULTI_LINE: "/*" (~["*"] | "*" ~["/"] )* "*/">
+}
+
+// Used java operator precedence: https://www.javatpoint.com/java-operator-precedence
+SimpleNode program() throws ParseException #PROGRAM :
+{
+    boolean first = true;
+    SimpleNode result = null;
+}
+{
+    (class_contents() { if (first) result = jjtThis; else result.jjtAddChild(jjtThis, result.jjtGetNumChildren()); })+
+
+    { return result; }
+}
+
+void class_contents() :
+{}
+{
+    LOOKAHEAD(method_declaration())
+    method_declaration() |
+    expression()
+}
+
+void expression() :
+{}
+{
+    LOOKAHEAD([var_declaration()]  <SEMICOLON>)
+    [var_declaration()] <SEMICOLON> #SEMICOLON     |
+    block()                     |
+    bl_for()                    |
+    bl_while()                  |
+    bl_if()                     |
+    bl_return()  <SEMICOLON> #SEMICOLON
+}
+
+void bl_return() #ST_RETURN :
+{}
+{
+    <ST_RETURN> [op_prio_3()]
+}
+
+void bl_if() #ST_IF :
+{}
+{
+    <ST_IF> <BRACKET_ROUND_LEFT> op_prio_3() #ST_IF_COND <BRACKET_ROUND_RIGHT> expression() #ST_IF_EXPR(true)
+    (LOOKAHEAD(<ST_ELSE> <ST_IF>) (<ST_ELSE> <ST_IF> <BRACKET_ROUND_LEFT> op_prio_3() #ST_IF_COND <BRACKET_ROUND_RIGHT> expression() #ST_IF_EXPR(true)) #ST_ELSE_IF)*
+    [LOOKAHEAD(<ST_ELSE> expression()) <ST_ELSE> expression() #ST_ELSE_EXPR]
+}
+
+void bl_while() #ST_WHILE :
+{}
+{
+    <ST_WHILE> <BRACKET_ROUND_LEFT> op_prio_3() #ST_WHILE_COND <BRACKET_ROUND_RIGHT> expression() #ST_WHILE_EXPR
+}
+
+
+void bl_for() #ST_FOR :
+{}
+{
+    <ST_FOR> <BRACKET_ROUND_LEFT> bl_for_body() <BRACKET_ROUND_RIGHT> expression() #ST_FOR_EXPR
+}
+
+void bl_for_body() :
+{}
+{
+    LOOKAHEAD(bl_for_each())
+    bl_for_each() | bl_for_normal()
+}
+
+void bl_for_each() #ST_FOR_EACH_BODY :
+{}
+{
+    (type_specifier() pure_identifier()) #ST_FOR_EACH_BODY_DECL <COLON> op_prio_3() #ST_FOR_EACH_BODY_ARR
+}
+
+void bl_for_normal() #ST_FOR_NORMAL_BODY :
+{}
+{
+    [var_declaration()] #ST_FOR_NORMAL_BODY_DECL <SEMICOLON> [op_prio_3()] #ST_FOR_NORMAL_BODY_COND <SEMICOLON> [op_prio_3()] #ST_FOR_NORMAL_BODY_INC
+}
+
+void method_declaration() #METHOD_DECLARATION :
+{}
+{
+    (type_specifier_void() | type_specifier()) identifier() method_param_declaration() block()
+}
+
+void method_param_declaration() #METHOD_PARAMETERS :
+{}
+{
+    <BRACKET_ROUND_LEFT> ((type_specifier() identifier()) #METHOD_PARAM(true) (<COMMA> (type_specifier() identifier()) #METHOD_PARAM)*)?  <BRACKET_ROUND_RIGHT>
+}
+
+void var_declaration() :
+{}
+{
+    (type_specifier() (LOOKAHEAD(pure_identifier() op_assignment()) (pure_identifier() op_assignment()) #VAR_INIT | pure_identifier())) #VAR_DECLARATION |
+    LOOKAHEAD(identifier() op_assignment())
+    (identifier() op_assignment()) #VAR_INIT |
+    op_prio_3()
+}
+
+void block() #BLOCK :
+{}
+{
+    <BRACKET_CURLY_LEFT> (expression())* <BRACKET_CURLY_RIGHT>
+}
+
+// PRIO 1
+void op_assignment() #OP_PRIO_1 :
+{
+    Token t;
+}
+{
+    // TODO identifier() ... is only 1 identifier ...
+    t = <OP_ASSIGNMENT> {jjtThis.value = t.image;} op_assignment_redo()
+}
+
+void op_assignment_redo() :
+{
+    Token t;
+}
+{
+    LOOKAHEAD(identifier() <OP_ASSIGNMENT> op_assignment_redo())
+    (identifier() (t = <OP_ASSIGNMENT> {jjtThis.value = t.image;} op_assignment_redo()) #OP_PRIO_1) #VAR_INIT |
+    op_prio_3()
+}
+
+// PRIO 3
+void op_prio_3() #OP_PRIO_3(>1) :
+{}
+{
+    op_prio_4() (op_prio_3_operator() op_prio_4())*
+}
+
+void op_prio_3_operator() #OPERATOR_3 :
+{
+    Token t;
+}
+{
+    t = <OP_LOGICAL_OR> {jjtThis.value = t.image;}
+}
+
+// PRIO 4
+void op_prio_4() #OP_PRIO_4(>1) :
+{}
+{
+    op_prio_6() (op_prio_4_operator() op_prio_6())*
+}
+
+void op_prio_4_operator() #OPERATOR_4 :
+{
+    Token t;
+}
+{
+    t = <OP_LOGICAL_AND> {jjtThis.value = t.image;}
+}
+
+// PRIO 6
+void op_prio_6() #OP_PRIO_6(>1) :
+{}
+{
+    op_prio_8() (op_prio_6_operator() op_prio_8())*
+}
+
+void op_prio_6_operator() #OPERATOR_6 :
+{
+    Token t;
+}
+{
+    t = <OP_BITWISE_EXCLUSIVE_OR> {jjtThis.value = t.image;}
+}
+
+// PRIO 8
+void op_prio_8() #OP_PRIO_8(>1) :
+{}
+{
+    op_prio_9() (op_prio_8_operator() op_prio_9())*
+}
+
+void op_prio_8_operator() #OPERATOR_8 :
+{
+    Token t;
+}
+{
+    t = <OP_RELATIONAL_EQUALS> {jjtThis.value = t.image;}
+}
+
+// PRIO 9
+void op_prio_9() #OP_PRIO_9(>1) :
+{}
+{
+    op_prio_11() (op_prio_9_operator() op_prio_11())*
+}
+
+void op_prio_9_operator() #OPERATOR_9 :
+{
+    Token t;
+}
+{
+    t = <OP_RELATIONAL_COMPARE> {jjtThis.value = t.image;} |
+    t = <OP_GREATER_THAN>       {jjtThis.value = t.image;} |
+    t = <OP_LESS_THAN>          {jjtThis.value = t.image;}
+}
+
+// PRIO 11
+void op_prio_11() #OP_PRIO_11(>1) :
+{}
+{
+    op_prio_12() (op_prio_11_operator() op_prio_12())*
+}
+
+void op_prio_11_operator() #OPERATOR_11 :
+{
+    Token t;
+}
+{
+    t = <OP_SUM> {jjtThis.value = t.image;}
+}
+
+// PRIO 12
+void op_prio_12() #OP_PRIO_12(>1) :
+{}
+{
+    op_prio_13() (op_prio_12_operator() op_prio_13())*
+}
+
+void op_prio_12_operator() #OPERATOR_12 :
+{
+    Token t;
+}
+{
+    t = <OP_MUL> {jjtThis.value = t.image;} |
+    t = <OP_DIV> {jjtThis.value = t.image;}
+}
+
+// PRIO 13
+void op_prio_13() #OP_PRIO_13(>1) :
+{}
+{
+    op_prio_14() | (op_prio_13_operator() op_prio_15())
+}
+
+void op_prio_13_operator() #OPERATOR_13 :
+{
+    Token t;
+}
+{
+    t = <OP_INCREMENT>  {jjtThis.value = t.image;} |
+    t = <OP_SUM>        {jjtThis.value = t.image;} |
+    t = <OP_PRE>        {jjtThis.value = t.image;}
+}
+
+// PRIO 14
+void op_prio_14() #OP_PRIO_14(>1) :
+{}
+{
+    op_prio_15() [op_prio_14_operator()]
+}
+
+void op_prio_14_operator() #OPERATOR_14 :
+{
+    Token t;
+}
+{
+    t = <OP_INCREMENT>
+
+    {jjtThis.value = t.image;}
+}
+
+// PRIO 15
+void op_prio_15() #OP_PRIO_15(>1) :
+{}
+{
+    atom() (op_prio_15_method() | op_prio_15_variable() | op_prio_15_array_selector())*
+}
+
+void op_prio_15_method() #OPERATOR_15_METHOD_CALL :
+{}
+{
+    LOOKAHEAD(2)
+    <BRACKET_ROUND_LEFT> <BRACKET_ROUND_RIGHT> |
+    (<BRACKET_ROUND_LEFT> op_prio_15_method_params() <BRACKET_ROUND_RIGHT>)
+}
+
+void op_prio_15_method_params() #OPERATOR_15_METHOD_CALL_PARAMS :
+{}
+{
+    op_prio_15_method_param() (<COMMA> op_prio_15_method_param())*
+}
+
+void op_prio_15_method_param() #OPERATOR_15_METHOD_CALL_PARAM :
+{}
+{
+    op_prio_3()
+}
+
+void op_prio_15_variable() #OPERATOR_15_MEMBER_SELECTOR :
+{}
+{
+    <DOT> identifier()
+}
+
+void op_prio_15_array_selector() #OPERATOR_15_ARRAY_INDEX_CALL :
+{}
+{
+    <BRACKET_SQUARE_LEFT> op_prio_3() <BRACKET_SQUARE_RIGHT>
+}
+
+// TODO concat with identifier() ?
+void pure_identifier() #LITERAL_IDENTIFIER :
+{
+    Token t;
+}
+{
+    t = <LITERAL_IDENTIFIER> {jjtThis.value = t.image;}
+}
+
+void type_array_brackets() #TYPE_ARRAY :
+{}
+{
+    <BRACKET_SQUARE_LEFT> <BRACKET_SQUARE_RIGHT>
+}
+
+void type_gl_brackets() #TYPE_TYPESAFE :
+{}
+{
+    <OP_LESS_THAN> (type_specifier() (<COMMA> type_specifier())*)* <OP_GREATER_THAN>
+}
+
+void type_specifier() #TYPE :
+{
+    Token t;
+}
+{
+    t = <TYPE_SPECIFIERS> {jjtThis.value = t.image;} [(type_gl_brackets() | type_array_brackets())]
+}
+
+void type_specifier_void() #TYPE :
+{
+ Token t;
+}
+
+{
+    t = <TYPE_SPECIFIERS_VOID> {jjtThis.value = t.image;}
+}
+
+void identifier() #LITERAL_IDENTIFIER :
+{
+    Token t;
+}
+{
+    t = <LITERAL_IDENTIFIER> {jjtThis.value = t.image;}
+}
+
+void native_array_container() #ARRAY_CONTAINER_NATIVE :
+{}
+{
+    <BRACKET_CURLY_LEFT> [array_container_body()] <BRACKET_CURLY_RIGHT>
+}
+
+void array_container() #ARRAY_CONTAINER :
+{}
+{
+    <BRACKET_SQUARE_LEFT> [array_container_body()] <BRACKET_SQUARE_RIGHT>
+}
+
+void array_container_body() :
+{}
+{
+    LOOKAHEAD(array_container_body_map())
+    array_container_body_map() |
+    array_container_body_set()
+}
+
+void array_container_body_set() :
+{}
+{
+    op_prio_3() #ARRAY_ELEMENT(true) (<COMMA> op_prio_3() #ARRAY_ELEMENT(true))*
+}
+
+void array_container_body_map() :
+{}
+{
+    array_container_map_element() (<COMMA> array_container_map_element())*
+}
+
+void array_container_map_element() #MAP_ELEMENT :
+{}
+{
+    op_prio_3() #MAP_ELEMENT_KEY <COLON> op_prio_3() #MAP_ELEMENT_VALUE
+}
+
+
+void atom() :
+{
+    Token t;
+}
+{
+    (t = <LITERAL_INTEGER> {jjtThis.value = t.image;})    #LITERAL_INTEGER      |
+    (t = <LITERAL_BOOLEAN> {jjtThis.value = t.image;})    #LITERAL_BOOLEAN      |
+    (t = <LITERAL_CHAR> {jjtThis.value = t.image;})       #LITERAL_CHAR         |
+    (t = <LITERAL_STRING> {jjtThis.value = t.image;})     #LITERAL_STRING       |
+    (t = <LITERAL_PATH> {jjtThis.value = t.image;})       #LITERAL_PATH         |
+    identifier()                                                                |
+    array_container()                                                           |
+    native_array_container()                                                    |
+    <BRACKET_ROUND_LEFT> op_prio_3() <BRACKET_ROUND_RIGHT>
+}
