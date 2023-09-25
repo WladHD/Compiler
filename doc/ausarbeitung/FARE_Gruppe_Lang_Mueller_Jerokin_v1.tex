@@ -313,8 +313,8 @@
 	Somit wird die Lexikalische Analyse und die Syntaxanalyse durch die definierte Grammatik durchgeführt.
 	Um dies kurz auszuführen wird mit JavaCC geprüft, ob ein gegebener Quellcode zur definierten Sprache und Grammatik zugehört (Lexikalische Analyse).
 	Durch erweiterte Annotation der Grammatik wird folgend der AST durch JJTree generiert (Syntaxanalyse).
-	Falls keine Fehler vorliegen, wird der AST zur Semantischen Analyse und Fehlerbehandlung übergeben, wo auf semantische Korrektheit geprüft wird.
-	Abschließend wird bei korrekter Semantik der AST zur Codeerzeugung übergeben, bei welcher vorerst Java Source Code erzeugt und danach compiliert wird.
+	Falls keine lexikalischen Fehler vorliegen, wird der AST zur semantischen Analyse und Fehlerbehandlung übergeben, wo auf semantische Korrektheit geprüft wird.
+	Parallel wird der AST zu Java Source Code übersetzt und abschließend nach Ablauf der semantischen Analyse compiliert.
 	
 	
 	
@@ -325,90 +325,122 @@
 	\section{Token}
 	\label{sec:Token}
 	\begin{lstlisting}[caption={Definierte JavaCC Token}, label=lst:token]
-// de/fh/javacc/Grammar1.jjt, Zeile 20 - 54
-<TypeMap: "Map">
-| <TypeSet: "Set">
-| <TypeSpecifiers: "int" | "char" | "String" | "boolean"| "Files" >
-| <LBRACKET : "[">
-| <RBRACKET : "]">
-| <TypePath: "Path" >
-| <IF: "if">
-| <ELSE: "else">
-| ";" |  ","
-| <GBracketOpen: "{">
-| <GBracketClose: "}">
-| <TypeVoid: "void">
-| <While: "while">
-| <For: "for">
-| <SimpleEquals: "="| "+=" |"-=" |"*="| "/=" | "%=" >
-| <Point: ".">
-| <RoundBracketOpen: "(">
-| <RoundBracketClose: ")">
-| <BooleanLiteral: "true" | "false" >
-| <LessThan: "<">
-| <GreaterThan: ">">
-| <BinVergleich : ">="  | "<=" | "==" | "!=" >
-| <BinJunktor : "||" | "&&" >
-| <OpSum : "+" | "-" >
-| <OpUnaer: "!">
-| <OpIncrement: "++" | "--">
-| <OpProd : "*" | "%">
-| <FWD: "/">
-| <Return : "return">
-| <Identifier : ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])* >
-| <IntegerLiteral : "0" | (["1"-"9"] (["0"-"9"])*) >
-| <StringLiteral: "\""(~["\"","\n"])*"\"" >
-| <CharLiteral:"'" (~["'","\n"]) "'" >
-| <PathLiteral:".."|  ["A"-"Z"] ":">
+// de/fh/javacc/Grammar1.jjt, Zeile 20 - 78
+TOKEN : {
+	// TYPES
+	<TYPE_SPECIFIERS: "Map" | "int" | "char" | "String" | "boolean" | "Files" | "Path" | "Set" > |
+	<TYPE_SPECIFIERS_VOID: "void"> |
+	
+	// SEPARATORS
+	<BRACKET_SQUARE_LEFT: "[">          | // PRIO 15
+	<BRACKET_SQUARE_RIGHT: "]">         | // PRIO 15
+	<BRACKET_ROUND_LEFT: "(">           | // PRIO 15
+	<BRACKET_ROUND_RIGHT: ")">          | // PRIO 15
+	<BRACKET_CURLY_LEFT: "{">           |
+	<BRACKET_CURLY_RIGHT: "}">          |
+	<DOT: ".">                          | // PRIO 15
+	<PATH_SLASH_SEPARATOR: "\\">        | // AND OP_MUL
+	<SEMICOLON: ";">                    |
+	<COLON: ":">                        |
+	<COMMA: ",">                        |
+	
+	// OPERATION
+	<OP_ASSIGNMENT: "="| "+=" |"-=" |"*="| "/=" | "%=">     | // PRIO 1
+	<OP_LOGICAL_OR: "||">               | // PRIO 3
+	<OP_LOGICAL_AND: "&&">              | // PRIO 4
+	<OP_BITWISE_EXCLUSIVE_OR: "^">      | // PRIO 6
+	<OP_RELATIONAL_EQUALS: "==" | "!="> | // PRIO 8
+	<OP_LESS_THAN: "<">                 | // PRIO 9
+	<OP_GREATER_THAN: ">">              | // PRIO 9
+	<OP_RELATIONAL_COMPARE: "<=" | ">=">    | // PRIO 9
+	<OP_SUM: "+" | "-">                 | // PRIO 11
+	<OP_DIV: "/">                       | // PRIO 12
+	<OP_MUL: "*" | "%">           | // PRIO 12
+	<OP_INCREMENT: "++" | "--">         | // PRIO 13 (pre) AND 14 (post)
+	<OP_PRE: "!">                       | // PRIO 13
+	// PRIO 15 Round Brackets, Array Subscript, Member Selection
+	
+	// STATEMENTS
+	<ST_IF: "if">           |
+	<ST_ELSE: "else">       |
+	<ST_WHILE: "while">     |
+	<ST_FOR: "for">         |
+	<ST_RETURN: "return">   |
+	
+	// LITERAL
+	<LITERAL_BOOLEAN: "true" | "false">             |
+	<LITERAL_IDENTIFIER: ["A"-"Z", "a"-"z", "_"](["A"-"Z", "a"-"z", "_", "0" - "9"])*> |
+	<LITERAL_STRING: "\""(~["\"","\n"])*"\"">       |
+	<LITERAL_CHAR: "'" (~["'","\n"]) "'">           |
+	<LITERAL_INTEGER: (["0"-"9"])+>                 |
+	<LITERAL_PATH: (<DOT> | ".." | (["A"-"Z"] <COLON>))? ((<PATH_SLASH_SEPARATOR> | <OP_DIV>) | (((<PATH_SLASH_SEPARATOR> | <OP_DIV>) (["A"-"Z", ".", "a"-"z", "_", "0" - "9"])+ ((["A"-"Z", ".", "a"-"z", " ", "_", "0" - "9"])* (["A"-"Z", ".", "a"-"z", "_", "0" - "9"])+))+) (<PATH_SLASH_SEPARATOR> | <OP_DIV>)?) >
+}
+
+SKIP : {
+	" "                     |
+	"\t"                    |
+	"\n"                    |
+	"\r"                    |
+	<COMMENT_SINGLE_LINE: "//" (~["\n"])*>     |
+	<COMMENT_MULTI_LINE: "/*" (~["*"] | "*" ~["/"] )* "*/">
+}
 	\end{lstlisting}
 	
 	\noindent
-	Insgesamt werden 34 verschiedene Token in Listing \ref{lst:token} definiert. Wenn nicht anders genannt, wird im Folgenden bei Zeilenangaben Listing \ref{lst:token} referenziert.
-	Die akzeptierten Variablentypen der Programmiersprache sind \textit{Map, Set, int, char, String, boolean, Files, Path} (vgl. Z. 2 - 4, 7).
-	Methoden erweitern diese um den Typen \textit{void} (vgl. Z. 13).
-	Zulässige Ausdrücke sind \textit{if, else, while, for} (vgl. Z. 8, 9, 14, 15).
-	Zuweisungen und Operationen werden nach dem Java Operator Vorrang eingeteilt \parencite[vgl.][]{javatpoint.2023}.
-	Diese werden in Zeilen 5, 6 sowie 16 bis 29 definiert.
-	Als grundlegende Token werden \textit{Identifier} und Literale für \textit{Integer, String, Char und Path} definiert.
-	Bei \textit{PathLiteral} handelt es sich um eine Sonderform. Der Pfad an sich wird durch grammatische Regeln definiert und ist in Kapitel \ref{sec:Grammatik} beschrieben.
+	Alle definierten Token sind in Listing \ref{lst:token} aufgelistet. Wie an den Kommentaren in Zeilen 3, 7, 20, 36, und 43 erkannt werden kann, liegen 5 verschiedene Kategorien der Token vor.
+	Die unterstützten Datentypen werden zuerst genannt (vgl. Listing \ref{lst:token}, Z. 4f).
+	Folgend werden vielseitige Zeichen definiert, die zur Trennung von Befehlen oder auch für Operationen wie Memberselektion gebraucht werden (vgl. Listing \ref{lst:token}, Z. 8 - 18).
+	Die dritte Kategorie beschreibt unäre sowie binäre Operatoren (vgl. Listing \ref{lst:token}, Z. 21 - 33).
+	Die Kategorie der Statements beschreibt Schlüsselwörter für Verzweigungen, Schleifen und die Rückgabe (vgl. Listing \ref{lst:token}, Z. 37 - 41).
+	
+	Die letzte Kategorie der Literalen beschreibt die atomaren Werte, die vom Benutzer eingegeben werden. Unter diese fallen die Werte eines Booleans, Variablenidentifiers, Strings, Chars, Zahlen (als Integer) sowie des Paths.
+	Bis auf den Path können die Ausprägungen mit Java Werten verglichen werden.
+	Der Path ist eine Sonderform der Sprache FARE und beschreibt die Ausprägung eines Pfads. Dieser muss mit \textit{., .., /, $\backslash$, <LAUFWERK>:/, <LAUFWERK>:$\backslash$} beginnen. Darauf kann der Name des Verzeichnisses oder einer Datei folgen. Nach einem Separator (\textit{/, $\backslash$}) kann der Name beliebig viel wiederholt werden. Ein Name kann aus Buchstaben, Zahlen, Punkten und Leerzeichen bestehen, wobei am Anfang und am Ende eines Namens Leerzeichen verboten sind. Sonderzeichen sind nicht gestattet.
+	(vgl. Listing \ref{lst:token}, Z. 44 - 49)
+	
+	Neben den Token die eingelesen werden, gibt es Regeln, anhand deren Zeichen ignoriert werden. Zu diesen Zählen Leerzeichen, Umbrüche, Tabulatoren sowie ein- und mehrzeilige Kommentare.
+	Einzeilige Kommentare werden mit \textit{//} eingeleitet und gehen bis zum Zeilenumbruch.
+	Mehrzeilige Kommentare werden mit \textit{/*} eingeleitet und enden mit \textit{*/}.
+	(vgl. Listing \ref{lst:token}, Z. 53 - 58)
+	 
 	
 	\section{Grammatik}
 	\label{sec:Grammatik}
 	Wie in Kapitel \ref{sec:Herangehensweise} genannt, wird JavaCC und JJTree genutzt. Um die erweiterte Grammatik zu demonstrieren, wird im Folgenden ein Beispiel angebracht.
 	
 		\begin{lstlisting}[caption={Beispiel der erweiterten Grammatik für Nutzung von JavaCC und JJTree anhand der Regel atom()}, label=lst:atom]
-// de/fh/javacc/Grammar1.jjt, Zeile 436 - 449
-void atom() #void :
+// de/fh/javacc/Grammar1.jjt, Zeile 471 - 485
+void atom() :
 {
-	Token ident = null;
-} {
-	LOOKAHEAD(2)
-	methodOrVariableCaller()
-	| ident=<Identifier> {jjtThis.value = ident.image; } #ATOM_VARIABLE
-	| ident=<IntegerLiteral> {jjtThis.value = ident.image; } #ATOM_INT
-	| ident=<BooleanLiteral> {jjtThis.value = ident.image; } #ATOM_BOL
-	| ident = <StringLiteral> {jjtThis.value = ident.image; } #ATOM_STRING
-	| ident = <CharLiteral> {jjtThis.value = ident.image; } #ATOM_CHAR
-	| (LOOKAHEAD(3) array()| atomset()| atommap())
-	| <RoundBracketOpen> junktoren() <RoundBracketClose>
+	Token t;
+}
+{
+	(t = <LITERAL_INTEGER> {jjtThis.value = t.image;})    #LITERAL_INTEGER |
+	(t = <LITERAL_BOOLEAN> {jjtThis.value = t.image;})    #LITERAL_BOOLEAN |
+	(t = <LITERAL_CHAR> {jjtThis.value = t.image;})       #LITERAL_CHAR    |
+	(t = <LITERAL_STRING> {jjtThis.value = t.image;})     #LITERAL_STRING  |
+	(t = <LITERAL_PATH> {jjtThis.value = t.image;})       #LITERAL_PATH    |
+	identifier()                                                           |
+	array_container()                                                      |
+	native_array_container()                                               |
+	<BRACKET_ROUND_LEFT> op_prio_3() <BRACKET_ROUND_RIGHT>
 }
 	\end{lstlisting}
 	
 	\noindent
-	Ähnlich zum reinen JavaCC können Regeln für die Grammatik definiert werden (vgl. Listing \ref{lst:atom}, Z. 7 - 16).
-	Die Erweiterung liegt in der Annotation für die Erstellung des AST, welche die Werte \textit{void, ATOM\_VARIABLE, ATOM\_INT, ATOM\_BOL, ATOM\_STRING, ATOM\_CHAR} annehmen kann. Im Sachkontext wird im Normalfall keine Node im AST angelegt (vgl. Listing \ref{lst:atom}, Z. 2).
-	Sollte jedoch eine Regel in den Zeilen 8 - 12 angewandt werden, so wird ein entsprechend benannter Knoten zum AST mit dem Inhalt des Tokens hinzugefügt (vgl. Listing \ref{lst:atom}, Z. 8 - 12). Nach diesem Prinzip wird für alle Regeln an sinnvollen Stellen ein Knoten zum AST hinzugefügt. Diese Kombination von JavaCC und JJTree ermöglicht die simultane Lexikalische Analyse und Syntaxanalyse.
-	
-	Nach der Anführung eines Beispiels wird folgend grob die Grammatik beschrieben. Insgesamt liegen 51 grammatische Regeln vor sowie 51 verschiedene AST Knotentypen.
+	Analog zum reinen JavaCC können Regeln für die Grammatik definiert werden (vgl. Listing \ref{lst:atom}, Z. 7 - 15).
+	Die Erweiterung liegt in der Annotation für die Erstellung des AST, welche die Werte \textit{void, LITERAL\_INTEGER, LITERAL\_BOOLEAN, LITERAL\_CHAR, LITERAL\_STRING, LITERAL\_PATH} annehmen kann. Im Sachkontext wird im Normalfall keine Node im AST angelegt (vgl. Listing \ref{lst:atom}, Z. 2).
+	Sollte jedoch eine Regel in den Zeilen 7 - 11 angewandt werden, so wird ein entsprechend benannter Knoten zum AST mit dem Inhalt des Tokens hinzugefügt (vgl. Listing \ref{lst:atom}, Z. 7 - 8). Nach diesem Prinzip wird für alle Regeln an sinnvollen Stellen ein Knoten zum AST hinzugefügt. Diese Kombination von JavaCC und JJTree ermöglicht die simultane Lexikalische Analyse und Syntaxanalyse, was in einem AST resultiert.
+	Nach der Anführung eines Beispiels wird folgend grob die Grammatik beschrieben.
 \begin{lstlisting}[caption={Wurzel des AST sowie erste Regel der Grammatik}, label=lst:rootNode]
 // de/fh/javacc/Grammar1.jjt, Zeile 62 - 70
-SimpleNode compilationUnit() #PROGRAM :
+SimpleNode program() throws ParseException #PROGRAM :
 {
 	boolean first = true;
 	SimpleNode result = null;
-} {(
-	(LOOKAHEAD(2) stmnt() | decl() | (methodOrVariableCaller() ";")) { if (first) result = jjtThis; else result.jjtAddChild(jjtThis, result.jjtGetNumChildren()); }
-	)*
+}{
+	(class_contents() { if (first) result = jjtThis; else result.jjtAddChild(jjtThis, result.jjtGetNumChildren()); })+
+	
 	{ return result; }
 }
 \end{lstlisting}	
@@ -416,99 +448,94 @@ SimpleNode compilationUnit() #PROGRAM :
 	\noindent
 	Da die Ausführung der ersten Regel einen AST als Rückgabewert liefert, stellt die Regel in Listing \ref{lst:rootNode} eine Sonderform dar.
 	Wie erkannt werden kann, wird in jedem Fall ein neuer Knoten mit dem Namen \textit{PROGRAM} erzeugt.
-	Unter diesem Knoten können nun beliebig viele \textit{stmnt(), decl()} und Methodenaufrufe vorliegen.
-	Fortführend wird beispielhaft die Regel zur Erzeugung des Literals \textit{Path} angebracht.
-	\begin{lstlisting}[caption={Grammatikregel für das Literal Path}, label=lst:pathNode]
-// de/fh/javacc/Grammar1.jjt, Zeile 314 - 325
-void path()  #ATOM_PATHELEMENT:
-{Token t;
-	Token t1 = null;
-}
-
-{
-	
-	(
-	t = <PathLiteral> {jjtThis.value = t.image;} |
-	t = <Point> {jjtThis.value = t.image;}|
-	t = <Identifier> ["." t1= <Identifier>]{jjtThis.value = (t.image +  (t1 != null ? "." + t1.image : ""));}) [("/" | "\\") [path()]]
-}
-	\end{lstlisting}
+	Unter diesem Knoten können nun beliebig viele \textit{class\_contents()} und vorliegen.
 	
 	\noindent
-	Die Zeilen 10 und 11 in Listing \ref{lst:pathNode} sagen aus, dass ein Teil des Pfades aus \textit{., .., <Laufwerkbuchstabe>:} bestehen kann.
-	Weiterführend kann der Pfad aus einem Namen bestehen und anschließend nach einen Separator \textit{$\backslash$, /} wiederholt werden.
-	Momentan besteht die Limitation des Pfades daraus, dass dieser keine Leerzeichen enthalten darf.
-	
-	\noindent
-	Nach diesem Muster werden die restlichen Regeln ebenfalls umgesetzt. Wie einleitend genannt, gibt es 51 verschiedene AST Typen, die im Folgenden alphabetisch aufgelistet werden.
+	Nach diesem Muster werden die restlichen Regeln ebenfalls umgesetzt. Insgesamt können 66 verschiedene AST Knotentypen vorliegen, die im Folgenden alphabetisch aufgelistet werden.
 	
 	
 	\begin{longtable}{|c|}
 		\toprule{}
-		 AST Typ \\ \midrule  
+		AST Typ \\ \midrule  
+		ASTARRAY\_CONTAINER \\
+		ASTARRAY\_CONTAINER\_NATIVE \\
 		ASTARRAY\_ELEMENT \\
-		ASTARRAYAUFRUF \\
-		ASTATOM\_ARRAY \\
-		ASTATOM\_BOL \\
-		ASTATOM\_CHAR \\
-		ASTATOM\_INT \\
-		ASTATOM\_MAP \\
-		ASTATOM\_PATH \\
-		ASTATOM\_PATHELEMENT \\
-		ASTATOM\_SET \\
-		ASTATOM\_STRING \\
-		ASTATOM\_VARIABLE \\
 		ASTBLOCK \\
-		ASTCONCLUDED\_VAR\_DEC \\
-		ASTCONDITION \\
-		ASTDECL \\
-		ASTDECL\_METHOD\_PARAMS \\
-		ASTELSE \\
-		ASTFOR \\
-		ASTFOR\_BODY \\
-		ASTFOR\_BODY\_EACH \\
-		ASTFOR\_BODY\_NORMAL \\
-		ASTFORCOND \\
-		ASTFORINIT \\
-		ASTFOROPER \\
-		ASTGET\_METHOD\_PARAMS \\
-		ASTGET\_VAR\_METHOD \\
-		ASTIF \\
-		ASTKOMPLEX\_TYPE \\
-		ASTMAP\_KEY \\
-		ASTMAP\_PAIR \\
-		ASTMAP\_VALUE \\
-		ASTMETHDECL \\
-		ASTOPERATION\_PRIO\_4\_AND\_3 \\
-		ASTOPERATION\_PRIO\_9 \\
-		ASTOPERATION\_PRIO\_11 \\
-		ASTOPERATION\_PRIO\_12 \\
-		ASTOPERATION\_PRIO\_13 \\
-		ASTOPERATION\_PRIO\_14 \\
-		ASTPARAM \\
-		ASTPARAM\_PAIR \\
+		ASTLITERAL\_BOOLEAN \\
+		ASTLITERAL\_CHAR \\
+		ASTLITERAL\_IDENTIFIER \\
+		ASTLITERAL\_INTEGER \\
+		ASTLITERAL\_PATH \\
+		ASTLITERAL\_STRING \\
+		ASTMAP\_ELEMENT \\
+		ASTMAP\_ELEMENT\_KEY \\
+		ASTMAP\_ELEMENT\_VALUE \\
+		ASTMETHOD\_DECLARATION \\
+		ASTMETHOD\_PARAM \\
+		ASTMETHOD\_PARAMETERS \\
+		ASTOP\_PRIO\_1 \\
+		ASTOP\_PRIO\_3 \\
+		ASTOP\_PRIO\_4 \\
+		ASTOP\_PRIO\_6 \\
+		ASTOP\_PRIO\_8 \\
+		ASTOP\_PRIO\_9 \\
+		ASTOP\_PRIO\_11 \\
+		ASTOP\_PRIO\_12 \\
+		ASTOP\_PRIO\_13 \\
+		ASTOP\_PRIO\_14 \\
+		ASTOP\_PRIO\_15 \\
+		ASTOPERATOR\_3 \\
+		ASTOPERATOR\_4 \\
+		ASTOPERATOR\_6 \\
+		ASTOPERATOR\_8 \\
+		ASTOPERATOR\_9 \\
+		ASTOPERATOR\_11 \\
+		ASTOPERATOR\_12 \\
+		ASTOPERATOR\_13 \\
+		ASTOPERATOR\_14 \\
+		ASTOPERATOR\_15\_ARRAY\_INDEX\_CALL \\
+		ASTOPERATOR\_15\_MEMBER\_SELECTOR \\
+		ASTOPERATOR\_15\_METHOD\_CALL \\
+		ASTOPERATOR\_15\_METHOD\_CALL\_PARAM \\
+		ASTOPERATOR\_15\_METHOD\_CALL\_PARAMS \\
 		ASTPROGRAM \\
-		ASTREQUESTER\_VAR\_METHOD \\
-		ASTRETURN \\
-		ASTSET\_ELEMENT \\
-		ASTSTATEMENT \\
+		ASTSEMICOLON \\
+		ASTST\_ELSE\_EXPR \\
+		ASTST\_ELSE\_IF \\
+		ASTST\_FOR \\
+		ASTST\_FOR\_EACH\_BODY \\
+		ASTST\_FOR\_EACH\_BODY\_ARR \\
+		ASTST\_FOR\_EACH\_BODY\_DECL \\
+		ASTST\_FOR\_EXPR \\
+		ASTST\_FOR\_NORMAL\_BODY \\
+		ASTST\_FOR\_NORMAL\_BODY\_COND \\
+		ASTST\_FOR\_NORMAL\_BODY\_DECL \\
+		ASTST\_FOR\_NORMAL\_BODY\_INC \\
+		ASTST\_IF \\
+		ASTST\_IF\_COND \\
+		ASTST\_IF\_EXPR \\
+		ASTST\_RETURN \\
+		ASTST\_WHILE \\
+		ASTST\_WHILE\_COND \\
+		ASTST\_WHILE\_EXPR \\
 		ASTTYPE \\
 		ASTTYPE\_ARRAY \\
-		ASTVAR\_METHOD\_NAME \\
-		ASTVARIABLE\_ASSIGNMENT\_PRIO\_1 \\
-		ASTWHILE \\ \midrule
+		ASTTYPE\_TYPESAFE \\
+		ASTVAR\_DECLARATION  \\
+		ASTVAR\_INIT \\ \midrule
 		
 		\caption{Alle möglichen Typen von AST Knoten}
 		\label{table:alleNodes}
 	\end{longtable}
 	
+	\newpage
 	\noindent
 	Um die Funktionsweise der Grammatik zu verdeutlichen, wird ein AST in Listing \ref{lst:bsplAst} aus dem Quelltext in Listing \ref{lst:bsplCode} erzeugt und verschriftlicht.
 \begin{lstlisting}[caption={Beispiel eines akzeptierten Source Code}, label=lst:bsplCode]
 // resources/beispiel.txt
 void main() {
 	Path p = D:\Arbeit\testing\test2;
-	Set<int> setA = {0,1,2};
+	Set<int> setA = [0, 1, 2];
 	
 	int x = 5;
 	int y;
@@ -519,125 +546,135 @@ void main() {
 \begin{lstlisting}[caption={Erzeugter AST eines akzeptierten Source Codes in Listing \ref{lst:bsplCode}}, label=lst:bsplAst]
 // Ausgabe
 PROGRAM = null
- DECL = null
+ METHOD_DECLARATION = null
   TYPE = void
-   VAR_METHOD_NAME = main
-   METHDECL = null
-    DECL_METHOD_PARAMS = null
-    BLOCK = null
-     DECL = null
-      TYPE = Path
-      VAR_METHOD_NAME = p
-      CONCLUDED_VAR_DEC = null
-       ATOM_PATH = null
-        ATOM_PATHELEMENT = D:
-         ATOM_PATHELEMENT = Arbeit
-          ATOM_PATHELEMENT = testing
-           ATOM_PATHELEMENT = test2
-     DECL = null
-      TYPE = Set
-       KOMPLEX_TYPE = null
-        TYPE = int
-      VAR_METHOD_NAME = setA
-      CONCLUDED_VAR_DEC = null
-       VARIABLE_ASSIGNMENT_PRIO_1 = =
-        ATOM_SET = null
-         SET_ELEMENT = null
-          ATOM_INT = 0
-         SET_ELEMENT = null
-          ATOM_INT = 1
-         SET_ELEMENT = null
-          ATOM_INT = 2
-     DECL = null
+  LITERAL_IDENTIFIER = main
+  METHOD_PARAMETERS = null
+  BLOCK = null
+   VAR_DECLARATION = null
+    TYPE = Path
+     VAR_INIT = null
+      LITERAL_IDENTIFIER = p
+      OP_PRIO_1 = =
+       LITERAL_PATH = D:\Arbeit\testing\test2
+   SEMICOLON = null
+   VAR_DECLARATION = null
+    TYPE = Set
+     TYPE_TYPESAFE = null
       TYPE = int
-      VAR_METHOD_NAME = x
-      CONCLUDED_VAR_DEC = null
-       VARIABLE_ASSIGNMENT_PRIO_1 = =
-        ATOM_INT = 5
-     DECL = null
-      TYPE = int
-      VAR_METHOD_NAME = y
-      CONCLUDED_VAR_DEC = null
-     DECL = null
-      TYPE = int
-      VAR_METHOD_NAME = z
-      CONCLUDED_VAR_DEC = null
-       VARIABLE_ASSIGNMENT_PRIO_1 = =
-        VAR_METHOD_NAME = y
-         VARIABLE_ASSIGNMENT_PRIO_1 = =
-          OPERATION_PRIO_14 = ++
-           REQUESTER_VAR_METHOD = x
-          OPERATION_PRIO_11 = +
-           REQUESTER_VAR_METHOD = x
-           OPERATION_PRIO_12 = /
-            ATOM_INT = 2
+    VAR_INIT = null
+     LITERAL_IDENTIFIER = setA
+      OP_PRIO_1 = =
+       ARRAY_CONTAINER = null
+        ARRAY_ELEMENT = null
+         LITERAL_INTEGER = 0
+        ARRAY_ELEMENT = null
+         LITERAL_INTEGER = 1
+        ARRAY_ELEMENT = null
+         LITERAL_INTEGER = 2
+    SEMICOLON = null
+    VAR_DECLARATION = null
+     TYPE = int
+      VAR_INIT = null
+       LITERAL_IDENTIFIER = x
+       OP_PRIO_1 = =
+        LITERAL_INTEGER = 5
+    SEMICOLON = null
+    VAR_DECLARATION = null
+     TYPE = int
+     LITERAL_IDENTIFIER = y
+    SEMICOLON = null
+    VAR_DECLARATION = null
+     TYPE = int
+      VAR_INIT = null
+       LITERAL_IDENTIFIER = z
+       OP_PRIO_1 = =
+        VAR_INIT = null
+         LITERAL_IDENTIFIER = y
+         OP_PRIO_1 = =
+          OP_PRIO_11 = null
+           OP_PRIO_14 = null
+            LITERAL_IDENTIFIER = x
+            OPERATOR_14 = ++
+           OPERATOR_11 = +
+           OP_PRIO_12 = null
+            LITERAL_IDENTIFIER = x
+            OPERATOR_12 = /
+            LITERAL_INTEGER = 2
+    SEMICOLON = null
 \end{lstlisting}
 
 \newpage
 \section{Semantik}
 Nach der Erzeugung des AST wird dieser der semantischen Prüfung übergeben.
-Derzeitig erfolgen nachstehend genannte Prüfungen.
+Hierbei wird gleichzeitig auch die Fehlerbehandlung abgedeckt.
+Um den Umfang der semantischen Analyse zu beschreiben, lassen sich hierfür die definierten Exceptions anbringen.
 
 \begin{longtable}{|c|c|}
 	\toprule{}
 	Num & Name \\ \midrule  
 	
-	1 & Deklaration von Variablen und Methoden \\
+	1 & ExpectedTypeMissmatchSemanticException \\
+	2 & IllegalClassContentSemanticException \\
+	3 & IllegalOperationSemanticException \\
+	4 & InternClosureCastingSemanticException \\
+	5 & InternClosureSemanticException \\
+	6 & MainMethodWithArgsSemanticException \\
+	7 & MethodDeclaredSemanticException \\
+	8 & MethodNotDeclaredSemanticException \\
+	9 & MethodParameterMismatchSemanticException \\
+	10 & NoMainMethodSemanticException \\
+	11 & NoReturnSemanticException \\
+	12 & NotArrayExceptionSemanticException \\
+	13 & ReturnTypeMismatchSemanticException \\
+	14 & SemanticException \\
+	15 & StatementExpectedSemanticException \\
+	16 & UnknownSemanticException \\
+	17 & UnreachableCodeSemanticException \\
+	18 & VariableDeclarationNotAllowedSemanticException \\
+	19 & VariableDeclaredSemanticException \\
+	20 & VariableNotDeclaredSemanticException \\
+	21 & VariableNotInitializedSemanticException \\
+	22 & WrongArrayDefinitionSemanticException  \\ \midrule
 	
-	2 & Initialisierung von Variablen und Methoden  \\ \midrule
-	
-	\caption{Umsetzung der semantischen Prüfung}
+	\caption{Alle für die semantische Analyse definierten Exceptions}
 	\label{table:semanticCheck}
 \end{longtable}
 
 \noindent
-Die Bereiche 3 und 4 in Tabelle \ref{table:bereiche} sollen durch die semantische Prüfung abgedeckt werden.
-\begin{lstlisting}[caption={Erzeugter AST eines akzeptierten Source Codes in Listing \ref{lst:bsplCode}}, label=lst:semanticCode]
-void main() {
-	int x;
-	int x;
+Folgend werden in Listings Beispiele für fehlerhaften Code gezeigt, welcher in ein Exceptions in Tabelle \ref{table:semanticCheck} resultieren.
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer ExpectedTypeMissmatchSemanticException}, label=lst:errCode]
+// ExpectedTypeMissmatchSemanticException
+void main() { // BSP 1
+	for(;34;) {} // EXCEPTION -> Condition != Boolean
 	
-	int y = "56";
-	int y = 56;
+	Set<int> mySet = [1, 2, 3];
+	for(String val : mySet) {} // String != int
+	
+	Set<boolean> myBoolSet = [true];
+	myBoolSet = myBoolSet + mySet; // Set<int> != Set<boolean>
+	int x = true; // int != boolean
 }
-
-void test1() { int test = 5; }
-
-void test2() { int test = 6; }
-
 \end{lstlisting}
 
-\noindent
-Anfangend mit \textit{Deklaration von Variablen und Methoden} in Tabelle \ref{table:semanticCheck} wird geprüft, ob eine Variable oder Methode bereits deklariert wurde. Es wird mit Closures gearbeitet, um sicherzustellen, dass gleich benannte Variablen in verschiedenen Methoden korrekterweise zugelassen werden (vgl. Listing \ref{lst:semanticCode}, Z. 9, 11). Wiederholte Deklarationen werden nicht zugelassen (vgl. Listing \ref{lst:semanticCode}, Z. 2, 3).
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer IllegalClassContentSemanticException}, label=lst:errCode]
 
-\noindent
-\textit{Initialisierung von Variablen und Methoden} in Tabelle \ref{table:semanticCheck} prüft, ob der zugewiesene Wert auch dem Datentyp der deklarierten Variable entspricht. Da \textit{"56"} vom Tokentyp \textit{StringLiteral} und die deklarierte Variable \textit{y} vom Datentyp \textit{int} ist, wird die Zuweisung abgelehnt.
-Wird in der semantischen Prüfung festgestellt, dass ein Fehler vorliegt, so wird eine Exception geworfen, welche den Compiler mit einer Fehlermeldung abbricht.
+\end{lstlisting}
 
 \newpage
 \section{Übersetzung}
 Die Übersetzung ist der letzte Schritt in Tabelle \ref{table:bereiche} und ist dafür verantwortlich, den erhaltenen AST zu Java Source Code zu übersetzen.
 Dieser wird im Anschluss compiliert und zu einer ausführbaren jar-Datei verpackt.
-Die Funktionsweise des Übersetzers liegt darin, über den AST zu iterieren und die Knoten mit passendem Java Code zu versehen.
-\begin{lstlisting}[caption={Beispiel eines akzeptierten Source Code}, label=lst:bsplCodeTranslator]
-// de/fh/translator/visitor/TranslateVisitor, Zeile 154 - 158
-@Override
-public Object visit(ASTWHILE node, Object data) {
-	String ph = "while ({0}) {1}";
-	return MessageFormat.format(ph, visit((SimpleNode) node.jjtGetChild(0), null), visit((SimpleNode) node.jjtGetChild(1), null), LINE_SEPARATOR);
-}
-\end{lstlisting}
-
-\noindent
-Als Beispiel einer Übersetzung lässt sich Listing \ref{lst:bsplCodeTranslator} heranführen. Hier wird der AST Typ \textit{WHILE} anhand von Java Regeln befüllt und übersetzt. Alle übersetzten Knoten werden zu einem einzelnen String zusammengefasst, was in dem Java Source Code resultiert. Hiermit erhält der Mustercode in Listing \ref{lst:bsplCode} folgenden Java Source Code:
+Der Java Source Code wird hierbei während der semantischen Analyse erzeugt, um auf die kontextabhängigen Closures zuzugreifen.
+Als Beispiel einer Übersetzung lässt sich Listing \ref{lst:bsplCodeTranslatorFinal} heranführen. Hier wird Mustercode in Listing \ref{lst:bsplCode} zu folgendem Java Source Code übersetzt:
 \begin{lstlisting}[caption={Ausschnitt des generierten Java Codes vom Source Code in Listing \ref{lst:bsplCode}}, label=lst:bsplCodeTranslatorFinal]
 // GENERATED CODE
-void main () {
+public void main() {
 	Path p = new Path("D:\\Arbeit\\testing\\test2");
-	Set<Integer> setA = new Set<>(0, 1, 2);
+	Set<Integer> setA = new Set<Integer>().add(0).add(1).add(2);
 	int x = 5;
-	int y ;
-	int z = y = x++ + x / 2;
+	int y;
+	int z = y = x++ / 2 + x / 2;
 }
 \end{lstlisting}
 

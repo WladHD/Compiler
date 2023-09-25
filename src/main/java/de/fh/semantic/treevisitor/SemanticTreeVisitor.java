@@ -543,7 +543,8 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
         translate(identifier + " ");
 
-        if (!cast(data).hasVariable(identifier, false)) throw new VariableNotDeclaredSemanticException(cast(data), identifier);
+        if (!cast(data).hasVariable(identifier, false))
+            throw new VariableNotDeclaredSemanticException(cast(data), identifier);
 
         ComplexParserType expectedType = cast(data).getVariableTypeAndValue(identifier, false).getKey();
         Object typeReturnType = visit(operation, data);
@@ -855,9 +856,9 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
     @Override
     public Object visit(ASTLITERAL_IDENTIFIER node, Object data) {
         translate(node.jjtGetValue());
-        AbstractMap.SimpleEntry<ComplexParserType, Object> s =  cast(data).getVariableTypeAndValue((String) node.jjtGetValue(), false);
+        AbstractMap.SimpleEntry<ComplexParserType, Object> s = cast(data).getVariableTypeAndValue((String) node.jjtGetValue(), false);
 
-        if(s.getValue() == null)
+        if (s.getValue() == null)
             throw new VariableNotInitializedSemanticException(cast(data), (String) node.jjtGetValue());
 
         return s.getKey();
@@ -904,8 +905,8 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
             throw new WrongArrayDefinitionSemanticException(
                     cast(data),
                     MessageFormat.format(
-                    "Das Objekt {0} ist vom Datentyp {1} und ist keine Array. Eine Array wird mit '{'...'}' definiert, wobei Set und Map mit [...] definiert werden."
-                    , init_ident.jjtGetValue(), arrayHolderType.toString()));
+                            "Das Objekt {0} ist vom Datentyp {1} und ist keine Array. Eine Array wird mit '{'...'}' definiert, wobei Set und Map mit [...] definiert werden."
+                            , init_ident.jjtGetValue(), arrayHolderType.toString()));
 
         translate("new " + arrayHolderType.toStringJava(true) + " {", false);
 
@@ -957,8 +958,8 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
             throw new WrongArrayDefinitionSemanticException(
                     cast(data),
                     MessageFormat.format(
-                    "Das Objekt {0} ist vom Datentyp {1} und ist eine Array. Eine Array wird mit '{'...'}' definiert, wobei Set und Map mit [...] definiert werden."
-                    , init_ident.jjtGetValue(), arrayHolderType.toString()));
+                            "Das Objekt {0} ist vom Datentyp {1} und ist eine Array. Eine Array wird mit '{'...'}' definiert, wobei Set und Map mit [...] definiert werden."
+                            , init_ident.jjtGetValue(), arrayHolderType.toString()));
 
         translate("new " + arrayHolderType.toStringJava(true) + "()");
 

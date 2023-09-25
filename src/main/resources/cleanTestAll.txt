@@ -1,12 +1,3 @@
 void main() {
-    int[] hello = {};
-    Map<int, int> test = [];
-    Set<int> collecting = [];
-
-    for(int i = 0; i < 5; i++) {
-        Set<int> temp = [i, i + 1, false];
-        collecting = collecting + temp;
-    }
-
-    System.println(collecting);
+    Path p = /home.txt;
 }
