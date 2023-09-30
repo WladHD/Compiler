@@ -3,6 +3,7 @@ package de.fh.semantic.closure;
 import de.fh.Main;
 import de.fh.semantic.ComplexParserType;
 import de.fh.semantic.err.MethodDeclaredSemanticException;
+import de.fh.semantic.err.UnknownSemanticException;
 import de.fh.semantic.err.VariableDeclaredSemanticException;
 import de.fh.semantic.err.VariableNotDeclaredSemanticException;
 
@@ -48,7 +49,11 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
 
     IClosure<VarMethodNames, VarMethodType, VarValue> createNewChildClosure(String name);
 
-    default void addVariableDeclaration(VarMethodNames varName, VarMethodType varType, boolean isParam) {
+    default void addVariableDeclaration(VarMethodNames varName, VarMethodType varType) {
+        addVariableDeclaration(varName, varType, false, null);
+    }
+
+    default void addVariableDeclaration(VarMethodNames varName, VarMethodType varType, boolean isParam, VarValue init) {
         if (hasVariable(varName, true)) {
             throw new VariableDeclaredSemanticException((IClosure<String, ComplexParserType, Object>) this, varName.toString());
         }
@@ -59,7 +64,7 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
 
         if (isParam) {
             getMethodParams().put(getMethodParams().size(), varType);
-            addVariableInitialisation(varName, null);
+            addVariableInitialisation(varName, init);
         }
     }
 
@@ -69,7 +74,17 @@ public interface IClosure<VarMethodNames, VarMethodType, VarValue> {
 
         Main.logger.info(MessageFormat.format("[Closure] Added variable initialisation {0} with value {1}.", varName, varValue));
 
-        getVariableValueMap().put(varName, varValue);
+        IClosure<VarMethodNames, VarMethodType, VarValue> varHolder = this;
+
+        while(varHolder != null && !varHolder.hasVariable(varName, true)) {
+            varHolder = varHolder.getParent();
+        }
+
+        // SHOULD NEVER BE POSSIBLE BECAUSE OF CHECK IN BEGINNING ...
+        if(varHolder == null)
+            throw new UnknownSemanticException("Variablendeklaration konnte nicht gefunden werden, obwohl sie vorliegen müsste ...");
+
+        varHolder.getVariableValueMap().put(varName, varValue);
     }
 
     default IClosure<VarMethodNames, VarMethodType, VarValue> addMethod(VarMethodNames methodName, VarMethodType methodType) {

@@ -3,9 +3,9 @@ Path p = C:\Users\Wladislaw Jerokin\Documents\Arbeit\fhir2text;
 
 int anzahl(String neu) {
     int x = 0;
+    String s = "dsf" + neu;
     for (Files f : p.files) {
-        x = x + 1;
-        System.println(f);
+        System.println(f.name);
     }
 
     return x;

@@ -1,4 +1,7 @@
 options {
+    DEBUG_LOOKAHEAD = true;
+    DEBUG_TOKEN_MANAGER = true;
+    DEBUG_PARSER = true;
     VISITOR = true;
     MULTI = true;
     IGNORE_CASE = false;
@@ -119,7 +122,7 @@ void bl_if() #ST_IF :
 {
     <ST_IF> <BRACKET_ROUND_LEFT> op_prio_3() #ST_IF_COND <BRACKET_ROUND_RIGHT> expression() #ST_IF_EXPR(true)
     (LOOKAHEAD(<ST_ELSE> <ST_IF>) (<ST_ELSE> <ST_IF> <BRACKET_ROUND_LEFT> op_prio_3() #ST_IF_COND <BRACKET_ROUND_RIGHT> expression() #ST_IF_EXPR(true)) #ST_ELSE_IF)*
-    [LOOKAHEAD(<ST_ELSE> expression()) <ST_ELSE> expression() #ST_ELSE_EXPR]
+    [<ST_ELSE> expression() #ST_ELSE_EXPR]
 }
 
 void bl_while() #ST_WHILE :
@@ -169,9 +172,8 @@ void method_param_declaration() #METHOD_PARAMETERS :
 void var_declaration() :
 {}
 {
-    (type_specifier() (LOOKAHEAD(pure_identifier() op_assignment()) (pure_identifier() op_assignment()) #VAR_INIT | pure_identifier())) #VAR_DECLARATION |
-    LOOKAHEAD(op_prio_15() op_assignment())
     (op_prio_15() op_assignment()) #VAR_INIT |
+    (type_specifier() ((pure_identifier() op_assignment()) #VAR_INIT | pure_identifier())) #VAR_DECLARATION |
     op_prio_3()
 }
 
@@ -197,7 +199,7 @@ void op_assignment_redo() :
 }
 {
     LOOKAHEAD(identifier() <OP_ASSIGNMENT> op_assignment_redo())
-    (identifier() (t = <OP_ASSIGNMENT> {jjtThis.value = t.image;} op_assignment_redo()) #OP_PRIO_1) #VAR_INIT |
+    (op_prio_15() (t = <OP_ASSIGNMENT> {jjtThis.value = t.image;} op_assignment_redo()) #OP_PRIO_1) #VAR_INIT |
     op_prio_3()
 }
 

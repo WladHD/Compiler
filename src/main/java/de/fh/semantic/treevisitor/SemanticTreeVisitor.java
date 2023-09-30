@@ -113,6 +113,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
     public void setupRootClosure() {
         // PRIMITIVE TYPES
         addRootClosureClass("int");
+        addRootClosureClass("Object");
         addRootClosureClass("char");
         addRootClosureClass("boolean");
 
@@ -136,8 +137,9 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
         Object cl_system = addRootClosureClass("System");
         addRootClosureMethod(cast(cl_system), "readString", new ComplexParserType(ParserTypes.STRING));
         Object cl_system_println = addRootClosureMethod(cast(cl_system), "println", new ComplexParserType(ParserTypes.VOID));
-
         addRootClosureMethodParameter(cast(cl_system_println), new ComplexParserType(ParserTypes.CLASS_OBJECT));
+        Object cl_system_print = addRootClosureMethod(cast(cl_system), "print", new ComplexParserType(ParserTypes.VOID));
+        addRootClosureMethodParameter(cast(cl_system_print), new ComplexParserType(ParserTypes.CLASS_OBJECT));
 
 
         // PATHS
@@ -171,7 +173,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
     IClosure<String, ComplexParserType, Object> addRootClosureClass(String name) {
         IClosure<String, ComplexParserType, Object> systemClosure = getRootClosure().createNewChildClosure(name);
-        getRootClosure().addVariableDeclaration(name, new ComplexParserType(ParserTypes.CLASS_OBJECT), false);
+        getRootClosure().addVariableDeclaration(name, new ComplexParserType(ParserTypes.CLASS_OBJECT));
         getRootClosure().addVariableInitialisation(name, systemClosure);
 
         return systemClosure;
@@ -182,7 +184,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
     }
 
     IClosure<String, ComplexParserType, Object> addRootClosureVariable(IClosure<String, ComplexParserType, Object> methodClosure, String name, ComplexParserType type) {
-        methodClosure.addVariableDeclaration(name, type, false);
+        methodClosure.addVariableDeclaration(name, type);
         methodClosure.addVariableInitialisation(name, retrieveClassClosure(type.getBasicType().toString()));
 
         return methodClosure;
@@ -190,7 +192,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
     IClosure<String, ComplexParserType, Object> addRootClosureMethodParameter(IClosure<String, ComplexParserType, Object> methodClosure, ComplexParserType... type) {
         for (int i = 0; i < type.length; i++)
-            methodClosure.addVariableDeclaration("ignored" + i, type[i], true);
+            methodClosure.addVariableDeclaration("ignored" + i, type[i], true, retrieveClassClosure(type[i].getBasicType().toString()));
 
         return methodClosure;
     }
@@ -364,7 +366,9 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
         translate(" : ");
         ComplexParserType currentType = degradeArrayMapSet((ComplexParserType) visit(init, data), true);
         translate(") ");
-        cast(data).addVariableDeclaration((String) ((SimpleNode) decl.jjtGetChild(1)).jjtGetValue(), definedType, false);
+        String varName = (String) ((SimpleNode) decl.jjtGetChild(1)).jjtGetValue();
+        cast(data).addVariableDeclaration(varName, definedType);
+        cast(data).addVariableInitialisation(varName, retrieveClassClosure(definedType.getBasicType().toString()));
 
         if (!currentType.isEqual(definedType))
             throw new ExpectedTypeMissmatchSemanticException(cast(data), currentType, definedType);
@@ -504,7 +508,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
         translate(type.toStringJava(true) + " " + identifier);
 
-        cast(data).addVariableDeclaration(identifier, type, true);
+        cast(data).addVariableDeclaration(identifier, type, true, retrieveClassClosure(type.getBasicType().toString()));
         return null;
     }
 
@@ -526,7 +530,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
             identifier = (String) ident.jjtGetValue();
         }
 
-        cast(data).addVariableDeclaration(identifier, type, false);
+        cast(data).addVariableDeclaration(identifier, type);
 
         if (init != null) visit(init, data);
 

@@ -5,7 +5,6 @@ import de.fh.javacc.generated.ParseException;
 import de.fh.javacc.generated.SimpleNode;
 import de.fh.lexparser.ILexParser;
 import de.fh.semantic.ISemanticAnalyzer;
-import de.fh.semantic.err.SemanticException;
 import de.fh.translator.ITranslator;
 import de.fh.utils.PrettyPrintVisitor;
 
