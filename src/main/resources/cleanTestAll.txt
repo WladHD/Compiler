@@ -1,6 +1,15 @@
+int i = 0;
+Path p = /home/robert/hello;
+
+int anzahl(String neu) {
+    for (Files f : p.files)
+        f.name = neu + f.name;
+
+    return 1;
+}
+
 void main() {
-	// Set<int> = {1,2,3}; // EXCEPTION -> [] für Set
-	// int[] = [1,2,3]; // EXCEPTION -> {} für Arrays
-	Map<int[], Set<int>> ms = [{1,2,3}: [3,4,5]]; // KEINE EXCEPTION
-	int[] x = {1,2,3};
+    System.print("Bitte geben Sie den Pfad ein:");
+    String neu = System.readString();
+    System.println(anzahl(neu));
 }

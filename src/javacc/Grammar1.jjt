@@ -170,8 +170,8 @@ void var_declaration() :
 {}
 {
     (type_specifier() (LOOKAHEAD(pure_identifier() op_assignment()) (pure_identifier() op_assignment()) #VAR_INIT | pure_identifier())) #VAR_DECLARATION |
-    LOOKAHEAD(identifier() op_assignment())
-    (identifier() op_assignment()) #VAR_INIT |
+    LOOKAHEAD(op_prio_15() op_assignment())
+    (op_prio_15() op_assignment()) #VAR_INIT |
     op_prio_3()
 }
 
