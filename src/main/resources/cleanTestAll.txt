@@ -1,15 +1,18 @@
 int i = 0;
-Path p = /home/robert/hello;
+Path p = C:\Users\Wladislaw Jerokin\Documents\Arbeit\fhir2text;
 
 int anzahl(String neu) {
-    for (Files f : p.files)
-        f.name = neu + f.name;
+    int x = 0;
+    for (Files f : p.files) {
+        x = x + 1;
+        System.println(f);
+    }
 
-    return 1;
+    return x;
 }
 
 void main() {
-    System.print("Bitte geben Sie den Pfad ein:");
+    System.println("Bitte geben Sie den Pfad ein:");
     String neu = System.readString();
     System.println(anzahl(neu));
 }
