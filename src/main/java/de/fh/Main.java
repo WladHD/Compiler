@@ -7,6 +7,9 @@ import de.fh.semantic.SemanticAnalyzer;
 import de.fh.translator.Translator;
 import de.fh.utils.CustomFormatter;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -49,6 +52,15 @@ public class Main {
             output = args.length > 1 ? args[1] : null;
         }
 
-        compiler.executePipelineFromResource(source, output);
+        if(!standalone)
+            compiler.executePipelineFromResource(source, output);
+        else {
+            File initialFile = new File(source);
+            try (InputStream targetStream = new FileInputStream(initialFile)){
+                compiler.executePipeline(targetStream, output);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
     }
 }
