@@ -1,5 +1,0 @@
-Path p = ./dsf;
-
-void main() {
-    p.files = {};
-}

@@ -1,5 +1,4 @@
 options {
-    DEBUG_LOOKAHEAD = true;
     VISITOR = true;
     MULTI = true;
     IGNORE_CASE = false;
