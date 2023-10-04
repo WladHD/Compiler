@@ -605,7 +605,7 @@ PROGRAM = null
 \end{lstlisting}
 
 \newpage
-\section{Semantik}
+\section{Semantik und Fehlermeldung}
 Nach der Erzeugung des AST wird dieser der semantischen Prüfung übergeben.
 Hierbei wird gleichzeitig auch die Fehlerbehandlung (und die Codeerzeugung in Kapitel \ref{sec:übersetzung}) abgedeckt.
 Um den Umfang der semantischen Analyse zu beschreiben, lassen sich hierfür die definierten Exceptions anbringen.
@@ -616,22 +616,23 @@ Um den Umfang der semantischen Analyse zu beschreiben, lassen sich hierfür die d
 	
 	1 & ExpectedTypeMissmatchSemanticException \\
 	2 & IllegalClassContentSemanticException \\
-	3 & IllegalOperationSemanticException \\
-	4 & MainMethodWithArgsSemanticException \\
-	5 & MethodDeclaredSemanticException \\
-	6 & MethodNotDeclaredSemanticException \\
-	7 & MethodParameterMismatchSemanticException \\
-	8 & NoMainMethodSemanticException \\
-	9 & NoReturnSemanticException \\
-	10 & NotArrayExceptionSemanticException \\
-	11 & ReturnTypeMismatchSemanticException \\
-	12 & StatementExpectedSemanticException \\
-	13 & UnreachableCodeSemanticException \\
-	14 & VariableDeclarationNotAllowedSemanticException \\
-	15 & VariableDeclaredSemanticException \\
-	16 & VariableNotDeclaredSemanticException \\
-	17 & VariableNotInitializedSemanticException \\
-	18 & WrongArrayDefinitionSemanticException  \\ \midrule
+	3 & IllegalInitializerSemanticException \\
+	4 & IllegalOperationSemanticException \\
+	5 & MainMethodWithArgsSemanticException \\
+	6 & MethodDeclaredSemanticException \\
+	7 & MethodNotDeclaredSemanticException \\
+	8 & MethodParameterMismatchSemanticException \\
+	9 & NoMainMethodSemanticException \\
+	10 & NoReturnSemanticException \\
+	11 & NotArrayExceptionSemanticException \\
+	12 & ReturnTypeMismatchSemanticException \\
+	13 & StatementExpectedSemanticException \\
+	14 & UnreachableCodeSemanticException \\
+	15 & VariableDeclarationNotAllowedSemanticException \\
+	16 & VariableDeclaredSemanticException \\
+	17 & VariableNotDeclaredSemanticException \\
+	18 & VariableNotInitializedSemanticException \\
+	19 & WrongArrayDefinitionSemanticException  \\ \midrule
 	
 	\caption{Alle für die semantische Analyse definierten Exceptions}
 	\label{table:semanticCheck}
@@ -654,6 +655,13 @@ void main() {
 \begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer IllegalClassContentSemanticException}, label=lst:errCode2]
 for (;;) {} // EXCEPTION -> Außerhalb einer Methode
 void main() {}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer IllegalInitializerSemanticException}, label=lst:errCode19]
+NoExample f = /* init */;
+void main() {
+	f.getName() = "dsf"; // EXCEPTION -> Prio 15
+}
 \end{lstlisting}
 
 \begin{lstlisting}[caption={Fehlerhafter Code resultierend in einer IllegalOperationSemanticException}, label=lst:errCode3]
@@ -759,8 +767,6 @@ void main() {
 }
 \end{lstlisting}
 
-
-\newpage
 \section{Übersetzung}
 \label{sec:übersetzung}
 Die Übersetzung ist der letzte Schritt in Tabelle \ref{table:bereiche} und ist dafür verantwortlich, den erhaltenen AST zu Java Source Code zu übersetzen.
@@ -785,23 +791,26 @@ Der in Listing \ref{lst:bsplCodeTranslatorFinal} generierte Java Source Code wir
 \section{Anleitung zur Ausführung}
 In diesem Kapitel wird beschrieben, wie das kompilierte Programm verwendet werden kann sowie die selbstständige Erstellung aus dem Source Code.
 
-\paragraph{Verwendung des kompilierten Programms} \mbox{} \\
+\paragraph{Verwendung des Compilers} \mbox{} \\
 Das Programm \textit{FARECompiler.jar} akzeptiert zwei Parameter und kann wie folgt aufgerufen werden:
 
 \noindent
-\textit{java -jar FARECompiler.jar <SourceCode> [OutputPath]}
+\textit{java -jar FARECompiler.jar <InputFile> [OutputFolder]}
 
 \noindent
-\textit{SourceCode} gibt den Pfad zur Textdatei an, in welcher sich der Quellcode befindet.
-\textit{OutputPath} gibt jeweils den Pfad zur zu erstellenden jar-Datei an.
-Wird der \textit{OutputPath} nicht gesetzt, wird der generierte AST und Java Code nur auf der Konsole angezeigt.
+\textit{InputFile} gibt den Pfad zur Textdatei an, in welcher sich der Quellcode befindet.
+\textit{OutputFolder} gibt jeweils den Pfad zum Ordner an, in welchem das kompilierte FARE Programm abgespeichert werden soll.
+Wird der \textit{OutputFolder} nicht gesetzt, wird der generierte AST + Java Code nur auf der Konsole angezeigt. Um das angehängte Beispiel auszuführen, nutzt man z. B. folgenden Befehl:
+
+\noindent
+\textit{java -jar ../FARECompiler.jar aufgabe.fare ./}
 
 \noindent
 Sollten zwei Parameter vorliegen, wird bei erfolgreichem Kompilieren eine ausführbare jar-Datei am \textit{OutputPath} erstellt.
-Diese kann dann mit folgendem Befehl gestartet werden:
+Die kompilierte jar kann dann mit folgendem Befehl gestartet werden:
 
 \noindent
-\textit{java -jar ErzeugteDatei.jar}
+\textit{java -jar TranslatorTemplate.jar}
 
 
 \paragraph{Kompilierung des Source Codes} \mbox{} \\
