@@ -11,6 +11,8 @@ import de.fh.utils.PrettyPrintVisitor;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.jar.Attributes;
@@ -86,15 +88,25 @@ public class Compiler<T extends Node> implements ICompiler<T> {
 
                 File outputFile = new File(outputPath);
 
-                if (!outputFile.getParentFile().exists()) {
-                    outputFile.getParentFile().mkdir();
+                if(!outputFile.exists())
+                    outputFile.mkdirs();
+
+                outputFile = Paths.get(outputFile.getPath(), "TranslatorTemplate.java").toFile();
+                outputPath = outputFile.getAbsolutePath();
+
+                try {
+                    System.out.println(outputFile.getAbsolutePath() + (outputFile.createNewFile() ? " wurde erstellt" : " liegt bereits vor"));
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
                 }
+
 
                 try (PrintWriter out = new PrintWriter(outputPath)) {
                     out.println(javaCodeSource);
                 } catch (FileNotFoundException e) {
                     throw new RuntimeException(e);
                 }
+
                 System.out.printf("Unter '%s' gespeichert%n", outputPath);
 
                 System.out.println("Generiere ausführbare JAR Datei ...");
@@ -114,7 +126,8 @@ public class Compiler<T extends Node> implements ICompiler<T> {
         String nameWithoutExtension = getNameWithoutExtension(outputFile);
 
         System.out.println(nameWithoutExtension);
-        File output = new File(outputFile.getParentFile().getAbsolutePath() + File.separator + nameWithoutExtension + ".jar");
+        String prefix = (outputFile.getParentFile() == null ? "." : outputFile.getParentFile().getAbsolutePath()) + File.separator;
+        File output = new File(prefix + nameWithoutExtension + ".jar");
 
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         int compilationResult = compiler.run(null, null, null, outputFile.getAbsolutePath());
@@ -160,7 +173,7 @@ public class Compiler<T extends Node> implements ICompiler<T> {
         }
 
         System.out.println("Deleting raw temporary class files ...");
-        for(File deleteMe : classes)
+        for (File deleteMe : classes)
             deleteMe.delete();
 
         System.out.println("JAR Datei wurde generiert... ausführbar mit:");

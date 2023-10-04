@@ -45,7 +45,7 @@ public class Main {
         }
 
         String source = "cleanTest.txt";
-        String output = true ? "./src/test/java/TranslatorTemplate.java" : null;
+        String output = true ? "./src/test/java" : null;
 
         if (args.length > 0) {
             source = args[0];
@@ -55,8 +55,9 @@ public class Main {
         if(!standalone)
             compiler.executePipelineFromResource(source, output);
         else {
-            File initialFile = new File(source);
-            try (InputStream targetStream = new FileInputStream(initialFile)){
+            File f = new File(source);
+            System.out.println("Lese Pfad ein: " + f.getAbsolutePath());
+            try (InputStream targetStream = new FileInputStream(f)){
                 compiler.executePipeline(targetStream, output);
             } catch (Exception ex) {
                 ex.printStackTrace();
