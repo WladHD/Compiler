@@ -272,7 +272,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
             if (!meth_cpt.isEqual(cpt))
                 throw new ReturnTypeMismatchSemanticException(cast(data), (String) ((SimpleNode) meth.jjtGetChild(1)).jjtGetValue(), meth_cpt, cpt);
         } else
-            throw new UnknownSemanticException(null);
+            throw new UnknownSemanticException(cast(data), null);
 
         return cpt;
     }
@@ -568,7 +568,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
             expectedType = (ComplexParserType) visit(op15, new AbstractMap.SimpleEntry<>(data, 2));
             typeReturnType = visit(operation, data);
         } else {
-            throw new UnknownSemanticException(null);
+            throw new UnknownSemanticException(cast(data), null);
         }
 
         if (typeReturnType instanceof ComplexParserType cpt)
@@ -607,7 +607,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
         if (node.jjtGetNumChildren() == 1) return visit(node.jjtGetChild(0), data);
 
         // TODO is it even possible?
-        throw new UnknownSemanticException(null);
+        throw new UnknownSemanticException(cast(data), null);
     }
 
     @Override
@@ -760,7 +760,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
         final IClosure<String, ComplexParserType, Object> startingClosure = currentClosure;
         final boolean disallowMethodAtEnd = resolveType != 0;
         final boolean disallowMapSetIndexCalls = resolveType == 2;
-
+        final boolean disallowRootObjectMemberCalls = resolveType == 2;
 
         ComplexParserType currentType = null;
 
@@ -784,13 +784,20 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
                     continue;
                 }
 
+                if (disallowRootObjectMemberCalls &&
+                        currentClosure.getParent() != null &&
+                        currentClosure.getParent().getParent() == null
+                ) {
+                    throw new UnknownSemanticException(startingClosure, "(Variablenzuweisung des Objekts " + currentClosure.getClosureName() + ") Variablen der vorgegebenen Klassen (Path, Files ...) sind final. Bitte die vorgesehenen Methoden verwenden.");
+                }
+
                 currentType = (ComplexParserType) visit(ident, currentClosure);
                 currentClosure = cast(currentClosure.getVariableTypeAndValue(currentIdentifier, false).getValue());
             }
 
             if (current instanceof ASTOPERATOR_15_METHOD_CALL mc) {
                 if (isNextMethodCall)
-                    throw new UnknownSemanticException("Es liegen zwei Methodenaufrufe aufeinander vor.");
+                    throw new UnknownSemanticException(startingClosure, "Es liegen zwei Methodenaufrufe aufeinander vor.");
 
                 if (disallowMethodAtEnd && isLast)
                     throw new IllegalInitializerSemanticException(startingClosure);
@@ -823,10 +830,10 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
 
             if (current instanceof ASTOPERATOR_15_ARRAY_INDEX_CALL ai) {
                 if (currentType == null)
-                    throw new UnknownSemanticException(null);
+                    throw new UnknownSemanticException(startingClosure, null);
 
-                if(disallowMapSetIndexCalls)
-                    if(currentType.getBasicType() == ParserTypes.MAP || currentType.getBasicType() == ParserTypes.SET)
+                if (disallowMapSetIndexCalls)
+                    if (currentType.getBasicType() == ParserTypes.MAP || currentType.getBasicType() == ParserTypes.SET)
                         throw new NotYetSupportedSemanticException(startingClosure, "Zuweisungen eines Werts auf den Index eines Objekts des Datentyps Map oder Set wird noch nicht angeboten.");
 
                 String closing;
@@ -948,8 +955,17 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
             parent = (SimpleNode) parent.jjtGetParent();
         }
 
-        ASTLITERAL_IDENTIFIER init_ident = (ASTLITERAL_IDENTIFIER) parent.jjtGetChild(0);
-        ComplexParserType arrayHolderType = cast(data).getVariableTypeAndValue(init_ident.jjtGetValue().toString(), false).getKey();
+        ComplexParserType arrayHolderType;
+        if (parent.jjtGetChild(0) instanceof ASTLITERAL_IDENTIFIER init_ident) {
+            init_ident = (ASTLITERAL_IDENTIFIER) parent.jjtGetChild(0);
+            arrayHolderType = cast(data).getVariableTypeAndValue(init_ident.jjtGetValue().toString(), false).getKey();
+        } else if (parent.jjtGetChild(0) instanceof ASTOP_PRIO_15 op15) {
+            translateDisabled = true;
+            arrayHolderType = (ComplexParserType) visit(op15, data);
+            translateDisabled = false;
+        } else {
+            throw new UnknownSemanticException(cast(data), null);
+        }
 
         for (int i = traverseTypeSpecifiers.size() - 1; i >= 0; i--) {
             arrayHolderType = arrayHolderType.clone();
@@ -957,11 +973,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
         }
 
         if (!arrayHolderType.isArray())
-            throw new WrongArrayDefinitionSemanticException(
-                    cast(data),
-                    MessageFormat.format(
-                            "Das Objekt {0} ist vom Datentyp {1} und ist keine Array. Eine Array wird mit '{'...'}' definiert, wobei Set und Map mit [...] definiert werden."
-                            , init_ident.jjtGetValue(), arrayHolderType.toString()));
+            throw new WrongArrayDefinitionSemanticException(cast(data));
 
         translate("new " + arrayHolderType.toStringJava(traverseTypeSpecifiers.isEmpty()) + " {", false);
 
@@ -1001,8 +1013,18 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
             parent = (SimpleNode) parent.jjtGetParent();
         }
 
-        ASTLITERAL_IDENTIFIER init_ident = (ASTLITERAL_IDENTIFIER) parent.jjtGetChild(0);
-        ComplexParserType arrayHolderType = cast(data).getVariableTypeAndValue(init_ident.jjtGetValue().toString(), false).getKey();
+        ComplexParserType arrayHolderType;
+        if (parent.jjtGetChild(0) instanceof ASTLITERAL_IDENTIFIER init_ident) {
+            init_ident = (ASTLITERAL_IDENTIFIER) parent.jjtGetChild(0);
+            arrayHolderType = cast(data).getVariableTypeAndValue(init_ident.jjtGetValue().toString(), false).getKey();
+        } else if (parent.jjtGetChild(0) instanceof ASTOP_PRIO_15 op15) {
+            translateDisabled = true;
+            arrayHolderType = (ComplexParserType) visit(op15, data);
+            translateDisabled = false;
+        } else {
+            throw new UnknownSemanticException(cast(data), null);
+        }
+
 
         for (int i = traverseTypeSpecifiers.size() - 1; i >= 0; i--) {
             arrayHolderType = arrayHolderType.clone();
@@ -1010,11 +1032,7 @@ public class SemanticTreeVisitor implements GodlyTestParserVisitor {
         }
 
         if (arrayHolderType.isArray())
-            throw new WrongArrayDefinitionSemanticException(
-                    cast(data),
-                    MessageFormat.format(
-                            "Das Objekt {0} ist vom Datentyp {1} und ist eine Array. Eine Array wird mit '{'...'}' definiert, wobei Set und Map mit [...] definiert werden."
-                            , init_ident.jjtGetValue(), arrayHolderType.toString()));
+            throw new WrongArrayDefinitionSemanticException(cast(data));
 
         translate("new " + arrayHolderType.toStringJava(true) + "()");
 

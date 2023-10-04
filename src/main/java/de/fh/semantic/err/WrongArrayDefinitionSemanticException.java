@@ -3,10 +3,8 @@ package de.fh.semantic.err;
 import de.fh.semantic.ComplexParserType;
 import de.fh.semantic.closure.IClosure;
 
-import java.text.MessageFormat;
-
 public class WrongArrayDefinitionSemanticException extends SemanticException {
-    public WrongArrayDefinitionSemanticException(IClosure<String, ComplexParserType, Object> iClosure, String msg) {
-        super(iClosure, msg);
+    public WrongArrayDefinitionSemanticException(IClosure<String, ComplexParserType, Object> iClosure) {
+        super(iClosure, "Eine Array wird mit '{'...'}' definiert, wobei Set und Map mit [...] definiert werden.");
     }
 }

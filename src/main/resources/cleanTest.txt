@@ -1,5 +1,5 @@
-Set<int> sdf = [1,2,3];
+Path p = ./dsf;
 
 void main() {
-    sdf[0] = 2;
+    p.files = {};
 }
