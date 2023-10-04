@@ -7,7 +7,6 @@ import de.fh.semantic.SemanticAnalyzer;
 import de.fh.translator.Translator;
 import de.fh.utils.CustomFormatter;
 
-import java.util.List;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;

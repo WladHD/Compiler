@@ -1,4 +1,5 @@
 options {
+    DEBUG_LOOKAHEAD = true;
     VISITOR = true;
     MULTI = true;
     IGNORE_CASE = false;
@@ -171,8 +172,8 @@ void var_declaration() :
 {}
 {
     (type_specifier() (LOOKAHEAD(pure_identifier() op_assignment()) (pure_identifier() op_assignment()) #VAR_INIT | pure_identifier())) #VAR_DECLARATION |
-    LOOKAHEAD(identifier() op_assignment())
-    (identifier() op_assignment()) #VAR_INIT |
+    LOOKAHEAD(op_prio_15() op_assignment())
+    (op_prio_15() op_assignment()) #VAR_INIT |
     op_prio_3()
 }
 
@@ -197,8 +198,8 @@ void op_assignment_redo() :
     Token t;
 }
 {
-    LOOKAHEAD(identifier() <OP_ASSIGNMENT> op_assignment_redo())
-    (identifier() (t = <OP_ASSIGNMENT> {jjtThis.value = t.image;} op_assignment_redo()) #OP_PRIO_1) #VAR_INIT |
+    LOOKAHEAD(op_prio_15() <OP_ASSIGNMENT> op_assignment_redo())
+    (op_prio_15() (t = <OP_ASSIGNMENT> {jjtThis.value = t.image;} op_assignment_redo()) #OP_PRIO_1) #VAR_INIT |
     op_prio_3()
 }
 
